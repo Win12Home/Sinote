@@ -1,0 +1,17 @@
+{
+  "editor.menu.files": "Files",
+  "editor.menu.edit": "Edit",
+  "editor.menu.code": "Code",
+  "editor.menu.run": "Run",
+  "editor.menu.files.newproj": "New Project",
+  "editor.menu.files.newfile": "New File",
+  "editor.menu.files.openproj": "Open Project",
+  "editor.menu.files.saveas": "Save As",
+  "editor.menu.files.settings": "Settings",
+  "editor.menu.files.exit": "Exit",
+  "editor.menu.edit.undo": "Undo",
+  "editor.menu.edit.redo": "Redo",
+  "editor.menu.run.compile": "Compile",
+  "editor.menu.run.run": "Run",
+  "editor.menu.run.editconf": "Edit Configuration"
+}

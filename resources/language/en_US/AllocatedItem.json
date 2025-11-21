@@ -1,0 +1,24 @@
+{
+  "item.text.done": "Done",
+  "item.text.version": "Version",
+  "item.text.cancel": "Cancel",
+  "item.list.version": [
+    "0",
+    "06",
+    "25530"
+  ],
+  "item.list.realversion": "0.06.25530-python3.14-pyqt6",
+  "item.bool.isbetaversion": true,
+  "item.list.language_files": [
+    "EditorUI",
+    "TrailUI"
+  ],
+  "item.dict.language_for": {
+    "en_US": "English (United States)",
+    "ja_JP": "Japanese (Japan) (NOT REALLY ADDED)",
+    "zh_CN": "Chinese (Simplified)"
+  },
+  "item.text.info": "Info",
+  "item.text.warn": "Warning",
+  "item.text.betaverdesc": "This version is a test version, it might have some issues, please use other editor for your important work!"
+}

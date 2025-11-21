@@ -1,0 +1,13 @@
+{
+  "config": {
+    "type": 1,
+    "api": [1,1],
+    "objectName": "python_syntax"
+  },
+  "coding": {
+    "codeName": "Python",
+    "fileExtension": [".pyi",".py"],
+    "keywords": ["and","or","not","if","elif","else","for","while","True","False","continue","pass","break","try","except","finally","raise","from","as","import","def","return","class","lambda","del","global","nonlocal","in","is","None","assert","with","yield","async","await"],
+    "symbols": ["=","->",">","<","-","+","*","/","//",":",":="]
+  }
+}
