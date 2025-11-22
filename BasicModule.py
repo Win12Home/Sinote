@@ -442,16 +442,17 @@ class LoadPluginHeader:
                     "enableSelfColorOfRemKeywordsMultipleLine": True,
                     "textKeywords": []
                 }
-                config: dict = self.config | config
-                items.append(config["codeName"])
-                items.append(config["fileExtensions"])
+                coding: dict = self.coding | coding
+                items.append(coding["codeName"])
+                items.append(coding["fileExtension"])
                 items.append(LoadPluginBase.CustomizeSyntaxHighlighter(
                     [
-                        config["keywords"],
-                        config["symbols"],
-                        config["remKeywords"],
-                        config["enableSelfColorOfRemKeywordsMultipleLine"],
-                        config["textKeywords"]
+                        coding["keywords"],
+                        coding["symbols"],
+                        coding["remKeywords"],
+                        coding["remKeywordsMultipleLine"],
+                        coding["enableSelfColorOfRemKeywordsMultipleLine"],
+                        coding["textKeywords"]
                     ]
                 ))
             else:
@@ -459,8 +460,9 @@ class LoadPluginHeader:
                 return 0
             addLog(0, f"Successfully to load {self.filename}! Used {(datetime.now() - beforeDatetime).total_seconds():02f}secs.")
             return items
-        except:
-            self.err("Unknown Error")
+        except Exception as e:
+            self.err("Unknown Error, Python Exception: {}"
+                                    .format(repr(e)))
             return -1
 
     @staticmethod
