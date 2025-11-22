@@ -1,8 +1,8 @@
-from qfluentwidgets import *
-from PyQt6.QtWidgets import *
+from PySide6.QtWidgets import *
 from functools import singledispatch
-from PyQt6.QtCore import *
-from PyQt6.QtGui import *
+from PySide6.QtCore import *
+from PySide6.QtGui import *
+from qt_material import *
 from json import loads
 from rich import print
 from locale import getdefaultlocale
@@ -16,6 +16,12 @@ from psutil import virtual_memory, cpu_percent
 import re,json,sys
 
 filterwarnings("ignore", category=DeprecationWarning)
+
+# Generate QApplication
+
+application = QApplication([])
+
+apply_stylesheet(application,"light_teal.xml")
 
 apiVersion: tuple = (1,0,1)
 sinoteVersion: str = "sinote-2025.01.00842-initial-preview-beta"
@@ -45,24 +51,17 @@ def saveLog():
     with open(datetime.now().strftime("./log/sinote-log-time-%Y-%m-%d-%H.%M.%S-output.log"),"w+",encoding="utf-8") as f:
         f.write("\n".join(normalLogOutput))
 
-#Generate QApplication
-app = QApplication(sys.argv)
-
 def err(error_code:str,parent:QWidget=None,no_occurred:bool=False):
     if not no_occurred:
         addLog(2,bodyText="Error Occurred, Program Used Function err to aborted running! Error Code: {}".format(error_code))
-    w = Dialog("Error","Sinote has found a error! \nError Code: {}\nPlease contact developer or re-install software!".format(error_code),parent)
-    w.yesButton.setText("Done")
-    w.cancelButton.hide()
-    w.buttonLayout.insertStretch(1)
-    w.exec()
+    w = QMessageBox.critical(None,"Error","Sinote has found a error! \nError Code: {}\nPlease contact developer or re-install software!".format(error_code))
     if not no_occurred:
         addLog(2,bodyText="Saving Error to local")
         saveLog()
     """
     Error Codes
     0xffffffff: Unknown Error, Traceback Hook Detected!
-    0x00000001: AllocatedItem.json not found, re-install software
+    0x00000001: BaseInfo.json not found, re-install software
     0x00000002: Other Language File not found, re-install software
     0x00000003: System isn't support (Only MacOS, Windows and Linux), use --bypass-system-check to bypass system check!
     """
@@ -130,24 +129,27 @@ debugMode: bool = False
 
 loadedJson: dict = {}
 
-# basicInfo will be AllocatedItem.json
+# basicInfo will be BaseInfo.json
 basicInfo: dict = {}
 
 
 lang = "en_US"
 try:
-    with open("./resources/language/{}/AllocatedItem.json".format(lang),"r",encoding="utf-8") as f:
+    with open("./resources/language/{}/BaseInfo.json".format(lang),"r",encoding="utf-8") as f:
         basicInfo = loads(f.read())
 except:
-    addLog(2,"AllocatedItem.json not found")
+    addLog(2,"BaseInfo.json not found")
     err("0x00000001")
     quit(1)
+
 # Look at the system
-if not system().lower() in ["darwin", "linux", "windows"] and not "--bypass-system-check" in (args := [i.lower() for i in sys.argv]):
+args = [i.lower() for i in sys.argv]
+
+if not system().lower() in ["darwin", "linux", "windows"] and not "--bypass-system-check" in args:
     addLog(2,"Your system isn't a Darwin Based, a Linux Based or Windows, cannot continue run safety, use --bypass-system-check to bypass.")
     err("0x00000003")
     quit(1)
-if "--debug-mode" in args or "-db" in args: # noqa: F821
+if "--debug-mode" in args or "-db" in args:
     debugMode = True
 
 for temp in basicInfo["item.list.language_files"]:
@@ -160,11 +162,7 @@ for temp in basicInfo["item.list.language_files"]:
 # Check the Beta Version
 def checkVersionForPopup():
     if basicInfo["item.bool.isbetaversion"]:
-        w = Dialog(basicInfo["item.text.warn"],basicInfo["item.text.betaverdesc"])
-        w.yesButton.setText(basicInfo["item.text.done"])
-        w.cancelButton.hide()
-        w.buttonLayout.insertStretch(1)
-        w.exec()
+        w = QMessageBox.warning(None,basicInfo["item.text.warn"],basicInfo["item.text.betaverdesc"])
 
 def loadJson(json_name: str):
     if not Path("./resources/language/{}/{}.json".format(lang,json_name)).exists():
@@ -181,15 +179,13 @@ def outputDeveloperDebugInformation():
 class LoadPluginBase:
     class ConfigKeyNotFoundError(Exception): ...
 
-    class LoadPluginError:
-        def __init__(self, code: int):
-            self.code = code
-
-        def returnString(self):
-            errCodeDefinitions: dict[Any] = {
-                0: "Missing Ingredients",
-                1: "API is too low or high"
-            }
+    @staticmethod
+    def parseErrCode(code: int):
+        errCodeDefinitions: dict = {
+            0: "Missing Ingredients",
+            1: "API is too low or high"
+        }
+        return code
 
 class LoadPluginHeader:
     """
@@ -205,7 +201,11 @@ class LoadPluginHeader:
         addLog(2,f"Cannot continue load plugin!")
 
     def getValue(self) -> int | list:
-        # Set Default Values in Config
+        """
+        Load plugin and return a format like this:
+        [<objName>,<type>,{<settings>}]
+        :return: Integer (follow LoadPluginBase.parseErrCode) List (plugin)
+        """
         self.config = {
             "type": 0,
             "api": [1,apiVersion[0]],
@@ -240,3 +240,5 @@ class LoadPluginHeader:
            readStr: str = f.read()
         # Convert JSON text to dict
         return json.loads(readStr)
+
+raise Exception("A Exception")
