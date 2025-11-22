@@ -83,8 +83,8 @@ A example of Python:
     "keywords": [/* Keywords of Python, like raise, async etc */],
     "symbols": [/* Symbols, like , . ^ & */],
     "remKeywords": ["#"],
-    "remKeywordsLikeString": ["\"\"\""],
-    "enableSelfColorOfRemKeywordsLikeString": false, //"""<text>""" also can use for str
+    "remKeywordsMultipleLine": ["\"\"\"","\"\"\""],
+    "enableSelfColorOfRemKeywordsMultipleLine": false, //"""<text>""" also can use for str, this is one of different of Python
     "textKeywords": ["'","\""]
     
   }
@@ -98,12 +98,12 @@ A example of Python:
  - ```keywords```: list, the keywords like static, void, protect, private etc.
  - ```symbols```: list, the symbols like ```,``` ```\\``` etc.
  - ```remKeywords```: list, the symbols like ```#```(Python) ```//``` (C++, Java, CPL etc.) etc.
- - ```remKeywordsLikeString```: list, the symbols like ```"""``` (Only Python)
- - ```enableSelfColorOfRemKeywordsLikeString```: boolean, ```"""``` in Python can be used for String, so it need to write false.
+ - ```remKeywordsMultipleLine```: list, the symbols like ```"""REM"""``` ```/*REM*/```
+ - ```enableSelfColorOfRemKeywordsMultipleLine```: boolean, ```"""``` in Python can be used for String, so it need to write false. Defaults is true.
  - ```textKeywords```: list, the symbols like ```'' , ""``` (Only One-character)
 
 > **<span style="color:red;font-style:oblique">&#x26a0;&#xfe0f; IMPORTANT NOTICE:</span> The all the selection is required!**
-> <br>Excepted ```enableSelfColorOfRemKeywordsLikeString``` selection. (Always false)
+> <br>Excepted ```enableSelfColorOfRemKeywordsLikeString``` selection. (Always true)
 
 ### 1.3.2 Complex Runner Define (type equals two)
 

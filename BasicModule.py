@@ -13,7 +13,8 @@ from datetime import datetime
 from traceback import format_exception
 from typing import *
 from psutil import virtual_memory, cpu_percent
-import sys
+from getpass import getuser
+import sys, re
 
 filterwarnings("ignore", category=DeprecationWarning)
 
@@ -81,7 +82,7 @@ def criticalLogSaver(err_type, err_value, err_tb) -> None:
       [info]
     Date:
       [date]
-    Please feedback to Developer yet!
+    Please feed back to Developer yet!
     
     And put it in folder ./log/critical
     :param err_type: Error Type
@@ -145,11 +146,23 @@ except:
 # Look at the system
 args = [i.lower() for i in sys.argv]
 
+if "-h" in args or "--help" in args:
+    QMessageBox.information(None,"Help","-h/--help: Arguments Help of Sinote\n-su/--use-root-user: Bypass check for SU User in posix env\n--bypass-system-check: Bypass System Check (Windows, Linux, Mac OS)")
+
 if not system().lower() in ["darwin", "linux", "windows"] and not "--bypass-system-check" in args:
     addLog(2,"Your system isn't a Darwin Based, a Linux Based or Windows, cannot continue run safety, use --bypass-system-check to bypass.")
     err("0x00000003")
     quit(1)
+
+if system().lower() in ["darwin","linux"]:
+    if getuser() == "root":
+        addLog(1,"We recommend to use Normal User in posix env. But use ROOT User is not SAFE for your OS! Please use Normal User Instead! (Excepted you have known it's unsafe or you wanna edit System File like GRUB)")
+        if not ("--use-root-user" in args or "-su" in args):
+            QMessageBox.warning(None, "Warning",
+                                     "We have noticed you run Sinote by ROOT/SU User, please remove 'sudo' command or exit 'su' environment. \nOr you can append -su for argument to bypass.")
+
 if "--debug-mode" in args or "-db" in args:
+    # Planned but not used ever.
     debugMode = True
 
 for temp in basicInfo["item.list.language_files"]:
@@ -171,7 +184,7 @@ def loadJson(json_name: str):
         quit(1)
 
 def outputDeveloperDebugInformation():
-    addLog(0, "For Developer Debug, Output your own PC's enviroment!")
+    addLog(0, "For Developer Debug, Output your own PC's environment!")
     addLog(0, f"Platform: {system()} Python: {python_version()} Win32 Version*: {" ".join(win32_ver())} | Linux LIBC Ver*: {" ".join(libc_ver())}")
     addLog(0, "Note: If some error occurred, please send log to the developer")
 
@@ -212,14 +225,129 @@ class LoadPluginBase:
         }
         return code
 
+    class CustomizeSyntaxHighlighter(QSyntaxHighlighter):
+        def __init__(self, syntaxList: list, parent: QTextDocument = None):
+            """
+            Initialize Customize Syntax Highlighter
+            :param syntaxList: syntax list, lexed from LoadPluginHeader object
+            :param parent: QTextDocument of a PlainTextEdit or TextEdit
+            """
+            super().__init__(parent)
+
+            self.keywords = syntaxList[0] if len(syntaxList) > 0 else []
+            self.symbols = syntaxList[1] if len(syntaxList) > 1 else []
+            self.remKeywords = syntaxList[2] if len(syntaxList) > 2 else []
+            self.remKeywordsMultipleLine = syntaxList[3] if len(syntaxList) > 3 else []
+            self.enableSelfColor = syntaxList[4] if len(syntaxList) > 4 else True
+            self.textKeywords = syntaxList[5] if len(syntaxList) > 5 else []
+
+            self.highlight_rules = []
+            self.multi_line_patterns = []
+
+            self._setup_formats()
+            self._setup_highlighting_rules()
+
+            addLog(0, f"Syntax highlighter initialized with {len(self.keywords)} keywords, {len(self.symbols)} symbols")
+
+        def _setup_formats(self):
+            self.keyword_format = QTextCharFormat()
+            self.keyword_format.setForeground(QColor('#569CD6'))
+            self.keyword_format.setFontWeight(QFont.Weight.Bold)
+
+            self.symbol_format = QTextCharFormat()
+            self.symbol_format.setForeground(QColor('#D4D4D4'))
+
+            self.single_comment_format = QTextCharFormat()
+            self.single_comment_format.setForeground(QColor('#6A9955'))
+            self.single_comment_format.setFontItalic(True)
+
+            self.multi_comment_format = QTextCharFormat()
+            self.multi_comment_format.setForeground(QColor('#6A9955'))
+            self.multi_comment_format.setFontItalic(True)
+
+            self.string_format = QTextCharFormat()
+            self.string_format.setForeground(QColor('#CE9178'))
+
+        def _setup_highlighting_rules(self):
+            self._add_keyword_rules()
+            self._add_symbol_rules()
+            self._add_single_comment_rules()
+            self._add_multi_comment_rules()
+            self._add_string_rules()
+
+        def _add_keyword_rules(self):
+            for keyword in self.keywords:
+                pattern = QRegularExpression(r'\b' + re.escape(keyword) + r'\b')
+                self.highlight_rules.append((pattern, self.keyword_format))
+
+        def _add_symbol_rules(self):
+            for symbol in self.symbols:
+                escaped_symbol = re.escape(symbol)
+                pattern = QRegularExpression(escaped_symbol)
+                self.highlight_rules.append((pattern, self.symbol_format))
+
+        def _add_single_comment_rules(self):
+            for comment_mark in self.remKeywords:
+                pattern = QRegularExpression(re.escape(comment_mark) + r'[^\n]*')
+                self.highlight_rules.append((pattern, self.single_comment_format))
+
+        def _add_multi_comment_rules(self):
+            if len(self.remKeywordsMultipleLine) >= 2 and self.enableSelfColor:
+                start_mark, end_mark = self.remKeywordsMultipleLine[0], self.remKeywordsMultipleLine[1]
+                pattern = QRegularExpression(
+                    re.escape(start_mark) + r'.*?' + re.escape(end_mark),
+                    QRegularExpression.PatternOption.DotMatchesEverythingOption
+                )
+                self.highlight_rules.append((pattern, self.multi_comment_format))
+
+                self.multi_line_patterns.append({
+                    'start': QRegularExpression(re.escape(start_mark)),
+                    'end': QRegularExpression(re.escape(end_mark)),
+                    'format': self.multi_comment_format
+                })
+
+        def _add_string_rules(self):
+            for string_mark in self.textKeywords:
+                pattern = QRegularExpression(
+                    re.escape(string_mark) + r'([^"\\]|\\.)*?' + re.escape(string_mark)
+                )
+                self.highlight_rules.append((pattern, self.string_format))
+
+        def highlightBlock(self, text: str):
+            for pattern, format in self.highlight_rules:
+                match_iterator = pattern.globalMatch(text)
+                while match_iterator.hasNext():
+                    match = match_iterator.next()
+                    self.setFormat(match.capturedStart(), match.capturedLength(), format)
+
+            self.setCurrentBlockState(0)
+            self.highlight_multi_line_comments(text)
+
+        def highlight_multi_line_comments(self, text: str):
+            if not self.multi_line_patterns or not self.enableSelfColor:
+                return
+
+            for multi_line in self.multi_line_patterns:
+                start_match = multi_line['start'].match(text)
+                end_match = multi_line['end'].match(text)
+
+                if start_match.hasMatch():
+                    start_index = start_match.capturedStart()
+                    if end_match.hasMatch():
+                        end_index = end_match.capturedEnd()
+                        self.setFormat(start_index, end_index - start_index, multi_line['format'])
+                    else:
+                        self.setFormat(start_index, len(text) - start_index, multi_line['format'])
+
+
 class LoadPluginHeader:
     """
     config needed
     Key: type | Header Type, for look please go to ./documentation/pluginEdit/header.md
     """
-    def __init__(self, header: AnyStr, filename: AnyStr = None):
+    def __init__(self, header: AnyStr | dict, filename: AnyStr = None):
         self.filename = filename
-        self.header = loads(header) if filename else self.readFile(header)
+        self.header = header if isinstance(header, dict) else loads(header) if filename else self.readFile(header)
 
     def err(self, error: str):
         addLog(2, f"Error while loading file \"{self.filename}\": {error}")
@@ -232,7 +360,7 @@ class LoadPluginHeader:
         :return: Integer (follow LoadPluginBase.parseErrCode) List (plugin)
         """
         items: list = []
-        if 1:
+        try:
             beforeDatetime = datetime.now()
             addLog(0,f"Attempting to load {self.filename}")
             self.config = {
@@ -295,8 +423,45 @@ class LoadPluginHeader:
                     if whichFuncToRun not in realFuncs:
                         addLog(1,f"{whichFuncToRun} defined in runFunc but didn't define in \"functions\".")
                     items[2][whichFuncToRun] = realFuncs[whichFuncToRun]
+            elif items[1] == 1:
+                # Syntax Highlighter
+                coding: dict = self.header.get("coding",None)
+                if coding is None:
+                    self.err("Key \"coding\" not found")
+                    return 0    # Missing Ingredients
+                if not isinstance(coding,dict):
+                    self.err("\"coding\" need a dict type")
+                    return 0    # Missing Ingredients
+                self.coding = {
+                    "codeName": "Not defined",
+                    "fileExtension": [],
+                    "keywords": [],
+                    "symbols": [],
+                    "remKeywords": [],
+                    "remKeywordsMultipleLine": [],
+                    "enableSelfColorOfRemKeywordsMultipleLine": True,
+                    "textKeywords": []
+                }
+                config: dict = self.config | config
+                items.append(config["codeName"])
+                items.append(config["fileExtensions"])
+                items.append(LoadPluginBase.CustomizeSyntaxHighlighter(
+                    [
+                        config["keywords"],
+                        config["symbols"],
+                        config["remKeywords"],
+                        config["enableSelfColorOfRemKeywordsMultipleLine"],
+                        config["textKeywords"]
+                    ]
+                ))
+            else:
+                self.err("Type is not support in this version (type==2 also not included)!")
+                return 0
             addLog(0, f"Successfully to load {self.filename}! Used {(datetime.now() - beforeDatetime).total_seconds():02f}secs.")
             return items
+        except:
+            self.err("Unknown Error")
+            return -1
 
     @staticmethod
     def readFile(file_path: str):
