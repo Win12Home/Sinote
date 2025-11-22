@@ -3,7 +3,7 @@ from functools import singledispatch
 from PySide6.QtCore import *
 from PySide6.QtGui import *
 from qt_material import *
-from json import loads
+from json5 import loads
 from rich import print
 from locale import getdefaultlocale
 from warnings import *
@@ -13,7 +13,7 @@ from datetime import datetime
 from traceback import format_exception
 from typing import *
 from psutil import virtual_memory, cpu_percent
-import re,json,sys
+import sys
 
 filterwarnings("ignore", category=DeprecationWarning)
 
@@ -21,7 +21,7 @@ filterwarnings("ignore", category=DeprecationWarning)
 
 application = QApplication([])
 
-apply_stylesheet(application,"light_teal.xml")
+apply_stylesheet(application,"dark_blue.xml")
 
 apiVersion: tuple = (1,0,1)
 sinoteVersion: str = "sinote-2025.01.00842-initial-preview-beta"
@@ -177,13 +177,38 @@ def outputDeveloperDebugInformation():
 
 
 class LoadPluginBase:
+    functions: dict = {
+        # Base Functions
+        "print": 0,
+        "msgbox": 1,
+        "log": 2,
+        "var": 3,
+        "vpr": 4,
+        "msgin": 5,
+        "system": 6,
+        "usefunc": 7,
+        # Advanced Functions
+        "set": 100,
+        "mkdir": 101,
+        "cfile": 102,
+        "efile": 103,
+        "pfile": 104,
+        "dfile": 105,
+        "afile": 106,
+        "wfile": 107,
+        "rfile": 108,
+        # GUI Functions
+        "errbox": 200
+    }
+
     class ConfigKeyNotFoundError(Exception): ...
 
     @staticmethod
     def parseErrCode(code: int):
         errCodeDefinitions: dict = {
             0: "Missing Ingredients",
-            1: "API is too low or high"
+            1: "API is too low or high",
+            -1: "Unknown Error"
         }
         return code
 
@@ -192,42 +217,86 @@ class LoadPluginHeader:
     config needed
     Key: type | Header Type, for look please go to ./documentation/pluginEdit/header.md
     """
-    def __init__(self, header: AnyStr | Dict, filename: AnyStr):
+    def __init__(self, header: AnyStr, filename: AnyStr = None):
         self.filename = filename
-        self.header = header if isinstance(header, dict) else self.readFile(header)
+        self.header = loads(header) if filename else self.readFile(header)
 
     def err(self, error: str):
         addLog(2, f"Error while loading file \"{self.filename}\": {error}")
         addLog(2,f"Cannot continue load plugin!")
 
-    def getValue(self) -> int | list:
+    def getValue(self) -> int | list | None:
         """
         Load plugin and return a format like this:
         [<objName>,<type>,{<settings>}]
         :return: Integer (follow LoadPluginBase.parseErrCode) List (plugin)
         """
-        self.config = {
-            "type": 0,
-            "api": [1,apiVersion[0]],
-            "enableCustomizeCommandRun": False,
-            "useSinoteVariableInString": True
-        }
-        flag: bool = False
         items: list = []
-        for k in (items := [k for k,_ in self.header.items()]):
-            if k == "config":
-                flag = True
-        if not flag:
-            self.err("Key \"config\" not found!")
-            return 0
-        if "objectName" not in self.header["config"]:
-            self.err("\"objectName\" is a required item in config.")
-            return 0
-        if "api" in self.header["config"]:
-            if not apiVersion[0] in range(self.header["config"]["api"][0],self.header["config"]["api"][1],1):
-                self.err("This plugin isn't support this version of API! Please update to new version!")
+        if 1:
+            beforeDatetime = datetime.now()
+            addLog(0,f"Attempting to load {self.filename}")
+            self.config = {
+                "type": 0,
+                "api": [1,apiVersion[0]],
+                "enableCustomizeCommandRun": False,
+                "useSinoteVariableInString": True
+            }
+            if not self.header.get("config",None):
+                self.err("Key \"config\" not found!")
+                return 0
+            config = self.config | self.header["config"]
+            if "objectName" not in config:
+                self.err("\"objectName\" is a required item in config.")
+                return 0
+            if not (config["api"][0] <= apiVersion[0] <= config["api"][1]):
+                self.err("This plugin not support API of this version! Please update to new version.")
                 return 1
-
+            # Add objectName to the list
+            items.append(config["objectName"])
+            items.append(config.get("type", 0) if isinstance(self.header["config"].get("type", 0), int) else 0)
+            if items[1] == 0:
+                # Check functions and runFunc
+                functions: dict | None = self.header.get("function", None)
+                runFunc: list | None = self.header.get("runFunc",None)
+                if not functions or not runFunc or config["enableCustomizeCommandRun"] == False:
+                    addLog(1, f"File \"{self.filename}\" is a Placeholder File ('Cause no function and runFunc)")
+                    # Interrupt
+                    return None
+                realFuncs: dict = {}
+                for funcName,funcProg in functions.items():
+                    if not isinstance(funcName, str):
+                        addLog(1, f"Ignored the {funcName} function 'caused not a String function name.")
+                        continue
+                    if not isinstance(funcProg, list):
+                        addLog(1,f"Ignored the {funcName} function 'caused not like this {r"\"String\":[]"}")
+                        continue
+                    # More safe
+                    if isinstance(funcProg, list):
+                        temp: list = []
+                        for line, k in enumerate(funcProg,1):
+                            if not isinstance(k, list):
+                                addLog(1,f"Ignored {line}th line in the {funcName} function 'caused isn't a List format.")
+                                continue
+                            if len(k) < 2:
+                                addLog(1,f"Ignored {line}th line in the {funcName} function 'caused isn't a List format.")
+                                continue
+                            if not isinstance(k[0], str):
+                                addLog(1,f"Ignored {line}th line in the {funcName} function 'caused cannot call the System Function. (Reason: Not String)")
+                                continue
+                            if LoadPluginBase.functions.get(k[0].lower(), None) is None:
+                                addLog(1,f"Ignored {line}th line in the {funcName} function 'caused {k[0]} isn't a real function there.")
+                                continue
+                            k[0] = LoadPluginBase.functions.get(k[0].lower())
+                            temp.append(k)
+                        realFuncs[funcName] = temp
+                # look for runFunc
+                items.append({})
+                for whichFuncToRun in runFunc:
+                    if whichFuncToRun not in realFuncs:
+                        addLog(1,f"{whichFuncToRun} defined in runFunc but didn't define in \"functions\".")
+                    items[2][whichFuncToRun] = realFuncs[whichFuncToRun]
+            addLog(0, f"Successfully to load {self.filename}! Used {(datetime.now() - beforeDatetime).total_seconds():02f}secs.")
+            return items
 
     @staticmethod
     def readFile(file_path: str):
@@ -239,6 +308,123 @@ class LoadPluginHeader:
         with open(file_path,"r",encoding="utf-8") as f:
            readStr: str = f.read()
         # Convert JSON text to dict
-        return json.loads(readStr)
+        return loads(readStr)
 
-raise Exception("A Exception")
+print(LoadPluginHeader("""{
+  "config": {
+    "objectName": "advanced_file_processor",
+    "type": 0,
+    "api": [1, 1],
+    "enableCustomizeCommandRun": true,
+    "useSinoteVariableInString": true
+  },
+  "function": {
+    "process_data_files": [
+      ["log", 0, "开始处理数据文件"],
+      ["var", "processed_count", "0"],
+      ["var", "error_count", "0"],
+      ["mkdir", "./data/input"],
+      ["mkdir", "./data/output"],
+      ["mkdir", "./data/backup"],
+      
+      // 检查输入目录是否存在文件
+      ["system", "dir ./data/input /b > ./temp_file_list.txt", {"out2term": false}],
+      ["rfile", "./temp_file_list.txt", "file_list"],
+      ["log", 0, "找到文件列表: %var:file_list%"],
+      
+      // 处理每个文件
+      ["var", "current_file", ""],
+      ["var", "file_index", "0"],
+      ["log", 0, "开始批量处理文件"],
+      
+      // 文件处理循环开始
+      ["var", "file_count", "0"],
+      ["system", "dir ./data/input /b | find /c /v \\"\\" > ./file_count.txt", {"out2term": false}],
+      ["rfile", "./file_count.txt", "file_count"],
+      ["log", 0, "总共发现 %var:file_count% 个文件需要处理"],
+      
+      // 处理第一个文件
+      ["log", 0, "处理第1个文件"],
+      ["cfile", "./data/input/data_1.txt"],
+      ["wfile", "./data/input/data_1.txt", "示例数据内容 1\\n第二行数据\\n第三行数据"],
+      ["rfile", "./data/input/data_1.txt", "file_content"],
+      ["log", 0, "文件内容: %var:file_content%"],
+      ["wfile", "./data/output/processed_1.txt", "处理后的数据: %var:file_content%"],
+      ["pfile", "./data/input/data_1.txt", "./data/backup/data_1_backup.txt"],
+      ["var", "processed_count", "1"],
+      
+      // 处理第二个文件  
+      ["log", 0, "处理第2个文件"],
+      ["cfile", "./data/input/data_2.txt"],
+      ["wfile", "./data/input/data_2.txt", "另一个文件的数据\\n更多内容在这里"],
+      ["rfile", "./data/input/data_2.txt", "file_content_2"],
+      ["wfile", "./data/output/processed_2.txt", "分析结果: %var:file_content_2%"],
+      ["pfile", "./data/input/data_2.txt", "./data/backup/data_2_backup.txt"],
+      ["var", "processed_count", "2"],
+      
+      // 处理第三个文件 - 模拟错误情况
+      ["log", 0, "处理第3个文件"],
+      ["cfile", "./data/input/data_3.txt"],
+      ["wfile", "./data/input/data_3.txt", "无效数据格式\\n损坏的文件内容"],
+      ["rfile", "./data/input/data_3.txt", "corrupted_content"],
+      ["log", 1, "文件 data_3.txt 格式异常，跳过处理"],
+      ["var", "error_count", "1"],
+      
+      // 数据处理和分析
+      ["log", 0, "开始数据分析阶段"],
+      ["var", "analysis_result", "数据分析完成"],
+      ["wfile", "./data/output/analysis_report.txt", "处理报告\\n==========\\n成功处理: %var:processed_count% 个文件\\n处理失败: %var:error_count% 个文件\\n处理时间: 2024年"],
+      
+      // 生成统计信息
+      ["cfile", "./data/output/statistics.json"],
+      ["wfile", "./data/output/statistics.json", "{\\n  \\"processed\\": %var:processed_count%,\\n  \\"errors\\": %var:error_count%,\\n  \\"timestamp\\": \\"2024-01-01\\"\\n}"],
+      
+      // 验证输出文件
+      ["log", 0, "验证输出文件"],
+      ["system", "dir ./data/output /b > ./output_files.txt", {"out2term": false}],
+      ["rfile", "./output_files.txt", "output_files"],
+      ["log", 0, "生成的输出文件: %var:output_files%"],
+      
+      // 清理临时文件
+      ["log", 0, "清理临时文件"],
+      ["dfile", "./temp_file_list.txt"],
+      ["dfile", "./file_count.txt"], 
+      ["dfile", "./output_files.txt"],
+      
+      // 最终报告
+      ["log", 0, "文件处理完成"],
+      ["msgbox", "处理完成", "成功处理 %var:processed_count% 个文件\\n失败 %var:error_count% 个文件"],
+      ["vpr", "processed_count"],
+      ["vpr", "error_count"],
+      
+      // 记录到日志文件
+      ["afile", "./processing_log.txt", "=== 处理会话 ===\\n"],
+      ["afile", "./processing_log.txt", "时间: 2024-01-01\\n"],
+      ["afile", "./processing_log.txt", "处理文件数: %var:processed_count%\\n"],
+      ["afile", "./processing_log.txt", "错误数: %var:error_count%\\n"],
+      ["afile", "./processing_log.txt", "状态: 完成\\n\\n"],
+      
+      ["log", 0, "高级文件处理器执行完毕"]
+    ],
+    
+    "cleanup_workspace": [
+      ["log", 0, "开始清理工作区"],
+      ["msgbox", "确认清理", "即将删除所有生成的文件，确认继续?"],
+      ["dfile", "./data/input/data_1.txt"],
+      ["dfile", "./data/input/data_2.txt"], 
+      ["dfile", "./data/input/data_3.txt"],
+      ["dfile", "./data/output/processed_1.txt"],
+      ["dfile", "./data/output/processed_2.txt"],
+      ["dfile", "./data/output/analysis_report.txt"],
+      ["dfile", "./data/output/statistics.json"],
+      ["dfile", "./data/backup/data_1_backup.txt"],
+      ["dfile", "./data/backup/data_2_backup.txt"],
+      ["dfile", "./processing_log.txt"],
+      ["log", 0, "工作区清理完成"],
+      ["msgbox", "清理完成", "所有临时文件已删除"]
+    ]
+  },
+  "runFunc": [
+    "process_data_files"
+  ]
+}""","filename.json").getValue())
