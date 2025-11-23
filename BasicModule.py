@@ -30,7 +30,7 @@ sinoteVersion: str = "sinote-2025.01.00842-initial-preview-beta"
 normalLogOutput: list[str] = []
 
 def addLog(type: int=0, bodyText:str="N/A"):
-    typeOfLog: str = ("INFO" if (type == 0) else "WARN" if (type == 1) else "ERR" if (type == 2) else "N/A")
+    typeOfLog: str = ("INFO" if (type == 0) else "WARN" if (type == 1) else "ERR" if (type == 2) else "DBG" if (type == 3) else"N/A")
     nowTime: str = datetime.now().strftime("%H:%M.%S.%f")[:-3]
     normalLogOutput.append(f"[{nowTime}] [SinoteLog] [{typeOfLog}] {bodyText}")
     print(f"[[blue]{nowTime}[/blue]] [SinoteLog] [[red]{typeOfLog}[/red]] {bodyText}")
@@ -162,7 +162,6 @@ if system().lower() in ["darwin","linux"]:
                                      "We have noticed you run Sinote by ROOT/SU User, please remove 'sudo' command or exit 'su' environment. \nOr you can append -su for argument to bypass.")
 
 if "--debug-mode" in args or "-db" in args:
-    # Planned but not used ever.
     debugMode = True
 
 for temp in basicInfo["item.list.language_files"]:
@@ -221,6 +220,8 @@ class LoadPluginBase:
         errCodeDefinitions: dict = {
             0: "Missing Ingredients",
             1: "API is too low or high",
+            2: "Missing File",
+            3: "Not a sure plugin",
             -1: "Unknown Error"
         }
         return code
@@ -477,3 +478,83 @@ class LoadPluginHeader:
         # Convert JSON text to dict
         return loads(readStr)
 
+class LoadPluginInfo:
+    def __init__(self, projName: str):
+        """
+        Load Plugin Information
+        :param projName: Project Name
+        """
+        self.projName = projName
+        self.headerPlacePath = f"{projName}/headers"
+        self.infoPath = f"{projName}/info.json"
+        self.importsPath = f"{projName}/imports.txt"
+
+    def lexImports(self, importText: str) -> list | None:
+        """
+        Lex imports.txt
+        :param importText: the string of imports.txt
+        :return: a list or None
+        """
+        lexedList: list = []
+        if debugMode:
+            addLog(3, "Attempting to load imports.txt, content: {}".format(importText.replace("\n","\\n")))
+            for temp in importText.split("\n"):
+                addLog(3, f"Attempting to lex content: {temp.strip()}")
+                status: int = 0
+                if temp.strip() is None:
+                    addLog(3, "Failed to load content because this content is NULL!")
+                    status = 1
+                else:
+                    lexedList.append(importText.strip().replace("&space;"," "))
+                    addLog(3, "Successfully to lex content.")
+            addLog(3, "Lex successfully, program will be import these files: {}".format(", ".join(lexedList)))
+        else:
+            for temp in importText.split("\n"):
+                status: int = 0
+                if temp.strip() is None:
+                    status = 1
+                else:
+                    lexedList.append(importText.strip().replace("&space;"," "))
+        return None if (len(lexedList) == 0) else lexedList
+
+    def getValue(self) -> list | int | None:
+        try:
+            errLite: bool = False
+            addLog(bodyText=f"Attempting to load plugin \"{self.projName}\"")
+            beforeDatetime: datetime = datetime.now()
+            if not Path(f"./resources/plugins/{self.projName}").is_dir() and not Path(f"./resources/plugins/{self.projName}").exists():
+                self.err("Directory not found.")
+                return 3
+            if not Path(f"./resources/plugins/{self.infoPath}").exists():
+                self.err("Missing info.json!")
+                return 2
+            if not Path(f"./resources/plugins/{self.importsPath}").exists():
+                addLog(1, "Missing imports.txt, plugin will continue load but it's not USEFUL.")
+                errLite = True
+            addLog(bodyText="Attempting to read info.json")
+            info: dict = LoadPluginHeader.readFile(f"./resources/plugin/{self.infoPath}")
+            addLog(bodyText="Successfully to read info.json")
+            listOfHeaders: list | None = []
+            if not errLite:
+                addLog(bodyText="Attempting to read imports.txt")
+                with open(f"./resources/plugins/imports.txt","r",encoding="utf-8") as f:
+                    imports: list | None = self.lexImports(f.read())
+                if not imports:
+                    addLog(bodyText="Load successfully!")
+                else:
+                    errLite = True
+                    addLog(bodyText="Cannot load imports.txt, plugin will continue load but it's not USEFUL.")
+            if not errLite:
+                for temp in imports:
+                    # For safe
+                    temp2 = LoadPluginHeader(f"./resources/plugins/{self.headerPlacePath}/{temp}")
+            else:
+                listOfHeaders = None
+        except Exception as e:
+            self.err("Unknown Error, Python Exception: {}"
+                                    .format(repr(e)))
+            return -1
+
+    def err(self, error: str):
+        addLog(2, f"Cannot load plugin that directory name is \"{self.projName}\"")
+        addLog(2, f"Reason: {error}")
