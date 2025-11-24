@@ -519,6 +519,20 @@ class LoadPluginInfo:
 
     def getValue(self) -> list | int | None:
         try:
+            self.info: dict = {
+                "icon": None,
+                "name": "Unnamed Plugin",
+                "objectName": f"sinote.unnamedPlugins.{self.projName}",
+                "version": "VER.VER.VER",
+                "versionIterate": 99900,
+                "customizeRemoveString": {
+                    "en_US": "Do you want to remove it? It won't be back!",
+                    "zh_CN": "你要永久删除这个插件吗？删除之后就真没了！"
+                },
+                "author": [
+                    "Author not found"
+                ]
+            }
             errLite: bool = False
             addLog(bodyText=f"Attempting to load plugin \"{self.projName}\"")
             beforeDatetime: datetime = datetime.now()
@@ -533,8 +547,16 @@ class LoadPluginInfo:
                 errLite = True
             addLog(bodyText="Attempting to read info.json")
             info: dict = LoadPluginHeader.readFile(f"./resources/plugin/{self.infoPath}")
+            if info.get("versionIterate", None) is None:
+                addLog(1, bodyText="\"versionIterate\" not found! This will be replace to 99900 (Maximum).")
             addLog(bodyText="Successfully to read info.json")
-            listOfHeaders: list | None = []
+            addLog(bodyText="Attempting to merge info.json")
+            information: dict = self.info | info
+            addLog(bodyText="Successfully to merge info.json")
+            if information["versionIterate"] > 99900:
+                information["versionIterate"] = 99900
+                addLog(1, "Number of \"versionIterate\" was more than 99900! \"versionIterate\" adjusted to 99900!")
+            imports: list | None = None
             if not errLite:
                 addLog(bodyText="Attempting to read imports.txt")
                 with open(f"./resources/plugins/imports.txt","r",encoding="utf-8") as f:
@@ -544,10 +566,14 @@ class LoadPluginInfo:
                 else:
                     errLite = True
                     addLog(bodyText="Cannot load imports.txt, plugin will continue load but it's not USEFUL.")
+            items: list = []
+            items.append(information)
             if not errLite:
                 for temp in imports:
                     # For safe
-                    temp2 = LoadPluginHeader(f"./resources/plugins/{self.headerPlacePath}/{temp}")
+                    temp2 = LoadPluginHeader(f"./resources/plugins/{self.headerPlacePath}/{temp}").getValue()
+                    if not isinstance(temp2, list):
+                        continue
             else:
                 listOfHeaders = None
         except Exception as e:
