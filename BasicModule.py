@@ -387,7 +387,7 @@ class Variables:
         :param varContent: Variable Content
         :return: None
         """
-        LoadPluginBase.logIfDebug(f"Set/Added Variable \"{varName}\" and edit it to \"{varContent}\"")
+        LoadPluginBase.logIfDebug(f"Set/Added Variable \"{varName}\" and edit it to \"{varContent}\" (UwU)")
         self._variableDict[varName] = varContent
 
     def getVar(self, varName: str) -> str:
@@ -396,11 +396,12 @@ class Variables:
         :param varName: Variable Name
         :return: String
         """
+        LoadPluginBase.logIfDebug("少女祈祷中...（不要出|XXX NOT FOUND|）")
         if not varName in self._variableDict.keys():
-            LoadPluginBase.logIfDebug(f"Cannot get variable {varName}")
+            LoadPluginBase.logIfDebug(f"Cannot get variable {varName} (TwT)")
             return f"|{varName} NOT FOUND|"
-        LoadPluginBase.logIfDebug(f"Successfully to get variable {varName}")
-        LoadPluginBase.logIfDebug(f"Variable Content: {self._variableDict[varName]}")
+        LoadPluginBase.logIfDebug(f"Successfully to get variable {varName} (OwO)")
+        LoadPluginBase.logIfDebug(f"Variable Content: {self._variableDict[varName]} (-W-)")
         return self._variableDict[varName]
 
     def removeVar(self, varName: str) -> bool:
@@ -409,7 +410,7 @@ class Variables:
         :param varName: Variable Name
         :return: Boolean, False for it was removed, True for Removed
         """
-        LoadPluginBase.logIfDebug(f"Successfully to remove variable {varName}")
+        LoadPluginBase.logIfDebug(f"Successfully to remove variable {varName} (O_I)")
         if not varName in self._variableDict.keys():
             return False
         self._variableDict.pop(varName)
@@ -430,18 +431,19 @@ class Variables:
         :return: The new string
         """
         def temporaryReplaceMatch(match):
-            LoadPluginBase.logIfDebug(f"Regular Expression Matching: GROUP = {match.group()} -> VAR: {match.group(1)}")
+            LoadPluginBase.logIfDebug(f"Regular Expression Matching: GROUP = {match.group()} -> VAR: {match.group(1)} (UwU)")
             temporary = self.getVar(match.group(1))
             LoadPluginBase.logIfDebug(f"Regular Expression Replaced: {temporary}")
             return temporary
 
         value = self._variableMatchPattern.sub(temporaryReplaceMatch, string)
-        LoadPluginBase.logIfDebug(f"Regular Expression Final Answer: {value}")
+        LoadPluginBase.logIfDebug(f"Regular Expression Final Answer: {value} (IwI)")
         return value
 
 class ParseFunctions:
-    def __init__(self, list_: list):
+    def __init__(self, list_: list, customizeVar: bool = True):
         self._list: list = list_
+        self._customizeVar = customizeVar
         self._variables: Variables = Variables()
         self._setupAndGetVariableInfo()
 
@@ -449,6 +451,25 @@ class ParseFunctions:
         """
         Parse the Variable and save in _variables
         :return: None
+        """
+        for line, temp in enumerate(self._list, 1):
+            LoadPluginBase.logIfDebug(f"Parsing line {line} for Variables object")
+            if not temp[0] == 3:
+                LoadPluginBase.logIfDebug(f"Ignored line {line} because this line is not using var function.")
+                continue
+            LoadPluginBase.logIfDebug(f"Parsing line {line} because Accepted.")
+            if not (2 <= len(temp) <= 3):
+                LoadPluginBase.logIfDebug(f"Ignored line {line} because var function needed 2 to 3 arguments.")
+                continue
+            if len(temp) == 2:
+                temp.append("null")
+            LoadPluginBase.logIfDebug(f"Added Variable {temp[1]} and its content is {temp[2]}.")
+            self._variables.addVar(temp[1], temp[2])
+
+    def getValue(self) -> list | None:
+        """
+        Get list[partial]
+        :return: list[partial] or None
         """
 
 
