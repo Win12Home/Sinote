@@ -1,5 +1,7 @@
+from subprocess import Popen
+from json import dumps
 from PySide6.QtWidgets import *
-from functools import singledispatch
+from functools import partial
 from PySide6.QtCore import *
 from PySide6.QtGui import *
 from qt_material import *
@@ -216,7 +218,7 @@ class LoadPluginBase:
     class ConfigKeyNotFoundError(Exception): ...
 
     @staticmethod
-    def parseErrCode(code: int):
+    def parseErrCode(code: int) -> str:
         errCodeDefinitions: dict = {
             0: "Missing Ingredients",
             1: "API is too low or high",
@@ -224,7 +226,7 @@ class LoadPluginBase:
             3: "Not a sure plugin",
             -1: "Unknown Error"
         }
-        return code
+        return errCodeDefinitions.get(code,"SIMPLY_ERROR")
 
     class CustomizeSyntaxHighlighter(QSyntaxHighlighter):
         def __init__(self, syntaxList: list, parent: QTextDocument = None):
@@ -340,6 +342,27 @@ class LoadPluginBase:
                     else:
                         self.setFormat(start_index, len(text) - start_index, multi_line['format'])
 
+    class LazyCustomizeSyntaxHighlighter:
+        def __init__(self, syntaxList: list, parent: QTextDocument = None):
+            self._syntaxList: list = syntaxList
+            self._parent: QTextDocument | None = parent
+
+        def setParent(self, parent: QTextDocument) -> None:
+            self._parent = parent
+
+        def getObject(self) -> QSyntaxHighlighter:
+            return LoadPluginBase.CustomizeSyntaxHighlighter(self._syntaxList, self._parent)
+
+    @staticmethod
+    def logIfDebug(logText: str) -> None:
+        """
+        Log out if Debug Mode starts.
+        :param logText: text will log out.
+        :return: None
+        """
+        if debugMode:
+            addLog(3, logText)
+
 
 class LoadPluginHeader:
     """
@@ -349,6 +372,9 @@ class LoadPluginHeader:
     def __init__(self, header: AnyStr | dict, filename: AnyStr = None):
         self.filename = filename
         self.header = header if isinstance(header, dict) else loads(header) if filename else self.readFile(header)
+
+    def setFilename(self, filename: AnyStr):
+        self.filename = filename
 
     def err(self, error: str):
         addLog(2, f"Error while loading file \"{self.filename}\": {error}")
@@ -426,7 +452,7 @@ class LoadPluginHeader:
                     items[2][whichFuncToRun] = realFuncs[whichFuncToRun]
             elif items[1] == 1:
                 # Syntax Highlighter
-                coding: dict = self.header.get("coding",None)
+                coding: dict | None = self.header.get("coding",None)
                 if coding is None:
                     self.err("Key \"coding\" not found")
                     return 0    # Missing Ingredients
@@ -446,7 +472,7 @@ class LoadPluginHeader:
                 coding: dict = self.coding | coding
                 items.append(coding["codeName"])
                 items.append(coding["fileExtension"])
-                items.append(LoadPluginBase.CustomizeSyntaxHighlighter(
+                items.append(LoadPluginBase.LazyCustomizeSyntaxHighlighter(
                     [
                         coding["keywords"],
                         coding["symbols"],
@@ -546,7 +572,7 @@ class LoadPluginInfo:
                 addLog(1, "Missing imports.txt, plugin will continue load but it's not USEFUL.")
                 errLite = True
             addLog(bodyText="Attempting to read info.json")
-            info: dict = LoadPluginHeader.readFile(f"./resources/plugin/{self.infoPath}")
+            info: dict = LoadPluginHeader.readFile(f"./resources/plugins/{self.infoPath}")
             if info.get("versionIterate", None) is None:
                 addLog(1, bodyText="\"versionIterate\" not found! This will be replace to 99900 (Maximum).")
             addLog(bodyText="Successfully to read info.json")
@@ -559,28 +585,71 @@ class LoadPluginInfo:
             imports: list | None = None
             if not errLite:
                 addLog(bodyText="Attempting to read imports.txt")
-                with open(f"./resources/plugins/imports.txt","r",encoding="utf-8") as f:
+                with open(f"./resources/plugins/{self.projName}/imports.txt","r",encoding="utf-8") as f:
                     imports: list | None = self.lexImports(f.read())
-                if not imports:
+                if imports is not None:
                     addLog(bodyText="Load successfully!")
                 else:
                     errLite = True
                     addLog(bodyText="Cannot load imports.txt, plugin will continue load but it's not USEFUL.")
             items: list = []
             items.append(information)
+            tmp: list = []
+            objectName: str = ""
             if not errLite:
                 for temp in imports:
                     # For safe
-                    temp2 = LoadPluginHeader(f"./resources/plugins/{self.headerPlacePath}/{temp}").getValue()
-                    if not isinstance(temp2, list):
-                        continue
+                    temp2 = LoadPluginHeader(f"./resources/plugins/{self.headerPlacePath}/{temp}")
+                    temp2.setFilename(temp)
+                    temp3 = temp2.getValue()
+                    LoadPluginBase.logIfDebug(f"Loaded Plugin Header! JSON: {temp2}")
+                    if not isinstance(temp3, list):
+                        if temp2 is None:
+                            addLog(1, f"Skipped file {temp} because it's a Placeholder File")
+                        elif isinstance(temp3, int):
+                            addLog(2,f"Illegal error, returns: {LoadPluginBase.parseErrCode(temp2)}")
+                    else:
+                        objectName = temp3[0]
+                        LoadPluginBase.logIfDebug(f"Loading {objectName}...")
+                        if temp3[1] == 0:
+                            LoadPluginBase.logIfDebug(f"Starting lex that object name is {temp3[0]}.")
+                            returned = self._functionLexer(temp3[2])
+                            if len(returned.keys()) > 0:
+                                tmp.append([objectName,returned])
+                                LoadPluginBase.logIfDebug("Successfully to lex!")
+                            else:
+                                tmp.append([objectName,None])
+                                LoadPluginBase.logIfDebug("Failed to lex, automatic switch to None.")
+                        elif temp3[1] == 1:
+                            LoadPluginBase.logIfDebug("Appending QSyntaxHighlighter and Informations...")
+                            tmp.append([objectName,temp3[2],temp3[3],temp3[4]])
+                            LoadPluginBase.logIfDebug("Successfully to append!")
+                # Convert normal value to [<TYPE>,<OBJNAME>,<CONTENT>]
+                items.append(tmp)
             else:
                 listOfHeaders = None
+                items.append(None)
+            addLog(0,
+                   f"Successfully to load {information["objectName"]}! Used {(datetime.now() - beforeDatetime).total_seconds()}secs.")
+            return items
         except Exception as e:
             self.err("Unknown Error, Python Exception: {}"
                                     .format(repr(e)))
             return -1
 
+    @staticmethod
+    def _functionLexer(func: dict):
+        """
+        Lex function to functools.partial method
+        Private Function
+        :param func: Functions
+        :return: Will run in Python
+        Not completed
+        """
+        return func
+
     def err(self, error: str):
         addLog(2, f"Cannot load plugin that directory name is \"{self.projName}\"")
         addLog(2, f"Reason: {error}")
+
+print(LoadPluginInfo("test01").getValue())

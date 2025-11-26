@@ -1,0 +1,11 @@
+{
+  "icon": null,
+  "name": "Python Syntax Highlighter",
+  "objectName": "sinote.syntax.python",
+  "version": "1.0.0",
+  "versionIterate": 1,
+  "author": [
+    "Win12Home"
+  ],
+  "description": "Python language syntax highlighting support"
+}
