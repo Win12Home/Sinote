@@ -1,3 +1,8 @@
+from datetime import datetime
+
+# Set beforeDatetime for catalog
+beforeDatetime = datetime.now()
+
 from subprocess import Popen
 from json import dumps
 from PySide6.QtWidgets import *
@@ -11,7 +16,6 @@ from locale import getdefaultlocale
 from warnings import *
 from pathlib import Path
 from platform import system, python_version, win32_ver, processor, libc_ver
-from datetime import datetime
 from traceback import format_exception
 from typing import *
 from psutil import virtual_memory, cpu_percent
@@ -31,20 +35,16 @@ sinoteVersion: str = "sinote-2025.01.00842-initial-preview-beta"
 
 normalLogOutput: list[str] = []
 
+onlyWarning: bool = False
+
 def addLog(type: int=0, bodyText:str="N/A"):
     typeOfLog: str = ("INFO" if (type == 0) else "WARN" if (type == 1) else "ERR" if (type == 2) else "DBG" if (type == 3) else"N/A")
     nowTime: str = datetime.now().strftime("%H:%M.%S.%f")[:-3]
     normalLogOutput.append(f"[{nowTime}] [SinoteLog] [{typeOfLog}] {bodyText}")
+    if onlyWarning and typeOfLog not in ["WARN", "ERR"]:
+        return
     print(f"[[blue]{nowTime}[/blue]] [SinoteLog] [[red]{typeOfLog}[/red]] {bodyText}")
 
-addLog(bodyText="Import Modules Finish!")
-addLog(bodyText="Loading Language and Basic Information")
-addLog(bodyText=r"   _____ _             __          ______    ___ __            ")
-addLog(bodyText=r"  / ___/(_)___  ____  / /____     / ____/___/ (_) /_____  _____")
-addLog(bodyText=r"  \__ \/ / __ \/ __ \/ __/ _ \   / __/ / __  / / __/ __ \/ ___/")
-addLog(bodyText=r" ___/ / / / / / /_/ / /_/  __/  / /___/ /_/ / / /_/ /_/ / /    ")
-addLog(bodyText=r"/____/_/_/ /_/\____/\__/\___/  /_____/\__,_/_/\__/\____/_/     ")
-addLog(bodyText=f"Sinote Editor {sinoteVersion}, API Version: {".".join([f"{i}" for i in apiVersion])}")
 
 def saveLog():
     if not Path("./log").exists():
@@ -145,11 +145,13 @@ except:
     err("0x00000001")
     quit(1)
 
+# Check Arguments
+
 # Look at the system
 args = [i.lower() for i in sys.argv]
 
 if "-h" in args or "--help" in args:
-    QMessageBox.information(None,"Help","-h/--help: Arguments Help of Sinote\n-su/--use-root-user: Bypass check for SU User in posix env\n--bypass-system-check: Bypass System Check (Windows, Linux, Mac OS)")
+    QMessageBox.information(None,"Help","-h/--help: Arguments Help of Sinote\n-su/--use-root-user: Bypass check for SU User in posix env\n--bypass-system-check: Bypass System Check (Windows, Linux, Mac OS)\n-db/--debug-mode: Use Debug Mode (I/O Performance will low)\n-ow/--only-warning: Only Warning/Error in LOG")
 
 if not system().lower() in ["darwin", "linux", "windows"] and not "--bypass-system-check" in args:
     addLog(2,"Your system isn't a Darwin Based, a Linux Based or Windows, cannot continue run safety, use --bypass-system-check to bypass.")
@@ -165,6 +167,9 @@ if system().lower() in ["darwin","linux"]:
 
 if "--debug-mode" in args or "-db" in args:
     debugMode = True
+
+if "-ow" in args or "--only-warning" in args:
+    onlyWarning = True
 
 for temp in basicInfo["item.list.language_files"]:
     if not Path("./resources/language/{}/{}.json".format(lang,temp)).exists():
@@ -362,6 +367,89 @@ class LoadPluginBase:
         """
         if debugMode:
             addLog(3, logText)
+
+
+"""
+Seperator for LoadPluginBase and ParseFunctions
+"""
+
+class Variables:
+    def __init__(self, variableDict: dict = None):
+        LoadPluginBase.logIfDebug(f"Variables has initializing, the variableDict argument: {"null" if variableDict is None else variableDict}")
+        self._variableDict: dict = variableDict if variableDict else {}
+        self._variableMatchPattern = re.compile(r"%var:([^%]+)%")
+        LoadPluginBase.logIfDebug("Successfully to initialize Variables object. (OwO)")
+
+    def addVar(self, varName: str, varContent: str):
+        """
+        Add or Edit Variable
+        :param varName: Variable Name
+        :param varContent: Variable Content
+        :return: None
+        """
+        LoadPluginBase.logIfDebug(f"Set/Added Variable \"{varName}\" and edit it to \"{varContent}\"")
+        self._variableDict[varName] = varContent
+
+    def getVar(self, varName: str) -> str:
+        """
+        Get the Variable Content
+        :param varName: Variable Name
+        :return: String
+        """
+        if not varName in self._variableDict.keys():
+            LoadPluginBase.logIfDebug(f"Cannot get variable {varName}")
+            return f"|{varName} NOT FOUND|"
+        LoadPluginBase.logIfDebug(f"Successfully to get variable {varName}")
+        LoadPluginBase.logIfDebug(f"Variable Content: {self._variableDict[varName]}")
+        return self._variableDict[varName]
+
+    def removeVar(self, varName: str) -> bool:
+        """
+        Remove a Variable
+        :param varName: Variable Name
+        :return: Boolean, False for it was removed, True for Removed
+        """
+        LoadPluginBase.logIfDebug(f"Successfully to remove variable {varName}")
+        if not varName in self._variableDict.keys():
+            return False
+        self._variableDict.pop(varName)
+        return True
+
+    def copyDict(self) -> dict:
+        """
+        By the way, a easy method.
+        Dict.copy()
+        :return: Dictionary
+        """
+        return self._variableDict
+
+    def resolveVarInString(self, string: str) -> str:
+        """
+        Use Regular Expression to Match in String
+        :param string: String
+        :return: The new string
+        """
+        def temporaryReplaceMatch(match):
+            LoadPluginBase.logIfDebug(f"Regular Expression Matching: GROUP = {match.group()} -> VAR: {match.group(1)}")
+            temporary = self.getVar(match.group(1))
+            LoadPluginBase.logIfDebug(f"Regular Expression Replaced: {temporary}")
+            return temporary
+
+        value = self._variableMatchPattern.sub(temporaryReplaceMatch, string)
+        LoadPluginBase.logIfDebug(f"Regular Expression Final Answer: {value}")
+        return value
+
+class ParseFunctions:
+    def __init__(self, list_: list):
+        self._list: list = list_
+        self._variables: Variables = Variables()
+        self._setupAndGetVariableInfo()
+
+    def _setupAndGetVariableInfo(self) -> None:
+        """
+        Parse the Variable and save in _variables
+        :return: None
+        """
 
 
 class LoadPluginHeader:
@@ -607,22 +695,22 @@ class LoadPluginInfo:
                         if temp2 is None:
                             addLog(1, f"Skipped file {temp} because it's a Placeholder File")
                         elif isinstance(temp3, int):
-                            addLog(2,f"Illegal error, returns: {LoadPluginBase.parseErrCode(temp2)}")
+                            addLog(2,f"Illegal error, returns: {LoadPluginBase.parseErrCode(temp3)}")
                     else:
-                        objectName = temp3[0]
+                        objectName = f"{information["objectName"]}.{"syntax" if temp3[1] == 1 else "functions" if temp3[1] == 0 else "null"}.{temp3[0]}"
                         LoadPluginBase.logIfDebug(f"Loading {objectName}...")
                         if temp3[1] == 0:
                             LoadPluginBase.logIfDebug(f"Starting lex that object name is {temp3[0]}.")
                             returned = self._functionLexer(temp3[2])
                             if len(returned.keys()) > 0:
-                                tmp.append([objectName,returned])
+                                tmp.append([objectName,0,returned])
                                 LoadPluginBase.logIfDebug("Successfully to lex!")
                             else:
-                                tmp.append([objectName,None])
+                                tmp.append([objectName,0,None])
                                 LoadPluginBase.logIfDebug("Failed to lex, automatic switch to None.")
                         elif temp3[1] == 1:
                             LoadPluginBase.logIfDebug("Appending QSyntaxHighlighter and Informations...")
-                            tmp.append([objectName,temp3[2],temp3[3],temp3[4]])
+                            tmp.append([objectName,1,temp3[2],temp3[3],temp3[4]])
                             LoadPluginBase.logIfDebug("Successfully to append!")
                 # Convert normal value to [<TYPE>,<OBJNAME>,<CONTENT>]
                 items.append(tmp)
@@ -652,4 +740,11 @@ class LoadPluginInfo:
         addLog(2, f"Cannot load plugin that directory name is \"{self.projName}\"")
         addLog(2, f"Reason: {error}")
 
-print(LoadPluginInfo("test01").getValue())
+
+addLog(bodyText=f"Import Modules Finish! Used {(datetime.now() - beforeDatetime).total_seconds()}secs")
+addLog(bodyText=r"   _____ _             __          ______    ___ __            ")
+addLog(bodyText=r"  / ___/(_)___  ____  / /____     / ____/___/ (_) /_____  _____")
+addLog(bodyText=r"  \__ \/ / __ \/ __ \/ __/ _ \   / __/ / __  / / __/ __ \/ ___/")
+addLog(bodyText=r" ___/ / / / / / /_/ / /_/  __/  / /___/ /_/ / / /_/ /_/ / /    ")
+addLog(bodyText=r"/____/_/_/ /_/\____/\__/\___/  /_____/\__,_/_/\__/\____/_/     ")
+addLog(bodyText=f"Sinote Editor {sinoteVersion}, API Version: {".".join([f"{i}" for i in apiVersion])}")

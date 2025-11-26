@@ -1,7 +1,7 @@
 {
   "icon": null,
   "name": "Python Syntax Highlighter",
-  "objectName": "sinote.syntax.python",
+  "objectName": "sinote.pythonsyntaxhighlighter",
   "version": "1.0.0",
   "versionIterate": 1,
   "author": [
