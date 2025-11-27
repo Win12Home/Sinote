@@ -1,5 +1,6 @@
 from datetime import datetime
 
+
 # Set beforeDatetime for catalog
 beforeDatetime = datetime.now()
 
@@ -37,13 +38,21 @@ normalLogOutput: list[str] = []
 
 onlyWarning: bool = False
 
-def addLog(type: int=0, bodyText:str="N/A"):
-    typeOfLog: str = ("INFO" if (type == 0) else "WARN" if (type == 1) else "ERR" if (type == 2) else "DBG" if (type == 3) else"N/A")
+def addLog(type: int=0, bodyText: str="N/A", activity: str | None = None):
+    typeOfLog: str = ("INFO" if (type == 0) else "WARN" if (type == 1) else "ERR" if (type == 2) else "DBG" if (type == 3) else "N/A")
+    colorOfType: dict = {
+        "INFO": "cyan",
+        "WARN": "yellow",
+        "ERR": "red",
+        "DBG": "green",
+        "N/A": "gray"
+    }
     nowTime: str = datetime.now().strftime("%H:%M.%S.%f")[:-3]
-    normalLogOutput.append(f"[{nowTime}] [SinoteLog] [{typeOfLog}] {bodyText}")
+    logSender: str = f"SinoteLog/[red]{activity}[/red]" if activity is not None else "SinoteLog"
+    normalLogOutput.append(f"[{nowTime}] [{logSender}] [{typeOfLog}] {bodyText}")
     if onlyWarning and typeOfLog not in ["WARN", "ERR"]:
         return
-    print(f"[[blue]{nowTime}[/blue]] [SinoteLog] [[red]{typeOfLog}[/red]] {bodyText}")
+    print(f"[[blue]{nowTime}[/blue]] [{logSender}] [[{colorOfType[typeOfLog]}]{typeOfLog}[/{colorOfType[typeOfLog]}]] {bodyText}")
 
 
 def saveLog():
@@ -56,10 +65,10 @@ def saveLog():
 
 def err(error_code:str,parent:QWidget=None,no_occurred:bool=False):
     if not no_occurred:
-        addLog(2,bodyText="Error Occurred, Program Used Function err to aborted running! Error Code: {}".format(error_code))
+        addLog(2,bodyText="Error Occurred, Program Used Function err to aborted running! Error Code: {}".format(error_code),activity="WindowsActivity")
     w = QMessageBox.critical(None,"Error","Sinote has found a error! \nError Code: {}\nPlease contact developer or re-install software!".format(error_code))
     if not no_occurred:
-        addLog(2,bodyText="Saving Error to local")
+        addLog(2,bodyText="Saving Error to local",activity="FileConfigActivity")
         saveLog()
     """
     Error Codes
@@ -107,20 +116,20 @@ def errExceptionHook(err_type, err_value, err_tb) -> None:
     :return: NoneType
     """
     global err_exceptionhook_detected
-    if err_exceptionhook_detected == False:
+    if not err_exceptionhook_detected:
         err_exceptionhook_detected = True
         name: str = ""
         if hasattr(err_type, '__class__'):
             name = err_type.__class__.__name__
         else:
             name = type(err_type).__name__
-        addLog(2, bodyText="Error occurred by errExceptionHook, please give the error to the author!")
+        addLog(2, bodyText="Error occurred by errExceptionHook, please give the error to the author!",activity="ExceptionHookActivity")
         addLog(0, bodyText=f"Output has printed:\n{str(err_type)[8:-2]}: {err_value}")
-        addLog(1, bodyText=f"Starting Window, if error occurred again, it won't write log when quit.")
+        addLog(1, bodyText=f"Starting Window, if error occurred again, it won't write log when quit.",activity="ExceptionHookActivity")
         err("0xffffffff",None,True)
-        addLog(0, bodyText="Attempting to save Critical Log")
+        addLog(0, bodyText="Attempting to save Critical Log",activity="FileConfigActivity")
         criticalLogSaver(err_type,err_value,err_tb)
-        addLog(0,bodyText="It might be successfully to save, please feedback to developer! Program will continue running.")
+        addLog(0,bodyText="It might be successfully to save, please feedback to developer! Program will continue running.",activity="ExceptionHookActivity")
         err_exceptionhook_detected = False
     else:
         sys.__excepthook__(err_type,err_value,err_tb)
@@ -141,7 +150,7 @@ try:
     with open("./resources/language/{}/BaseInfo.json".format(lang),"r",encoding="utf-8") as f:
         basicInfo = loads(f.read())
 except:
-    addLog(2,"BaseInfo.json not found")
+    addLog(2,"BaseInfo.json not found", "FileConfigActivity")
     err("0x00000001")
     quit(1)
 
@@ -150,30 +159,40 @@ except:
 # Look at the system
 args = [i.lower() for i in sys.argv]
 
-if "-h" in args or "--help" in args:
+if "--debug-mode" in args or "-db" in args:
+    debugMode = True
+    addLog(3, "Debug Mode Started...", "ArgumentParser")
+
+if "-h" in args or "--help" in args: # HelpActivity
+    addLog(0, "Sinote Help is starting...", "HelpActivity")
     QMessageBox.information(None,"Help","-h/--help: Arguments Help of Sinote\n-su/--use-root-user: Bypass check for SU User in posix env\n--bypass-system-check: Bypass System Check (Windows, Linux, Mac OS)\n-db/--debug-mode: Use Debug Mode (I/O Performance will low)\n-ow/--only-warning: Only Warning/Error in LOG")
+    addLog(0, "Sinote Help closed, return to normal enviroment.", "HelpActivity")
+    addLog(0, "Exiting...")
+    sys.exit(0)
 
 if not system().lower() in ["darwin", "linux", "windows"] and not "--bypass-system-check" in args:
+    addLog(3, "Checked not a Darwin, Linux, NT Based, starting error.", "ArgumentParser")
     addLog(2,"Your system isn't a Darwin Based, a Linux Based or Windows, cannot continue run safety, use --bypass-system-check to bypass.")
+    addLog(3, "Starting error window...", "ArgumentParser")
     err("0x00000003")
     quit(1)
 
 if system().lower() in ["darwin","linux"]:
     if getuser() == "root":
+        addLog(3, "ROOT User detected.", "ArgumentParser")
         addLog(1,"We recommend to use Normal User in posix env. But use ROOT User is not SAFE for your OS! Please use Normal User Instead! (Excepted you have known it's unsafe or you wanna edit System File like GRUB)")
+        addLog(3, "Starting warning window...", "ArgumentParser")
         if not ("--use-root-user" in args or "-su" in args):
             QMessageBox.warning(None, "Warning",
                                      "We have noticed you run Sinote by ROOT/SU User, please remove 'sudo' command or exit 'su' environment. \nOr you can append -su for argument to bypass.")
 
-if "--debug-mode" in args or "-db" in args:
-    debugMode = True
-
 if "-ow" in args or "--only-warning" in args:
+    addLog(3, "Only Warning Started.", "ArgumentParser")
     onlyWarning = True
 
 for temp in basicInfo["item.list.language_files"]:
     if not Path("./resources/language/{}/{}.json".format(lang,temp)).exists():
-        addLog(2,"Check Language files failed!")
+        addLog(2,"Check Language files failed!","FileConfigActivity")
         err("0x00000002")
         quit(1)
 
@@ -185,7 +204,7 @@ def checkVersionForPopup():
 
 def loadJson(json_name: str):
     if not Path("./resources/language/{}/{}.json".format(lang,json_name)).exists():
-        addLog(2, "Failed to load when load this Language File: {}".format(json_name))
+        addLog(2, "Failed to load when load this Language File: {}".format(json_name), "FileConfigActivity")
         err("0x00000002")
         quit(1)
 
@@ -218,6 +237,30 @@ class LoadPluginBase:
         "rfile": 108,
         # GUI Functions
         "errbox": 200
+    }
+
+    argumentNumber: dict = {
+        # Base Functions
+        0: [1, 1],
+        1: [2, 2],
+        2: [2, 2],
+        3: [1, 2],
+        4: [1, 1],
+        5: [3, 3],
+        6: [1, 2],
+        7: [1, 1],
+        # Advanced Functions
+        100: [2, 2],
+        101: [1, 1],
+        102: [1, 1],
+        103: [1, 1],
+        104: [1, 1],
+        105: [1, 1],
+        106: [2, 2],
+        107: [2, 2],
+        108: [2, 2],
+        # GUI Functions
+        200: [1, 1]
     }
 
     class ConfigKeyNotFoundError(Exception): ...
@@ -366,7 +409,7 @@ class LoadPluginBase:
         :return: None
         """
         if debugMode:
-            addLog(3, logText)
+            addLog(3, logText, "LoadPluginActivity")
 
 
 """
@@ -440,11 +483,27 @@ class Variables:
         LoadPluginBase.logIfDebug(f"Regular Expression Final Answer: {value} (IwI)")
         return value
 
+
+class FunctionLexerSet:
+    def __init__(self, listOfFunc: list[str | int | dict], variableObject: Variables):
+        self._listOfFunc = listOfFunc
+        self._varObj = variableObject
+
+    def getValue(self) -> None:
+        """
+        Get value
+        :return: None
+        """
+
+
+
 class ParseFunctions:
+
     def __init__(self, list_: list, customizeVar: bool = True):
         self._list: list = list_
         self._customizeVar = customizeVar
         self._variables: Variables = Variables()
+        self._removes: list[int] = []
         self._setupAndGetVariableInfo()
 
     def _setupAndGetVariableInfo(self) -> None:
@@ -458,6 +517,7 @@ class ParseFunctions:
                 LoadPluginBase.logIfDebug(f"Ignored line {line} because this line is not using var function.")
                 continue
             LoadPluginBase.logIfDebug(f"Parsing line {line} because Accepted.")
+            self._removes.append(line)
             if not (2 <= len(temp) <= 3):
                 LoadPluginBase.logIfDebug(f"Ignored line {line} because var function needed 2 to 3 arguments.")
                 continue
@@ -471,7 +531,18 @@ class ParseFunctions:
         Get list[partial]
         :return: list[partial] or None
         """
-
+        for line, temp in enumerate(self._list, 1):
+            LoadPluginBase.logIfDebug(f"Parsing line {line}... (OwO)")
+            if line in self._removes:
+                LoadPluginBase.logIfDebug("Automatic skip when it's a variable.")
+                continue
+            if temp[0] not in LoadPluginBase.functions.keys():
+                LoadPluginBase.logIfDebug(f"Error In Line {line}: Functions is not defined!")
+                continue
+            if temp[0] == 7:
+                addLog(1, f"USEFUNC Function will be define in API 1.0.3, now API Version is {".".join(apiVersion)}")
+                continue
+            
 
 class LoadPluginHeader:
     """

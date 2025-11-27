@@ -45,7 +45,7 @@ For you create a function, you need to know the built-in functions in Sinote.
  - ```print```: Print the string to the terminal. Struct: ```["print","\<string\>"]```
  - ```msgbox```: Out a Messagebox to the Main Application. Struct: ```["msgbox","\<title\>","\<content\>"]```
  - ```log```: Out customize content for log. Struct: ```["log", "\<type, 0: INFO, 1: WARN\>", "\<content\>"]```
- - ```var```: Set a temporary variable, use %var:\<varname\>% to use. Struct: ```["var","\<name\>","\<content\>"]```
+ - ```var```: Set a temporary variable, use %var:\<varname\>% to use. Struct: ```["var","\<name\>","\<content\>"]``` (Content was not required.) 
  - ```vpr```: Only print content of variable. Struct: ```["vpr","\<variable name\>"]```
  - ```msgin```: Set a temporary variable with Message Box. Struct: ```["msgin","\<title\>","\<content\>","\<variable name\>]```
  - ```system```: Run a command in terminal. Struct: ```["system","\<command\>",{"out2term": false}]``` &#x26a0;&#xfe0f; A dangerous function
