@@ -847,7 +847,7 @@ class LoadPluginInfo:
             if not errLite:
                 for temp in imports:
                     # For safe
-                    temp2 = LoadPluginHeader(f"./resources/plugins/{self.headerPlacePath}/{temp}")
+                    temp2 = LoadPluginHeader(f"./resources/plugins/{self.headerPlacePath}/headers/{temp}")
                     temp2.setFilename(temp)
                     temp3 = temp2.getValue()
                     LoadPluginBase.logIfDebug(f"Loaded Plugin Header! JSON: {temp2}")

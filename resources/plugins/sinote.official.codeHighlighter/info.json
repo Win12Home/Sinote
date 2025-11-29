@@ -1,0 +1,11 @@
+{
+  "icon": null,
+  "name": "Sinote Code Highlighter",
+  "objectName": "sinote.official.codeHghlighter",
+  "version": "1.0.0",
+  "versionIterate": 1,
+  "author": [
+    "Win12Home"
+  ],
+  "description": "C++/Python/Rust language syntax highlighting support"
+}
