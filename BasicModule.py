@@ -772,22 +772,18 @@ class LoadPluginInfo:
         lexedList: list = []
         if debugMode:
             addLog(3, "Attempting to load imports.txt, content: {}".format(importText.replace("\n","\\n")))
-            for temp in importText.split("\n"):
+            print(importText.replace("\n","\\n"))
+            for temp in importText.split("\r\n") if system() == "windows" else importText.split("\n"):
                 addLog(3, f"Attempting to lex content: {temp.strip()}")
-                status: int = 0
                 if temp.strip() is None:
                     addLog(3, "Failed to load content because this content is NULL!")
-                    status = 1
                 else:
                     lexedList.append(importText.strip().replace("&space;"," "))
                     addLog(3, "Successfully to lex content.")
             addLog(3, "Lex successfully, program will be import these files: {}".format(", ".join(lexedList)))
         else:
             for temp in importText.split("\n"):
-                status: int = 0
-                if temp.strip() is None:
-                    status = 1
-                else:
+                if not temp.strip() is None:
                     lexedList.append(importText.strip().replace("&space;"," "))
         return None if (len(lexedList) == 0) else lexedList
 
@@ -847,7 +843,8 @@ class LoadPluginInfo:
             if not errLite:
                 for temp in imports:
                     # For safe
-                    temp2 = LoadPluginHeader(f"./resources/plugins/{self.headerPlacePath}/headers/{temp}")
+                    LoadPluginBase.logIfDebug(f"Trying to load header file in ./resources/plugins/{self.headerPlacePath}/{temp}")
+                    temp2 = LoadPluginHeader(f"./resources/plugins/{self.headerPlacePath}/{temp}")
                     temp2.setFilename(temp)
                     temp3 = temp2.getValue()
                     LoadPluginBase.logIfDebug(f"Loaded Plugin Header! JSON: {temp2}")
