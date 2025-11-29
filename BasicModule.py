@@ -423,7 +423,7 @@ class Variables:
         self._variableMatchPattern = re.compile(r"%var:([^%]+)%")
         LoadPluginBase.logIfDebug("Successfully to initialize Variables object. (OwO)")
 
-    def addVar(self, varName: str, varContent: str):
+    def addVar(self, varName: str, varContent: str = "NULL"):
         """
         Add or Edit Variable
         :param varName: Variable Name
@@ -461,7 +461,7 @@ class Variables:
 
     def copyDict(self) -> dict:
         """
-        By the way, a easy method.
+        By the way, an easy method.
         Dict.copy()
         :return: Dictionary
         """
@@ -485,64 +485,132 @@ class Variables:
 
 
 class FunctionLexerSet:
-    def __init__(self, listOfFunc: list[str | int | dict], variableObject: Variables):
+    def __init__(self, listOfFunc: list[str | int | dict], translateVariables: bool = True):
         self._listOfFunc = listOfFunc
-        self._varObj = variableObject
+        self._varObj = Variables()
+        self._needVar = translateVariables
+        self._if = {
+            0: self.print,
+            1: self.messageBox,
+            2: self.log,
+            3: self.addVar,
+            4: self.printContentOfVariable,
+            5: self.messageInput,
+            6: self.system,
+            7: self.usefunc
+        }
+        # self._insideFunction = self._if
+        # You can remove # head if you want to use self._insideFunction
 
-    def getValue(self) -> None:
+    def usefunc(self, funcname: str) -> None:
+        addLog(1, "UseFunc Command is not support this version (Wait for 1.0.3)", "FunctionLexerActivity")
+
+    def system(self, command: str) -> None:
+        addLog(1, "System Command is not support this version (Wait for 1.0.3)", "FunctionLexerActivity")
+
+    def addVar(self, varName: str, varContent: str) -> None:
+        self._varObj.addVar(varName, varContent)
+
+    def messageInput(self, title: str, content: str, varname: str) -> None:
+        FunctionLexerSet.debugLog("Preparing to Message Input for a Variable")
+        temp, ok = QInputDialog.getText(None, title, content)
+        if ok:
+            FunctionLexerSet.debugLog("Successfully received input text from InputDialog, content: {}".format(temp))
+            self._varObj.addVar(varname, temp)
+        else:
+            FunctionLexerSet.debugLog("Failed to receive input text from InputDialog, default's only create and set its content to NULL.")
+            self._varObj.addVar(varname)
+
+    def lexVariable(self, string: str) -> str:
+        return self._varObj.resolveVarInString(string) if self._needVar else string
+
+    def printContentOfVariable(self, variableName: str) -> None:
+        FunctionLexerSet.debugLog("Preparing to Print Content")
+        print(self._varObj.getVar(variableName))
+        FunctionLexerSet.debugLog("Successfully to Print Content")
+
+    def messageBox(self, title: str, content: str) -> None:
+        FunctionLexerSet.debugLog("Preparing to Set a Message Box")
+        temp = QMessageBox(QMessageBox.Icon.NoIcon, self.lexVariable(title), self.lexVariable(content), QMessageBox.StandardButton.Close)
+        temp.exec()
+        FunctionLexerSet.debugLog("Successfully to Set a Message Box")
+
+    def print(self, outText: str) -> None:
+        FunctionLexerSet.debugLog("Preparing to Print out Customize Text")
+        print(self.lexVariable(outText))
+        FunctionLexerSet.debugLog("Successfully to Print out Customize Text")
+
+    @staticmethod
+    def debugLog(outText: str) -> None:
+        if debugMode:
+            addLog(3, outText, "FunctionLexerActivity")
+
+    def log(self, level: int, outText: str) -> None:
+        FunctionLexerSet.debugLog("Preparing to log out...")
+        if level not in (0, 1):
+            addLog(2, "Illegal Log Level: {}".format(level), "FunctionLexerActivity")
+            return
+        addLog(level, self.lexVariable(outText), "FunctionRunnerActivity")
+        FunctionLexerSet.debugLog(f"Logged Out Customize Text, LEVEL: {level}.")
+
+    def getValue(self) -> list[partial]:
         """
         Get value
         :return: None
         """
-
+        returnlist: list[partial] = []
+        for i in self._listOfFunc:
+            if not i[0] in self._if.keys():
+                addLog(2, "Not compatible with this command!", "FunctionLexerActivity")
+                continue
+            if i[0] == 0:
+                returnlist.append(partial(self._if[i[0]], i[1]))
+            elif i[0] == 2:
+                returnlist.append(partial(self._if[i[0]], i[1], i[2]))
+            elif i[0] == 3:
+                returnlist.append(partial(self._if[i[0]], i[1], "NULL" if len(i) == 2 else i[2]))
+            elif i[0] == 4:
+                returnlist.append(partial(self._if[i[0]], i[1]))
+            elif i[0] == 5:
+                returnlist.append(partial(self._if[i[0]], i[1], i[2], i[3]))
+            elif i[0] == 6:
+                returnlist.append(partial(self._if[i[0]], i[1]))
+            elif i[0] == 7:
+                returnlist.append(partial(self._if[i[0]], i[1]))
+        return returnlist
 
 
 class ParseFunctions:
-
     def __init__(self, list_: list, customizeVar: bool = True):
         self._list: list = list_
         self._customizeVar = customizeVar
-        self._variables: Variables = Variables()
-        self._removes: list[int] = []
-        self._setupAndGetVariableInfo()
-
-    def _setupAndGetVariableInfo(self) -> None:
-        """
-        Parse the Variable and save in _variables
-        :return: None
-        """
-        for line, temp in enumerate(self._list, 1):
-            LoadPluginBase.logIfDebug(f"Parsing line {line} for Variables object")
-            if not temp[0] == 3:
-                LoadPluginBase.logIfDebug(f"Ignored line {line} because this line is not using var function.")
-                continue
-            LoadPluginBase.logIfDebug(f"Parsing line {line} because Accepted.")
-            self._removes.append(line)
-            if not (2 <= len(temp) <= 3):
-                LoadPluginBase.logIfDebug(f"Ignored line {line} because var function needed 2 to 3 arguments.")
-                continue
-            if len(temp) == 2:
-                temp.append("null")
-            LoadPluginBase.logIfDebug(f"Added Variable {temp[1]} and its content is {temp[2]}.")
-            self._variables.addVar(temp[1], temp[2])
 
     def getValue(self) -> list | None:
         """
         Get list[partial]
         :return: list[partial] or None
         """
+        verifiedlist: list = []
         for line, temp in enumerate(self._list, 1):
-            LoadPluginBase.logIfDebug(f"Parsing line {line}... (OwO)")
-            if line in self._removes:
-                LoadPluginBase.logIfDebug("Automatic skip when it's a variable.")
-                continue
+            LoadPluginBase.logIfDebug(f"Checking line {line}... (OwO)")
             if temp[0] not in LoadPluginBase.functions.keys():
                 LoadPluginBase.logIfDebug(f"Error In Line {line}: Functions is not defined!")
                 continue
             if temp[0] == 7:
                 addLog(1, f"USEFUNC Function will be define in API 1.0.3, now API Version is {".".join(apiVersion)}")
                 continue
-            
+            verifiedlist.append(temp)
+            LoadPluginBase.logIfDebug(f"Successfully to Check line {line}! No problem! (UwU) I'm proud!")
+
+        LoadPluginBase.logIfDebug(f"Successfully to Check all the Function List, Total: {len(self._list)} Passed: {len(verifiedlist)} Skipped: {len(self._list)-len(verifiedlist)}")
+
+        try:
+            temp = FunctionLexerSet(verifiedlist).getValue()
+            return temp
+        except Exception as e:
+            addLog(2, f"Failed to parse! Reason: {repr(e)}")
+            return None
+
 
 class LoadPluginHeader:
     """

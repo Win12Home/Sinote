@@ -1,0 +1,24 @@
+{
+  "config": {
+    "type": 1,
+    "objectName": "pythonSyntax",
+    "api": [1, 1]
+  },
+  "coding": {
+    "codeName": "Python",
+    "fileExtension": ["py", "pyw", "pyi"],
+    "keywords": [
+      "def", "class", "if", "else", "elif", "for", "while", "return",
+      "import", "from", "as", "with", "try", "except", "finally",
+      "True", "False", "None", "and", "or", "not", "in", "is"
+    ],
+    "symbols": [
+      "=", "==", "!=", "<", ">", "<=", ">=", "+", "-", "*", "/", "//", "%",
+      "(", ")", "[", "]", "{", "}", ":", ",", ".", "->", "#", ":="
+    ],
+    "remKeywords": ["#"],
+    "remKeywordsMultipleLine": ["\"\"\"", "\"\"\""],
+    "enableSelfColorOfRemKeywordsMultipleLine": false,
+    "textKeywords": ["\"", "'"]
+  }
+}
