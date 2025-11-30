@@ -771,20 +771,21 @@ class LoadPluginInfo:
         """
         lexedList: list = []
         if debugMode:
-            addLog(3, "Attempting to load imports.txt, content: {}".format(importText.replace("\n","\\n")))
-            print(importText.replace("\n","\\n"))
-            for temp in importText.split("\r\n") if system() == "windows" else importText.split("\n"):
-                addLog(3, f"Attempting to lex content: {temp.strip()}")
+            addLog(3, "Attempting to load imports.txt, content: {}".format(importText.replace("\n","\\n")), "LexImportsActivity")
+            for temp in importText.split("\n"):
+                addLog(3, f"Attempting to lex content: {temp.strip()}", "LexImportsActivity")
                 if temp.strip() is None:
-                    addLog(3, "Failed to load content because this content is NULL!")
+                    addLog(3, "Failed to load content because this content is NULL!", "LexImportsActivity")
+                elif temp.strip().startswith("//"):
+                    addLog(3, "Automatic skip note", "LexImportsActivity")
                 else:
-                    lexedList.append(importText.strip().replace("&space;"," "))
-                    addLog(3, "Successfully to lex content.")
-            addLog(3, "Lex successfully, program will be import these files: {}".format(", ".join(lexedList)))
+                    lexedList.append(temp.strip().replace("&space;"," "))
+                    addLog(3, "Successfully to lex content.", "LexImportsActivity")
+            addLog(3, "Lex successfully, program will be import these files: {}".format(", ".join(lexedList)), "LexImportsActivity")
         else:
             for temp in importText.split("\n"):
-                if not temp.strip() is None:
-                    lexedList.append(importText.strip().replace("&space;"," "))
+                if not (temp.strip() is None or temp.strip().startswith("//")):
+                    lexedList.append(temp.strip().replace("&space;"," "))
         return None if (len(lexedList) == 0) else lexedList
 
     def getValue(self) -> list | int | None:
