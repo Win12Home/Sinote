@@ -19,7 +19,7 @@ from pathlib import Path
 from platform import system, python_version, win32_ver, processor, libc_ver
 from traceback import format_exception
 from typing import *
-from psutil import virtual_memory, cpu_percent
+from psutil import virtual_memory, cpu_percent, swap_memory
 from getpass import getuser
 import sys, re
 
@@ -39,6 +39,7 @@ normalLogOutput: list[str] = []
 onlyWarning: bool = False
 
 def addLog(type: int=0, bodyText: str="N/A", activity: str | None = None):
+    global logInfoStatus
     typeOfLog: str = ("INFO" if (type == 0) else "WARN" if (type == 1) else "ERR" if (type == 2) else "DBG" if (type == 3) else "N/A")
     colorOfType: dict = {
         "INFO": "cyan",
@@ -860,7 +861,7 @@ class LoadPluginInfo:
                         if temp3[1] == 0:
                             LoadPluginBase.logIfDebug(f"Starting lex that object name is {temp3[0]}.")
                             returned = self._functionLexer(temp3[2])
-                            if len(returned.keys()) > 0:
+                            if len(returned) > 0:
                                 tmp.append([objectName,0,returned])
                                 LoadPluginBase.logIfDebug("Successfully to lex!")
                             else:
@@ -884,15 +885,14 @@ class LoadPluginInfo:
             return -1
 
     @staticmethod
-    def _functionLexer(func: dict):
+    def _functionLexer(func: list):
         """
         Lex function to functools.partial method
         Private Function
         :param func: Functions
         :return: Will run in Python
-        Not completed
         """
-        return func
+        return ParseFunctions(func).getValue()
 
     def err(self, error: str):
         addLog(2, f"Cannot load plugin that directory name is \"{self.projName}\"")
@@ -906,3 +906,5 @@ addLog(bodyText=r"  \__ \/ / __ \/ __ \/ __/ _ \   / __/ / __  / / __/ __ \/ ___
 addLog(bodyText=r" ___/ / / / / / /_/ / /_/  __/  / /___/ /_/ / / /_/ /_/ / /    ")
 addLog(bodyText=r"/____/_/_/ /_/\____/\__/\___/  /_____/\__,_/_/\__/\____/_/     ")
 addLog(bodyText=f"Sinote Editor {sinoteVersion}, API Version: {".".join([f"{i}" for i in apiVersion])}")
+
+del beforeDatetime
