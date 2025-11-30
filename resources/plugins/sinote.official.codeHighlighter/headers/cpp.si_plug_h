@@ -12,6 +12,7 @@
     "remKeywords": ["//"],
     "remKeywordsMultipleLine": ["/*", "*/"],
     "enableSelfColorOfRemKeywordsMultipleLine": true,
-    "textKeywords": ["\"", "'"]
+    "textKeywords": ["\"", "'"],
+    "pairKeywords": [["{","}"],["(",")"],["[","]"]]
   }
 }

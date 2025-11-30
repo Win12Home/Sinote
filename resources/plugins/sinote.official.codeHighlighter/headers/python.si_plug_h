@@ -19,6 +19,8 @@
     "remKeywords": ["#"],
     "remKeywordsMultipleLine": ["\"\"\"", "\"\"\""],
     "enableSelfColorOfRemKeywordsMultipleLine": false,
-    "textKeywords": ["\"", "'"]
+    "textKeywords": ["\"", "'"],
+    "defineKeywords": ["{","}"],
+    "pairKeywords": [["{","}"],["(",")"],["[","]"]]
   }
 }

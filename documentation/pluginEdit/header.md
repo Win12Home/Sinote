@@ -85,8 +85,9 @@ A example of Python:
     "remKeywords": ["#"],
     "remKeywordsMultipleLine": ["\"\"\"","\"\"\""],
     "enableSelfColorOfRemKeywordsMultipleLine": false, //"""<text>""" also can use for str, this is one of different of Python
-    "textKeywords": ["'","\""]
-    
+    "textKeywords": ["'","\""],
+    "defineKeywords": [":",""],  //C++: ["{","}"] VSB: ["BEGIN","END"],
+    "pairKeywords": [["{","}"],["(",")"]/*...*/]
   }
 }
 ```
@@ -101,6 +102,9 @@ A example of Python:
  - ```remKeywordsMultipleLine```: list, the symbols like ```"""REM"""``` ```/*REM*/```
  - ```enableSelfColorOfRemKeywordsMultipleLine```: boolean, ```"""``` in Python can be used for String, so it need to write false. Defaults is true.
  - ```textKeywords```: list, the symbols like ```'' , ""``` (Only One-character)
+ - ```defineKeywords```: list, the define func/object symbols like ```{ + }, BEGIN + END```
+ - ```pairKeywords```: list, the object symbols like ```( + ), { + }, [ + ]```. e.g. in C++ ```{ + }``` for STL types
+
 
 > **<span style="color:red;font-style:oblique">&#x26a0;&#xfe0f; IMPORTANT NOTICE:</span> The all the selection is required!**
 > <br>Excepted ```enableSelfColorOfRemKeywordsLikeString``` selection. (Always true)

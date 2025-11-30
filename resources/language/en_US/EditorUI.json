@@ -6,6 +6,7 @@
   "editor.menu.files.newproj": "New Project",
   "editor.menu.files.newfile": "New File",
   "editor.menu.files.openproj": "Open Project",
+  "editor.menu.temps.openfile": "Open File",
   "editor.menu.files.saveas": "Save As",
   "editor.menu.files.settings": "Settings",
   "editor.menu.files.exit": "Exit",
@@ -13,5 +14,9 @@
   "editor.menu.edit.redo": "Redo",
   "editor.menu.run.compile": "Compile",
   "editor.menu.run.run": "Run",
-  "editor.menu.run.editconf": "Edit Configuration"
+  "editor.menu.run.editconf": "Edit Configuration",
+  "editor.tab.new_file": "New File",
+  "editor.tab.tab_name": "{}",
+  "editor.tab.tab_name_unsaved": "{}*",
+  "editor.window.temps.openfile": "Open File"
 }

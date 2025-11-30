@@ -6,8 +6,11 @@ beforeDatetime = datetime.now()
 
 from subprocess import Popen
 from json import dumps
+from threading import Thread
 from PySide6.QtWidgets import *
 from functools import partial
+from signal import SIGINT
+from signal import signal as signalConnect
 from PySide6.QtCore import *
 from PySide6.QtGui import *
 from qt_material import *
@@ -50,7 +53,7 @@ def addLog(type: int=0, bodyText: str="N/A", activity: str | None = None):
     }
     nowTime: str = datetime.now().strftime("%H:%M.%S.%f")[:-3]
     logSender: str = f"SinoteLog/[red]{activity}[/red]" if activity is not None else "SinoteLog"
-    normalLogOutput.append(f"[{nowTime}] [{logSender}] [{typeOfLog}] {bodyText}")
+    normalLogOutput.append(f"[{nowTime}] [SinoteLog{f"/{activity}" if activity is not None else ""}] [{typeOfLog}] {bodyText}")
     if onlyWarning and typeOfLog not in ["WARN", "ERR"]:
         return
     print(f"[[blue]{nowTime}[/blue]] [{logSender}] [[{colorOfType[typeOfLog]}]{typeOfLog}[/{colorOfType[typeOfLog]}]] {bodyText}")
@@ -108,6 +111,8 @@ def criticalLogSaver(err_type, err_value, err_tb) -> None:
     with open(f"./log/critical/criticalLog-{datetime.now().strftime("%Y-%m-%d %H.%M.%S")}.log","w") as f:
         f.write(string)
 
+keyboardInterruptProcess: bool = False
+keyboardInterruptDatetime: datetime | None = None
 def errExceptionHook(err_type, err_value, err_tb) -> None:
     """
     Attempting to cancel crash and pop-up a window, save critical log!
@@ -135,6 +140,28 @@ def errExceptionHook(err_type, err_value, err_tb) -> None:
     else:
         sys.__excepthook__(err_type,err_value,err_tb)
 
+def interruptSignalBaseFunction(signum, frame) -> None:
+    global keyboardInterruptProcess, keyboardInterruptDatetime
+    if keyboardInterruptDatetime and keyboardInterruptProcess:
+        if (datetime.now() - keyboardInterruptDatetime).seconds > 5:
+            keyboardInterruptProcess = False   # Property
+    if keyboardInterruptProcess:
+        if (datetime.now() - keyboardInterruptDatetime).seconds <= 5:
+            addLog(2, "Ctrl+C twice to exit unnormally!")
+            addLog(2, "Saving log for a unnormally exit")
+            saveLog()
+            addLog(2, "Successfully to exit! Sinote will exit with code 100.")
+            sys.exit(100)
+    addLog(1, "Don't use Ctrl+C to exit unnormally! If you need, please re-enter Ctrl+C to exit.")
+    keyboardInterruptProcess = True
+    keyboardInterruptDatetime = datetime.now()
+    return
+
+def interruptSignal() -> None:
+    signalConnect(SIGINT, interruptSignalBaseFunction)
+    timer = QTimer()    # Super Qt's Timer
+    timer.timeout.connect(lambda: None)
+    timer.start(100)
 
 sys.excepthook = lambda a,b,c: errExceptionHook(a,b,c)
 
@@ -203,11 +230,17 @@ def checkVersionForPopup():
     if basicInfo["item.bool.isbetaversion"]:
         w = QMessageBox.warning(None,basicInfo["item.text.warn"],basicInfo["item.text.betaverdesc"])
 
+alreadyLoaded: dict[str, dict] = {}   # Cache Language File (What is @lru_cache? I cannot be got it.)
+
 def loadJson(json_name: str):
     if not Path("./resources/language/{}/{}.json".format(lang,json_name)).exists():
         addLog(2, "Failed to load when load this Language File: {}".format(json_name), "FileConfigActivity")
         err("0x00000002")
         quit(1)
+    if json_name in alreadyLoaded.keys():
+        return alreadyLoaded[json_name]
+    with open("./resources/language/{}/{}.json".format(lang, json_name)) as f:
+        return loads(f.read())
 
 def outputDeveloperDebugInformation():
     addLog(0, "For Developer Debug, Output your own PC's environment!")
@@ -716,7 +749,9 @@ class LoadPluginHeader:
                     "remKeywords": [],
                     "remKeywordsMultipleLine": [],
                     "enableSelfColorOfRemKeywordsMultipleLine": True,
-                    "textKeywords": []
+                    "textKeywords": [],
+                    "defineKeywords": ["{","}"],
+                    "pairKeywords": []
                 }
                 coding: dict = self.coding | coding
                 items.append(coding["codeName"])
@@ -731,6 +766,8 @@ class LoadPluginHeader:
                         coding["textKeywords"]
                     ]
                 ))
+                items.append(coding["defineKeywords"])
+                items.append(coding["pairKeywords"])
             else:
                 self.err("Type is not support in this version (type==2 also not included)!")
                 return 0
@@ -869,7 +906,7 @@ class LoadPluginInfo:
                                 LoadPluginBase.logIfDebug("Failed to lex, automatic switch to None.")
                         elif temp3[1] == 1:
                             LoadPluginBase.logIfDebug("Appending QSyntaxHighlighter and Informations...")
-                            tmp.append([objectName,1,temp3[2],temp3[3],temp3[4]])
+                            tmp.append([objectName,1,temp3[2],temp3[3], temp3[4], temp3[5], temp3[6]])
                             LoadPluginBase.logIfDebug("Successfully to append!")
                 # Convert normal value to [<TYPE>,<OBJNAME>,<CONTENT>]
                 items.append(tmp)
@@ -906,5 +943,7 @@ addLog(bodyText=r"  \__ \/ / __ \/ __ \/ __/ _ \   / __/ / __  / / __/ __ \/ ___
 addLog(bodyText=r" ___/ / / / / / /_/ / /_/  __/  / /___/ /_/ / / /_/ /_/ / /    ")
 addLog(bodyText=r"/____/_/_/ /_/\____/\__/\___/  /_____/\__,_/_/\__/\____/_/     ")
 addLog(bodyText=f"Sinote Editor {sinoteVersion}, API Version: {".".join([f"{i}" for i in apiVersion])}")
+
+interruptSignal()
 
 del beforeDatetime
