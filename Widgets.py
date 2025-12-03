@@ -4,16 +4,17 @@ Win12Home (C) 2025, MIT.
 """
 from pathlib import PurePath
 from BasicModule import * # Note: PySide6 was imported in BasicModule.py
+import time # Wow, I wanna sleep!
 
 def debugLog(content: str) -> None:
     if debugMode:
-        auto = Thread()
+        auto = Thread(daemon=True)
         auto.run = partial(addLog, 3, content, "SinoteUserInterfaceActivity")
         auto.start()
 
 def debugPluginLog(content: str) -> None:
     if debugMode:
-        auto = Thread()
+        auto = Thread(daemon=True)
         auto.run = partial(addLog, 3, content, "SinoteMainPluginLoadActivity")
         auto.start()
 
@@ -25,44 +26,48 @@ syntaxHighlighter Struct:
 {
     "Code Name": [
         <One LoadPluginBase.CustomizeSyntaxHighlighter>,
-        ["appendix1","appendix2","appendix3","appendix4","appendix5","appendix6"]
+        ["appendix1","appendix2","appendix3","appendix4","appendix5","appendix6"],
+        ...
     ]
 }
 """
 
+outputDeveloperDebugInformation()
+
 def automaticLoadPlugin() -> None:
     if not Path("./resources/plugins/").exists():
-        addLog(1, "Failed to load all the Plugins, Reason: ./resources/plugins/ not exists")
+        addLog(1, "Failed to load all the Plugins, Reason: ./resources/plugins/ not exists ❌")
         return
     if not Path("./resources/plugins/").is_dir():
-        addLog(1, "Failed to load all the Plugins, Reason: ./resources/plugins/ not a folder")
+        addLog(1, "Failed to load all the Plugins, Reason: ./resources/plugins/ not a folder ❌")
+        return
     dirs = list(Path("./resources/plugins/").iterdir())
-    debugPluginLog(f"Total: {len(dirs)}, Starting load...")
+    debugPluginLog(f"Total: {len(dirs)}, Starting load... 💥")
     for item in dirs:
         debugPluginLog(f"Loading {item.name}")
         if not item.is_dir():
-            addLog(0, f"Automatic skipped {item.name}, Reason: not a folder")
+            addLog(0, f"Automatic skipped {item.name}, Reason: not a folder ❌")
             continue
 
         infoJson: Path | PurePath = item / "info.json"
 
         if not (infoJson.exists()):
-            addLog(1, f"Automatic skipped {item.name}, Reason: info.json not exists")
+            addLog(1, f"Automatic skipped {item.name}, Reason: info.json not exists ❌")
             continue
         temp = LoadPluginInfo(item.name).getValue()
         loadedPlugin.append(temp[0])
-        debugPluginLog(f"Successfully loaded {item.name}, objectName: {temp[0]["objectName"]}. Preparing to parse...")
+        debugPluginLog(f"Successfully loaded {item.name}, objectName: {temp[0]["objectName"]}. Preparing to parse... ✅")
         for key in temp[1]:
             debugPluginLog(f"Loading {key[0]}...")
             if key[1] == 1:
-                debugPluginLog(f"Checked its property! Type: SyntaxHighlighter")
-                debugPluginLog(f"Creating QSyntaxHighlighter...")
+                debugPluginLog(f"Checked its property! Type: SyntaxHighlighter 🔎")
+                debugPluginLog(f"Creating QSyntaxHighlighter... 🤓")
                 beforeTime = datetime.now()
                 syntaxHighlighter[key[2]] = [key[4].getObject(), key[3], key[5], key[6]]
-                debugPluginLog(f"Successfully created QSyntaxHighlighter! Used time: {(datetime.now() - beforeTime).total_seconds()}secs")
+                debugPluginLog(f"Successfully created QSyntaxHighlighter! Used time: {(datetime.now() - beforeTime).total_seconds()}secs ✅")
             elif key[1] == 0:
-                debugPluginLog(f"Checked its property! Type: RunningFunc")
-                debugPluginLog(f"Appending to autoRun...")
+                debugPluginLog(f"Checked its property! Type: RunningFunc 🤓")
+                debugPluginLog(f"Appending to autoRun... 💥")
                 [autoRun.append(i) if isinstance(i, partial) else None for i in key[2]]
                 """
                 This code definitely equals
@@ -70,8 +75,45 @@ def automaticLoadPlugin() -> None:
                     if isinstance(i, partial):
                         autoRun.append(i)
                 """
-                debugPluginLog(f"Successfully to append!")
-    debugPluginLog("Successfully to load plugins!")
+                debugPluginLog(f"Successfully to append! ✅")
+    debugPluginLog("Successfully to load plugins! ✅")
+
+
+class AutomaticSaveThingsThread(QThread):
+    def __init__(self, parent: QWidget = None, saveSecs: int = 10):
+        super().__init__(parent)
+        self.saveSecs: int = saveSecs
+        self.running: bool = True
+        self.ended: bool = False
+
+    def saveThings(self) -> None:
+        debugLog(f"Automatic saving every {self.saveSecs} secs 😍")
+        if not self.parent() or not hasattr(self.parent(), "tabTextEdits"):
+            debugLog("Skipped saveThings because attribute \"tabTextEdits\" destroyed! 😰")  # Automatic skip when not have attribute tabTextEdits
+            return
+        for temp in (getEditor for getEditor in self.parent().tabTextEdits if getEditor is not None):   # UwU I'm lazy so I tried to use list but my memory is lazy so I edit to Generator
+            debugLog(f"Saving file {temp.nowFilename} ✅")
+            temp.autoSave()
+        debugLog("Save successfully! ✅")
+        debugLog("Waiting for next cycle... 💥")
+
+    def run(self) -> None:
+        while self.running:
+            for i in range(100 * self.saveSecs):
+                time.sleep(i/100)
+                if not self.running:
+                    self.saveThings()
+                    break
+            if self.running:
+                self.saveThings()
+        debugLog("AutomaticSaveThingsThread ended")
+        self.ended = True
+
+    def quit(self):
+        self.running = False
+        debugLog("AutomaticSaveThingsThread has closed by this->quit 💥")
+        while self.ended: ...
+        super().quit()
 
 
 class LineNumberWidget(QWidget):
@@ -79,10 +121,9 @@ class LineNumberWidget(QWidget):
         super().__init__(editor)
         self.editor = editor
         self.setFixedWidth(40)
-        self.setCursor(Qt.CursorShape.SizeHorCursor)
+        self.setCursor(Qt.CursorShape.LastCursor)
 
     def paintEvent(self, event):
-        debugLog("paintEvent in LineNumberWidget has been activated!")
         painter = QPainter(self)
         painter.fillRect(event.rect(), self.palette().window().color())
         block = self.editor.firstVisibleBlock()
@@ -98,14 +139,10 @@ class LineNumberWidget(QWidget):
                 number = str(blockNumber + 1)
                 painter.drawText(0, int(top), self.width() - 5, self.editor.fontMetrics().height(),
                                  Qt.AlignmentFlag.AlignRight, number)
-                debugLog(f"Drawing text in LineNumberWidget: {number}")
-
             block = block.next()
             top = bottom
             bottom = top + self.editor.blockBoundingRect(block).height()
             blockNumber += 1
-            debugLog(f"Setted up for next cycle")
-        debugLog(f"Successfully to draw text!")
 
 
 class LineShowTextEdit(QPlainTextEdit):
@@ -289,7 +326,6 @@ class SinotePlainTextEdit(SpacingSupportEdit):
         self.setFilename = None
         self.nowFilename: str | None = None
         self.num: int = -1
-        self.textChanged.connect(self.autoSave)
 
     def autoSave(self):
         if self.nowFilename:
@@ -332,25 +368,25 @@ class SinotePlainTextEdit(SpacingSupportEdit):
             self.appendix = appendix
 
         def run(self) -> None:
-            debugLog(f"Finding Highlighter (*.{self.appendix})... (THREAD)")
+            debugLog(f"Finding Highlighter (*.{self.appendix})... (THREAD) 🔎")
             temp: LoadPluginBase.CustomizeSyntaxHighlighter | None = None
             temp2, temp3 = None, None
             for _, i in syntaxHighlighter.items():
                 if self.appendix in i[1]:
-                    debugLog(f"{self.appendix} is in {i[1]}, successfully to find!")
+                    debugLog(f"{self.appendix} is in {i[1]}, successfully to find! ✅")
                     temp = i[0]
                     temp2 = i[2]
                     temp3 = i[3]
                     break
                 else:
-                    debugLog(f"{self.appendix} isn't in {i[1]}, continue find!")
+                    debugLog(f"{self.appendix} isn't in {i[1]}, continue find! 🔎")
             if temp is not None:
-                debugLog(r"Emit found Syntax Highlighter")
+                debugLog(r"Emit found Syntax Highlighter 💥")
                 self.foundHighlighter.emit(temp)
                 temp3.append(temp2)
                 self.setPairKeywords.emit(temp3)
             else:
-                debugLog(r"Cannot found Syntax Highlighter.")
+                debugLog(r"Cannot found Syntax Highlighter ❌")
                 self.noSyntax.emit()
 
     def setHighlighter(self, highlighter: LoadPluginBase.CustomizeSyntaxHighlighter | None) -> None:
@@ -359,9 +395,13 @@ class SinotePlainTextEdit(SpacingSupportEdit):
         self.highlighter.setDocument(self.document())
 
     def setFileAppendix(self, fileAppendix: str) -> None:
+        debugLog(f"Attempting to set file appendix to {fileAppendix} 🪲")
+        debugLog(f"Finding Children of Document and remove Highlighter")
         for i in self.findChildren(LoadPluginBase.CustomizeSyntaxHighlighter):
             i.setDocument(None)
             i.deleteLater()
+        debugLog("Successfully remove Highlighter ✅")
+        debugLog("Searching Highlighter 🔎")
         self.temp = self._LoadHighlighter(fileAppendix)
         self.temp.foundHighlighter.connect(self.setHighlighter)
         self.temp.setPairKeywords.connect(self._setPairKeywords)
@@ -382,11 +422,11 @@ class SinotePlainTextEdit(SpacingSupportEdit):
         if not Path(filename).exists():
             addLog(1, f"Cannot find file {filename}, current file will save.","SinoteUserInterfaceActivity")
         if not Path(filename).is_file():
-            addLog(1, f"Are you sure you using a normal file? Cannot read {filename}!", "SinoteUserInterfaceActivity")
+            addLog(1, f"Are you sure you are using a normal file? Cannot read {filename}!", "SinoteUserInterfaceActivity")
         try:
             with open(filename, "r", encoding="utf-8") as f:
                 self.setPlainText(f.read())
-                debugLog(f"Successfully to read {filename}!")
+                debugLog(f"Successfully to read {filename}! {len(self.toPlainText()) / 8 / 1024:.2f}KiB {len(self.toPlainText().splitlines())} lines")
             self.setFileAppendix(Path(filename).suffix[1:])
             if self.setFilename is not None:
                 self.setFilename(self.num, loadJson("EditorUI")["editor.tab.tab_name"].format(Path(filename).name))
@@ -407,6 +447,7 @@ class MainWindow(QMainWindow):
         self.widget = QStackedWidget()
         self.mainFrame = QWidget()
         self.settingFrame = QWidget()
+        self.editorThread = AutomaticSaveThingsThread(self)
         self.setCentralWidget(self.widget)
         self._initBase()
         self._setupUI()
@@ -447,16 +488,39 @@ class MainWindow(QMainWindow):
         self.setMenuBar(self.fileEditMenu)
         debugLog("Successfully to set up Menu!")
         debugLog("Setting up Setting Area...")
+        self.backToMain = QPushButton(loadJson("EditorUI")["editor.button.settings.back"])
+        self.backToMain.clicked.connect(partial(self.widget.setCurrentIndex, 0))
+        self.backToMain.setMaximumWidth(250)
+        self.backToMain.setMinimumWidth(220)
         self.setArea = QTabWidget()
         self.setArea.setMovable(False)
         self.setArea.setTabsClosable(False)
+        self.setArea.appearance = QWidget()
+        self.setArea.addTab(self.setArea.appearance, loadJson("EditorUI")["editor.tab.settings.appearance"])
+        self.setVerticalLayout = QVBoxLayout()
+        self.setVerticalLayout.addWidget(self.backToMain)
+        self.setVerticalLayout.addWidget(self.setArea)
+        self.settingFrame.setLayout(self.setVerticalLayout)
         debugLog("Successfully to set up Setting Area...")
         debugLog("Adding Frames to StackedWidget...")
         self.widget.addWidget(self.mainFrame)
         self.widget.addWidget(self.settingFrame)
         self.widget.setCurrentIndex(0)
+        self.editorThread.start()
         debugLog("Successfully to add frame!")
         debugLog("Successfully to set up User Interface!")
+
+    def show(self) -> None:
+        debugLog("Showing Application...")
+        super().show()
+        debugLog("Show Application Successfully!")
+
+    def close(self) -> None:
+        debugLog("Attempting to close 🤓")
+        self.hide()
+        self.editorThread.quit()
+        self.editorThread.wait()
+        super().close()
 
     def tempOpenFile(self) -> None:
         """
@@ -465,16 +529,16 @@ class MainWindow(QMainWindow):
         """
         get, _ = QFileDialog.getOpenFileName(self, loadJson("EditorUI")["editor.window.temps.openfile"], filter = "All File (*)")
         if get:
-            debugLog(f"Get FileDialog return Information: {get}")
+            debugLog(f"Get FileDialog return Information: {get} ✅")
             self.textEditArea.currentWidget().readFile(get)
 
     def saveAs(self) -> None:
         get, _ = QFileDialog.getSaveFileName(self, loadJson("EditorUI")["editor.window.temps.saveas"], filter = "All File (*)")
         if get:
-            debugLog(f"Get FileDialog return Information: {get}")
+            debugLog(f"Get FileDialog return Information: {get} 😍")
             with open(get, "w+", encoding="utf-8") as f:
                 f.write(self.textEditArea.currentWidget().toPlainText())
-            debugLog(f"Successfully to save!")
+            debugLog(f"Successfully to save! ✅")
 
     def _requestClose(self, index: int):
         if index >= 0 and index < len(self.tabTextEdits):
@@ -487,7 +551,7 @@ class MainWindow(QMainWindow):
         self._createTab()
 
     def _createTab(self, filename: str | None = None):
-        debugLog(f"Creating Tab... Will load file: {filename if filename else "Nothing"}")
+        debugLog(f"Creating Tab... Will load file: {filename if filename else "Nothing"} 🤓")
         oldDatetime = datetime.now()
         temp = SinotePlainTextEdit()
         temp.num = len(self.tabTextEdits)
@@ -496,13 +560,13 @@ class MainWindow(QMainWindow):
         self.tabTextEdits.append(temp)
         self.textEditArea.addTab(temp, loadJson("EditorUI")["editor.tab.new_file"])
         temp.setFilename = self.textEditArea.tabBar().setTabText
-        debugLog(f"Successfully to create tab! Used: {(datetime.now() - oldDatetime).total_seconds():.2f}s")
+        debugLog(f"Successfully to create tab! Used: {(datetime.now() - oldDatetime).total_seconds():.2f}s ✅")
 
     def _initBase(self):
-        debugLog("Initializing Base Window...")
+        debugLog("Initializing Base Window... 🔎")
         self.setWindowTitle("Sinote")
         self.resize(1280, 760)
-        debugLog("Successfully to initialize")
+        debugLog("Successfully to initialize ✅")
 
 automaticLoadPlugin()
 
@@ -510,5 +574,5 @@ if __name__ == "__main__":
     a = MainWindow()
     a.show()
     application.exec()
-    addLog(0, "Successfully to exit Sinote with Process Code 0.")
+    addLog(0, "Successfully to exit Sinote with Process Code 0 ✅")
     sys.exit(0)

@@ -1,3 +1,5 @@
 cpp.si_plug_h
 python.si_plug_h
 // Automatically load C++ & Python Code Highlighter and save it to LazyCustomizeSyntaxHighlighter
+shell.si_plug_h
+// BASH is too magic!

@@ -189,7 +189,7 @@ args = [i.lower() for i in sys.argv]
 
 if "--debug-mode" in args or "-db" in args:
     debugMode = True
-    addLog(3, "Debug Mode Started...", "ArgumentParser")
+    addLog(3, "Debug Mode Started 😍", "ArgumentParser")
 
 if "-h" in args or "--help" in args: # HelpActivity
     addLog(0, "Sinote Help is starting...", "HelpActivity")
@@ -215,12 +215,12 @@ if system().lower() in ["darwin","linux"]:
                                      "We have noticed you run Sinote by ROOT/SU User, please remove 'sudo' command or exit 'su' environment. \nOr you can append -su for argument to bypass.")
 
 if "-ow" in args or "--only-warning" in args:
-    addLog(3, "Only Warning Started.", "ArgumentParser")
+    addLog(3, "Only Warning Started 🤓", "ArgumentParser")
     onlyWarning = True
 
 for temp in basicInfo["item.list.language_files"]:
     if not Path("./resources/language/{}/{}.json".format(lang,temp)).exists():
-        addLog(2,"Check Language files failed!","FileConfigActivity")
+        addLog(2,"Check Language files failed! ❌","FileConfigActivity")
         err("0x00000002")
         quit(1)
 
@@ -232,20 +232,24 @@ def checkVersionForPopup():
 
 alreadyLoaded: dict[str, dict] = {}   # Cache Language File (What is @lru_cache? I cannot be got it.)
 
-def loadJson(json_name: str):
-    if not Path("./resources/language/{}/{}.json".format(lang,json_name)).exists():
-        addLog(2, "Failed to load when load this Language File: {}".format(json_name), "FileConfigActivity")
+def loadJson(jsonName: str):
+    global alreadyLoaded
+    if not Path("./resources/language/{}/{}.json".format(lang,jsonName)).exists():
+        addLog(2, "Failed to load when load this Language File: {} ❌".format(jsonName), "FileConfigActivity")
         err("0x00000002")
         quit(1)
-    if json_name in alreadyLoaded.keys():
-        return alreadyLoaded[json_name]
-    with open("./resources/language/{}/{}.json".format(lang, json_name)) as f:
-        return loads(f.read())
+    if jsonName in alreadyLoaded.keys():
+        if debugMode: addLog(3, f"{jsonName}.json Cache hit 💥", "FileConfigActivity")
+        return alreadyLoaded[jsonName]
+    with open("./resources/language/{}/{}.json".format(lang, jsonName)) as f:
+        if debugMode: addLog(3, f"Attempting to load {jsonName}.json and cache it ✅", "FileConfigActivity")
+        alreadyLoaded[jsonName] = loads(f.read())
+        return alreadyLoaded[jsonName]  # Use cache for file read nullptr
 
 def outputDeveloperDebugInformation():
-    addLog(0, "For Developer Debug, Output your own PC's environment!")
-    addLog(0, f"Platform: {system()} Python: {python_version()} Win32 Version*: {" ".join(win32_ver())} | Linux LIBC Ver*: {" ".join(libc_ver())}")
-    addLog(0, "Note: If some error occurred, please send log to the developer")
+    addLog(3, "For Developer Debug, Output your own PC's environment! 🤓", "OutputDeveloperDebugInformationActivity")
+    addLog(3, f"Platform: {system()} Python: {python_version()} Win32 Version*: {" ".join(win32_ver())} | Linux LIBC Ver*: {" ".join(libc_ver())}", "OutputDeveloperDebugInformationActivity")
+    addLog(3, "Note: If some error occurred, please send log to the developer 💥", "OutputDeveloperDebugInformationActivity")
 
 
 class LoadPluginBase:
@@ -332,7 +336,7 @@ class LoadPluginBase:
             self._setup_formats()
             self._setup_highlighting_rules()
 
-            addLog(0, f"Syntax highlighter initialized with {len(self.keywords)} keywords, {len(self.symbols)} symbols")
+            addLog(0, f"Syntax highlighter initialized with {len(self.keywords)} keywords, {len(self.symbols)} symbols 😍", "LoadPluginBaseActivity")
 
         def _setup_formats(self):
             self.keyword_format = QTextCharFormat()
@@ -452,10 +456,10 @@ Seperator for LoadPluginBase and ParseFunctions
 
 class Variables:
     def __init__(self, variableDict: dict = None):
-        LoadPluginBase.logIfDebug(f"Variables has initializing, the variableDict argument: {"null" if variableDict is None else variableDict}")
+        LoadPluginBase.logIfDebug(f"Variables has initializing, the variableDict argument: {"null" if variableDict is None else variableDict} 🥳")
         self._variableDict: dict = variableDict if variableDict else {}
         self._variableMatchPattern = re.compile(r"%var:([^%]+)%")
-        LoadPluginBase.logIfDebug("Successfully to initialize Variables object. (OwO)")
+        LoadPluginBase.logIfDebug("Successfully to initialize Variables object ✅ (OwO)")
 
     def addVar(self, varName: str, varContent: str = "NULL"):
         """
@@ -464,7 +468,7 @@ class Variables:
         :param varContent: Variable Content
         :return: None
         """
-        LoadPluginBase.logIfDebug(f"Set/Added Variable \"{varName}\" and edit it to \"{varContent}\" (UwU)")
+        LoadPluginBase.logIfDebug(f"Set/Added Variable \"{varName}\" and edit it to \"{varContent}\" ✅ (UwU)")
         self._variableDict[varName] = varContent
 
     def getVar(self, varName: str) -> str:
@@ -477,7 +481,7 @@ class Variables:
         if not varName in self._variableDict.keys():
             LoadPluginBase.logIfDebug(f"Cannot get variable {varName} (TwT)")
             return f"|{varName} NOT FOUND|"
-        LoadPluginBase.logIfDebug(f"Successfully to get variable {varName} (OwO)")
+        LoadPluginBase.logIfDebug(f"Successfully to get variable {varName} ✅ (OwO)")
         LoadPluginBase.logIfDebug(f"Variable Content: {self._variableDict[varName]} (-W-)")
         return self._variableDict[varName]
 
@@ -487,7 +491,7 @@ class Variables:
         :param varName: Variable Name
         :return: Boolean, False for it was removed, True for Removed
         """
-        LoadPluginBase.logIfDebug(f"Successfully to remove variable {varName} (O_I)")
+        LoadPluginBase.logIfDebug(f"Successfully to remove variable {varName} ✅ (O_I)")
         if not varName in self._variableDict.keys():
             return False
         self._variableDict.pop(varName)
@@ -510,11 +514,11 @@ class Variables:
         def temporaryReplaceMatch(match):
             LoadPluginBase.logIfDebug(f"Regular Expression Matching: GROUP = {match.group()} -> VAR: {match.group(1)} (UwU)")
             temporary = self.getVar(match.group(1))
-            LoadPluginBase.logIfDebug(f"Regular Expression Replaced: {temporary}")
+            LoadPluginBase.logIfDebug(f"Regular Expression Replaced: {temporary} ✅")
             return temporary
 
         value = self._variableMatchPattern.sub(temporaryReplaceMatch, string)
-        LoadPluginBase.logIfDebug(f"Regular Expression Final Answer: {value} (IwI)")
+        LoadPluginBase.logIfDebug(f"Regular Expression Final Answer: {value} 💥(IwI)")
         return value
 
 
@@ -671,7 +675,7 @@ class LoadPluginHeader:
         items: list = []
         try:
             beforeDatetime = datetime.now()
-            addLog(0,f"Attempting to load {self.filename}")
+            addLog(0,f"Attempting to load {self.filename} 🔎")
             self.config = {
                 "type": 0,
                 "api": [1,apiVersion[0]],
@@ -679,11 +683,11 @@ class LoadPluginHeader:
                 "useSinoteVariableInString": True
             }
             if not self.header.get("config",None):
-                self.err("Key \"config\" not found!")
+                self.err("Key \"config\" not found! ❌")
                 return 0
             config = self.config | self.header["config"]
             if "objectName" not in config:
-                self.err("\"objectName\" is a required item in config.")
+                self.err("\"objectName\" is a required item in config ❌")
                 return 0
             if not (config["api"][0] <= apiVersion[0] <= config["api"][1]):
                 self.err("This plugin not support API of this version! Please update to new version.")
@@ -736,10 +740,10 @@ class LoadPluginHeader:
                 # Syntax Highlighter
                 coding: dict | None = self.header.get("coding",None)
                 if coding is None:
-                    self.err("Key \"coding\" not found")
+                    self.err("Key \"coding\" not found 🤓")
                     return 0    # Missing Ingredients
                 if not isinstance(coding,dict):
-                    self.err("\"coding\" need a dict type")
+                    self.err("\"coding\" need a dict type ❌")
                     return 0    # Missing Ingredients
                 self.coding = {
                     "codeName": "Not defined",
@@ -809,17 +813,17 @@ class LoadPluginInfo:
         """
         lexedList: list = []
         if debugMode:
-            addLog(3, "Attempting to load imports.txt, content: {}".format(importText.replace("\n","\\n")), "LexImportsActivity")
+            addLog(3, "Attempting to load imports.txt, content: {} 🔎".format(importText.replace("\n","\\n")), "LexImportsActivity")
             for temp in importText.split("\n"):
-                addLog(3, f"Attempting to lex content: {temp.strip()}", "LexImportsActivity")
+                addLog(3, f"Attempting to lex content: {temp.strip()} 🔎", "LexImportsActivity")
                 if temp.strip() is None:
-                    addLog(3, "Failed to load content because this content is NULL!", "LexImportsActivity")
+                    addLog(3, "Failed to load content because this content is NULL! ❌", "LexImportsActivity")
                 elif temp.strip().startswith("//"):
-                    addLog(3, "Automatic skip note", "LexImportsActivity")
+                    addLog(3, "Automatic skip note 💥", "LexImportsActivity")
                 else:
                     lexedList.append(temp.strip().replace("&space;"," "))
-                    addLog(3, "Successfully to lex content.", "LexImportsActivity")
-            addLog(3, "Lex successfully, program will be import these files: {}".format(", ".join(lexedList)), "LexImportsActivity")
+                    addLog(3, "Successfully to lex content ✅", "LexImportsActivity")
+            addLog(3, "Lex successfully, program will be import these files: {} 🥳".format(", ".join(lexedList)), "LexImportsActivity")
         else:
             for temp in importText.split("\n"):
                 if not (temp.strip() is None or temp.strip().startswith("//")):
@@ -843,7 +847,7 @@ class LoadPluginInfo:
                 ]
             }
             errLite: bool = False
-            addLog(bodyText=f"Attempting to load plugin \"{self.projName}\"")
+            addLog(bodyText=f"Attempting to load plugin \"{self.projName}\" 🔎")
             beforeDatetime: datetime = datetime.now()
             if not Path(f"./resources/plugins/{self.projName}").is_dir() and not Path(f"./resources/plugins/{self.projName}").exists():
                 self.err("Directory not found.")
@@ -854,27 +858,27 @@ class LoadPluginInfo:
             if not Path(f"./resources/plugins/{self.importsPath}").exists():
                 addLog(1, "Missing imports.txt, plugin will continue load but it's not USEFUL.")
                 errLite = True
-            addLog(bodyText="Attempting to read info.json")
+            addLog(bodyText="Attempting to read info.json 🔎")
             info: dict = LoadPluginHeader.readFile(f"./resources/plugins/{self.infoPath}")
             if info.get("versionIterate", None) is None:
-                addLog(1, bodyText="\"versionIterate\" not found! This will be replace to 99900 (Maximum).")
-            addLog(bodyText="Successfully to read info.json")
-            addLog(bodyText="Attempting to merge info.json")
+                addLog(1, bodyText="\"versionIterate\" not found! This will be replace to 99900 (Maximum) 😰")
+            addLog(bodyText="Successfully to read info.json ✅")
+            addLog(bodyText="Attempting to merge info.json 🔎")
             information: dict = self.info | info
-            addLog(bodyText="Successfully to merge info.json")
+            addLog(bodyText="Successfully to merge info.json ✅")
             if information["versionIterate"] > 99900:
                 information["versionIterate"] = 99900
-                addLog(1, "Number of \"versionIterate\" was more than 99900! \"versionIterate\" adjusted to 99900!")
+                addLog(1, "Number of \"versionIterate\" was more than 99900! \"versionIterate\" adjusted to 99900! 💥")
             imports: list | None = None
             if not errLite:
-                addLog(bodyText="Attempting to read imports.txt")
+                addLog(bodyText="Attempting to read imports.txt ✅")
                 with open(f"./resources/plugins/{self.projName}/imports.txt","r",encoding="utf-8") as f:
                     imports: list | None = self.lexImports(f.read())
                 if imports is not None:
-                    addLog(bodyText="Load successfully!")
+                    addLog(bodyText="Load successfully! ✅")
                 else:
                     errLite = True
-                    addLog(bodyText="Cannot load imports.txt, plugin will continue load but it's not USEFUL.")
+                    addLog(bodyText="Cannot load imports.txt, plugin will continue load but it's not USEFUL. 😰")
             items: list = []
             items.append(information)
             tmp: list = []
@@ -882,39 +886,39 @@ class LoadPluginInfo:
             if not errLite:
                 for temp in imports:
                     # For safe
-                    LoadPluginBase.logIfDebug(f"Trying to load header file in ./resources/plugins/{self.headerPlacePath}/{temp}")
+                    LoadPluginBase.logIfDebug(f"Trying to load header file in ./resources/plugins/{self.headerPlacePath}/{temp} 🪲")
                     temp2 = LoadPluginHeader(f"./resources/plugins/{self.headerPlacePath}/{temp}")
                     temp2.setFilename(temp)
                     temp3 = temp2.getValue()
-                    LoadPluginBase.logIfDebug(f"Loaded Plugin Header! JSON: {temp2}")
+                    LoadPluginBase.logIfDebug(f"Loaded Plugin Header! JSON: {temp2} 🤓")
                     if not isinstance(temp3, list):
                         if temp2 is None:
-                            addLog(1, f"Skipped file {temp} because it's a Placeholder File")
+                            addLog(1, f"Skipped file {temp} because it's a Placeholder File ❌")
                         elif isinstance(temp3, int):
-                            addLog(2,f"Illegal error, returns: {LoadPluginBase.parseErrCode(temp3)}")
+                            addLog(2,f"Illegal error, returns: {LoadPluginBase.parseErrCode(temp3)} 😰")
                     else:
                         objectName = f"{information["objectName"]}.{"syntax" if temp3[1] == 1 else "functions" if temp3[1] == 0 else "null"}.{temp3[0]}"
-                        LoadPluginBase.logIfDebug(f"Loading {objectName}...")
+                        LoadPluginBase.logIfDebug(f"Loading {objectName}... 😍")
                         if temp3[1] == 0:
-                            LoadPluginBase.logIfDebug(f"Starting lex that object name is {temp3[0]}.")
+                            LoadPluginBase.logIfDebug(f"Starting lex that object name is {temp3[0]}. 🔎")
                             returned = self._functionLexer(temp3[2])
                             if len(returned) > 0:
                                 tmp.append([objectName,0,returned])
-                                LoadPluginBase.logIfDebug("Successfully to lex!")
+                                LoadPluginBase.logIfDebug("Successfully to lex! ✅")
                             else:
                                 tmp.append([objectName,0,None])
-                                LoadPluginBase.logIfDebug("Failed to lex, automatic switch to None.")
+                                LoadPluginBase.logIfDebug("Failed to lex, automatic switch to None ❌")
                         elif temp3[1] == 1:
-                            LoadPluginBase.logIfDebug("Appending QSyntaxHighlighter and Informations...")
+                            LoadPluginBase.logIfDebug("Appending QSyntaxHighlighter and Informations... 🔎")
                             tmp.append([objectName,1,temp3[2],temp3[3], temp3[4], temp3[5], temp3[6]])
-                            LoadPluginBase.logIfDebug("Successfully to append!")
+                            LoadPluginBase.logIfDebug("Successfully to append! ✅")
                 # Convert normal value to [<TYPE>,<OBJNAME>,<CONTENT>]
                 items.append(tmp)
             else:
                 listOfHeaders = None
                 items.append(None)
             addLog(0,
-                   f"Successfully to load {information["objectName"]}! Used {(datetime.now() - beforeDatetime).total_seconds()}secs.")
+                   f"Successfully to load {information["objectName"]}! Used {(datetime.now() - beforeDatetime).total_seconds()}secs. ✅")
             return items
         except Exception as e:
             self.err("Unknown Error, Python Exception: {}"

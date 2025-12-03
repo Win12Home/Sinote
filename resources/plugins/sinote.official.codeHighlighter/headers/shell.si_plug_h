@@ -1,0 +1,16 @@
+{
+  "config": {
+    "type": 1,
+    "objectName": "bashShellSyntax",
+    "api": [1, 1]
+  },
+  "coding": {
+    "codeName": "Like UNIX System Shell",
+    "fileExtension": ["sh", "bash"],
+    "keywords": ["if", "else", "elif", "fi", "then", "do", "done", "case", "esac", "for", "while", "until", "function", "local", "read", "shift", "return", "break", "continue", "source", ".", "alias", "unalias", "cd", "pwd", "mkdir", "rm", "cp", "mv", "ls", "grep", "awk", "sed", "cat", "chmod", "chown", "sudo", "su", "apt", "yum", "dnf", "pacman", "npm", "node", "python", "perl"],
+    "symbols": ["+", "-", "*", "/", "[", "]", "(", ")", "$", ">", "&&", "||", ";", ":", "&", "|", "<", "="],
+    "remKeywords": ["#"],
+    "textKeywords": ["\"", "'"],
+    "pairKeywords": [["(",")"],["[","]"]]
+  }
+}

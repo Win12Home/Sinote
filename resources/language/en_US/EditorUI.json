@@ -18,5 +18,7 @@
   "editor.tab.new_file": "New File",
   "editor.tab.tab_name": "{}",
   "editor.tab.tab_name_unsaved": "{}*",
-  "editor.window.temps.openfile": "Open File"
+  "editor.tab.settings.appearance": "Appearance",
+  "editor.window.temps.openfile": "Open File",
+  "editor.button.settings.back": "Back to Editor"
 }
