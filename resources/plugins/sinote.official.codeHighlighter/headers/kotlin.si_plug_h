@@ -1,0 +1,18 @@
+{
+  "config": {
+    "type": 1,
+    "objectName": "kotlinSyntax",
+    "api": [1, 1]
+  },
+  "coding": {
+    "codeName": "Kotlin Programming Language",
+    "fileExtension": ["kt", "kts"],
+    "keywords": ["abstract", "actual", "annotation", "as", "break", "by", "catch", "class", "companion", "const", "constructor", "continue", "crossinline", "data", "delegate", "do", "else", "enum", "expect", "external", "false", "final", "finally", "for", "fun", "get", "if", "import", "in", "infix", "init", "inline", "inner", "interface", "internal", "is", "it", "lateinit", "noinline", "null", "object", "open", "operator", "out", "override", "package", "param", "private", "property", "protected", "public", "receiver", "reified", "return", "sealed", "set", "super", "suspend", "tailrec", "this", "throw", "true", "try", "typealias", "typeof", "val", "var", "vararg", "when", "where", "while"],
+    "symbols": ["+", "-", "*", "/", "%", "=", "+=", "-=", "*=", "/=", "%=", "==", "!=", "===", "!==", ">", "<", ">=", "<=", "&&", "||", "!", "&", "|", "^", "~", "<<", ">>", "&=", "|=", "^=", "<<=", ">>=", "++", "--", "->", "::", ".", "..", "...", "?", ":", "?:", ",", ";", "$"],
+    "remKeywords": ["//"],
+    "remKeywordsMultipleLine": ["/*", "*/"],
+    "enableSelfColorOfRemKeywordsMultipleLine": true,
+    "textKeywords": ["\"", "'"],
+    "pairKeywords": [["{","}"],["(",")"],["[","]"]]
+  }
+}

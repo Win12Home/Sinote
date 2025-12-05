@@ -1,0 +1,18 @@
+{
+  "config": {
+    "type": 1,
+    "objectName": "javascriptSyntax",
+    "api": [1, 1]
+  },
+  "coding": {
+    "codeName": "JavaScript",
+    "fileExtension": ["js", "jsx", "mjs", "cjs"],
+    "keywords": ["break", "case", "catch", "class", "const", "continue", "debugger", "default", "delete", "do", "else", "export", "extends", "finally", "for", "function", "if", "import", "in", "instanceof", "let", "new", "return", "super", "switch", "this", "throw", "try", "typeof", "var", "void", "while", "with", "yield", "async", "await", "true", "false", "null", "undefined"],
+    "symbols": ["+", "-", "*", "/", "%", "=", "+=", "-=", "*=", "/=", "%=", "==", "!=", "===", "!==", ">", "<", ">=", "<=", "&&", "||", "!", "&", "|", "^", "~", "<<", ">>", "&=", "|=", "^=", "<<=", ">>=", "++", "--", "->", "=>", "::", ".", "...", "?", ":", "?.", "??", ",", ";"],
+    "remKeywords": ["//"],
+    "remKeywordsMultipleLine": ["/*", "*/"],
+    "enableSelfColorOfRemKeywordsMultipleLine": true,
+    "textKeywords": ["\"", "'", "`"],
+    "pairKeywords": [["{","}"],["(",")"],["[","]"]]
+  }
+}

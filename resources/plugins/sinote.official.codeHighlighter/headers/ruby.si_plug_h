@@ -1,0 +1,18 @@
+{
+  "config": {
+    "type": 1,
+    "objectName": "rubySyntax",
+    "api": [1, 1]
+  },
+  "coding": {
+    "codeName": "Ruby",
+    "fileExtension": ["rb", "rbw", "gemspec", "rake"],
+    "keywords": ["alias", "and", "begin", "BEGIN", "break", "case", "class", "def", "defined?", "do", "else", "elsif", "end", "END", "ensure", "false", "for", "if", "in", "module", "next", "nil", "not", "or", "redo", "rescue", "retry", "return", "self", "super", "then", "true", "undef", "unless", "until", "when", "while", "yield", "__FILE__", "__LINE__"],
+    "symbols": ["+", "-", "*", "/", "%", "=", "+=", "-=", "*=", "/=", "%=", "==", "!=", "===", "!==", ">", "<", ">=", "<=", "&&", "||", "!", "&", "|", "^", "~", "<<", ">>", "&=", "|=", "^=", "<<=", ">>=", "**", "*=", "<=>", "===", "=~", "!~", "::", ".", "...", "?", ":", ",", ";"],
+    "remKeywords": ["#"],
+    "remKeywordsMultipleLine": ["=begin", "=end"],
+    "enableSelfColorOfRemKeywordsMultipleLine": true,
+    "textKeywords": ["\"", "'"],
+    "pairKeywords": [["{","}"],["(",")"],["[","]"]]
+  }
+}

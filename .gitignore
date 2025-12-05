@@ -7,18 +7,17 @@ __pycache__/
 *.so
 
 # IFLOW READ
-IFLOW-ASSISTANT-INTELLIGENT-PLEASE-READ
+IFLOW.md
+.iflow/
+
+# Ignored Setting File
+setting.json5
 
 # Test Files
 *.test.py
 
 # Logs
 log/
-
-# PyInstaller Dist / build
-dist/
-build/
-*.egg-info
 
 # Distribution / packaging
 .Python

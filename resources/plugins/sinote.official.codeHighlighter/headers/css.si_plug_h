@@ -1,0 +1,18 @@
+{
+  "config": {
+    "type": 1,
+    "objectName": "cssSyntax",
+    "api": [1, 1]
+  },
+  "coding": {
+    "codeName": "CSS",
+    "fileExtension": ["css", "scss", "sass"],
+    "keywords": ["color", "background", "background-color", "background-image", "margin", "padding", "border", "width", "height", "display", "position", "float", "clear", "font-family", "font-size", "font-weight", "text-align", "line-height", "opacity", "visibility", "overflow", "z-index", "top", "right", "bottom", "left", "transform", "transition", "animation", "flex", "grid", "box-shadow", "text-shadow", "border-radius", "cursor", "pointer-events"],
+    "symbols": [":", ";", "{", "}", ",", ".", "#", ">", "+", "~", "[", "]", "(", ")", "*", "|", "^", "$"],
+    "remKeywords": ["/*"],
+    "remKeywordsMultipleLine": ["/*", "*/"],
+    "enableSelfColorOfRemKeywordsMultipleLine": true,
+    "textKeywords": ["\"", "'"],
+    "pairKeywords": [["{","}"],["[","]"],["(",")"]]
+  }
+}

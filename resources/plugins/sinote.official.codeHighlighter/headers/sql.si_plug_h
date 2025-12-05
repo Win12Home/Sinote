@@ -1,0 +1,18 @@
+{
+  "config": {
+    "type": 1,
+    "objectName": "sqlSyntax",
+    "api": [1, 1]
+  },
+  "coding": {
+    "codeName": "SQL",
+    "fileExtension": ["sql"],
+    "keywords": ["SELECT", "FROM", "WHERE", "INSERT", "INTO", "VALUES", "UPDATE", "SET", "DELETE", "CREATE", "TABLE", "ALTER", "DROP", "INDEX", "PRIMARY", "KEY", "FOREIGN", "REFERENCES", "UNIQUE", "NOT", "NULL", "DEFAULT", "AUTO_INCREMENT", "JOIN", "INNER", "LEFT", "RIGHT", "FULL", "OUTER", "ON", "GROUP", "BY", "HAVING", "ORDER", "ASC", "DESC", "LIMIT", "OFFSET", "UNION", "ALL", "DISTINCT", "COUNT", "SUM", "AVG", "MIN", "MAX", "AND", "OR", "NOT", "IN", "EXISTS", "BETWEEN", "LIKE", "IS", "CASE", "WHEN", "THEN", "ELSE", "END"],
+    "symbols": ["=", "!=", "<>", "<", ">", "<=", ">=", "+", "-", "*", "/", "%", "(", ")", ",", ".", ";"],
+    "remKeywords": ["--"],
+    "remKeywordsMultipleLine": ["/*", "*/"],
+    "enableSelfColorOfRemKeywordsMultipleLine": true,
+    "textKeywords": ["'", "\""],
+    "pairKeywords": [["(",")"]]
+  }
+}

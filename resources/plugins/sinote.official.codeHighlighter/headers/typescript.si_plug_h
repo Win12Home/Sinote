@@ -1,0 +1,18 @@
+{
+  "config": {
+    "type": 1,
+    "objectName": "typescriptSyntax",
+    "api": [1, 1]
+  },
+  "coding": {
+    "codeName": "TypeScript",
+    "fileExtension": ["ts", "tsx"],
+    "keywords": ["break", "case", "catch", "class", "const", "continue", "debugger", "default", "delete", "do", "else", "export", "extends", "finally", "for", "function", "if", "import", "in", "instanceof", "let", "new", "return", "super", "switch", "this", "throw", "try", "typeof", "var", "void", "while", "with", "yield", "async", "await", "true", "false", "null", "undefined", "as", "implements", "interface", "type", "enum", "declare", "module", "namespace", "abstract", "readonly", "private", "protected", "public", "static", "keyof", "unknown", "never", "any"],
+    "symbols": ["+", "-", "*", "/", "%", "=", "+=", "-=", "*=", "/=", "%=", "==", "!=", "===", "!==", ">", "<", ">=", "<=", "&&", "||", "!", "&", "|", "^", "~", "<<", ">>", "&=", "|=", "^=", "<<=", ">>=", "++", "--", "->", "=>", "::", ".", "...", "?", ":", "?.", "??", ",", ";"],
+    "remKeywords": ["//"],
+    "remKeywordsMultipleLine": ["/*", "*/"],
+    "enableSelfColorOfRemKeywordsMultipleLine": true,
+    "textKeywords": ["\"", "'", "`"],
+    "pairKeywords": [["{","}"],["(",")"],["[","]"]]
+  }
+}

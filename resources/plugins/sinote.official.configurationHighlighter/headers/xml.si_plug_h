@@ -1,0 +1,19 @@
+{
+  "config": {
+    "type": 1,
+    "objectName": "xmlSyntax",
+    "api": [1, 1]
+  },
+  "coding": {
+    "codeName": "XML",
+    "fileExtension": ["xml", "xhtml", "svg", "xsl", "xsd", "xslt"],
+    "keywords": ["xml", "version", "encoding", "standalone", "DOCTYPE", "PUBLIC", "SYSTEM", "CDATA"],
+    "symbols": ["<", ">", "/", "=", "\"", "'", "?", "!", "[", "]", "-", ":", "."],
+    "remKeywords": [],
+    "remKeywordsMultipleLine": ["<!--", "-->"],
+    "enableSelfColorOfRemKeywordsMultipleLine": false,
+    "textKeywords": ["\"", "'"],
+    "defineKeywords": ["<", ">"],
+    "pairKeywords": [["<", ">"], ["\"", "\""], ["'", "'"], ["<!--", "-->"], ["[", "]"]]
+  }
+}

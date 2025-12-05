@@ -8,15 +8,15 @@ import time # Wow, I wanna sleep!
 
 def debugLog(content: str) -> None:
     if debugMode:
-        auto = Thread(daemon=True)
-        auto.run = partial(addLog, 3, content, "SinoteUserInterfaceActivity")
-        auto.start()
+        thread: Thread = Thread(daemon=True)
+        thread.run = partial(addLog,  3, content, "SinoteUserInterfaceActivity")
+        thread.start()
 
 def debugPluginLog(content: str) -> None:
     if debugMode:
-        auto = Thread(daemon=True)
-        auto.run = partial(addLog, 3, content, "SinoteMainPluginLoadActivity")
-        auto.start()
+        thread: Thread = Thread()
+        thread.run = partial(addLog, 3, content, "SinoteMainPluginLoadActivity")
+        thread.start()
 
 syntaxHighlighter: dict[str, list[LoadPluginBase.CustomizeSyntaxHighlighter | list[str]]] = {}
 loadedPlugin: list[dict[str, str | int | None]] = []
@@ -43,6 +43,7 @@ def automaticLoadPlugin() -> None:
         return
     dirs = list(Path("./resources/plugins/").iterdir())
     debugPluginLog(f"Total: {len(dirs)}, Starting load... 💥")
+    beforeLoadDatetime: datetime = datetime.now()
     for item in dirs:
         debugPluginLog(f"Loading {item.name}")
         if not item.is_dir():
@@ -76,7 +77,9 @@ def automaticLoadPlugin() -> None:
                         autoRun.append(i)
                 """
                 debugPluginLog(f"Successfully to append! ✅")
-    debugPluginLog("Successfully to load plugins! ✅")
+    usedTime: float = (datetime.now() - beforeLoadDatetime).total_seconds()
+    debugPluginLog(f"Successfully to load plugins! ✅ Used {usedTime:.3f}s")
+    debugPluginLog(f"An assessment for Sinote: {"Use a new computer instead 🤔💀" if usedTime / len(dirs) > 1.0 else "Too slow 💀" if usedTime / len(dirs) > 0.8 else "A bit slow 😰" if usedTime / len(dirs) > 0.65 else "Good load 😍"}")
 
 
 class AutomaticSaveThingsThread(QThread):
@@ -99,8 +102,8 @@ class AutomaticSaveThingsThread(QThread):
 
     def run(self) -> None:
         while self.running:
-            for i in range(100 * self.saveSecs):
-                time.sleep(i/100)
+            for temp in range(self.saveSecs * 10):
+                time.sleep(0.1)
                 if not self.running:
                     self.saveThings()
                     break
@@ -108,12 +111,11 @@ class AutomaticSaveThingsThread(QThread):
                 self.saveThings()
         debugLog("AutomaticSaveThingsThread ended")
         self.ended = True
+        super().quit()
 
     def quit(self):
         self.running = False
         debugLog("AutomaticSaveThingsThread has closed by this->quit 💥")
-        while self.ended: ...
-        super().quit()
 
 
 class LineNumberWidget(QWidget):
@@ -329,8 +331,10 @@ class SinotePlainTextEdit(SpacingSupportEdit):
 
     def autoSave(self):
         if self.nowFilename:
+            debugLog(f"Automatic saving file {self.nowFilename}")
             with open(self.nowFilename, "w+", encoding="utf-8") as f:
                 f.write(self.toPlainText())
+            debugLog(f"Successfully to save file {self.nowFilename}")
 
     def clear(self):
         if self.setFilename is not None:
@@ -422,23 +426,44 @@ class SinotePlainTextEdit(SpacingSupportEdit):
         if not Path(filename).exists():
             addLog(1, f"Cannot find file {filename}, current file will save.","SinoteUserInterfaceActivity")
         if not Path(filename).is_file():
-            addLog(1, f"Are you sure you are using a normal file? Cannot read {filename}!", "SinoteUserInterfaceActivity")
-        try:
-            with open(filename, "r", encoding="utf-8") as f:
-                self.setPlainText(f.read())
-                debugLog(f"Successfully to read {filename}! {len(self.toPlainText()) / 8 / 1024:.2f}KiB {len(self.toPlainText().splitlines())} lines")
+            addLog(1, f"Are you sure you using a normal file? Cannot read {filename}!", "SinoteUserInterfaceActivity")
+        # Try different encodings and support Chinese(GBK/GB2312)
+        encodings = ["utf-8", "utf-16", "gbk", "gb2312", "latin-1", "windows-1252", "utf-32", "ascii"]
+        content: str | None = None
+        usedEnc: str | None = None
+        
+        for encoding in encodings:
+            try:
+                debugLog(f"Trying reading with encoding {encoding.upper()} 🤔")
+                with open(filename, "r", encoding=encoding) as f:
+                    content = f.read()
+                    usedEnc = encoding
+                    debugLog(f"Successfully to read {filename} with {encoding} encoding! {len(content) / 8 / 1024:.2f}KiB {len(content.splitlines())} lines")
+                break
+            except UnicodeDecodeError or LookupError:
+                debugLog(f"Failed to read with encoding {encoding.upper()} 💀")
+                continue
+            except PermissionError:
+                addLog(2, f"Cannot read file {filename}. Permission Denied!", "SinoteUserInterfaceActivity")
+                break
+            except IOError:
+                addLog(2, f"Cannot read file {filename}. IOError at Python!", "SinoteUserInterfaceActivity")
+                break
+            except Exception as e:
+                addLog(1, f"Failed to read {filename} with {encoding}: {repr(e)}", "SinoteUserInterfaceActivity")
+                continue
+        if content is not None:
+            self.setPlainText(content)
             self.setFileAppendix(Path(filename).suffix[1:])
             if self.setFilename is not None:
                 self.setFilename(self.num, loadJson("EditorUI")["editor.tab.tab_name"].format(Path(filename).name))
-            self.nowFilename = Path(filename).name
-        except PermissionError:
-            addLog(2, f"Cannot read file {filename}. Permission Denied!", "SinoteUserInterfaceActivity")
-        except IOError:
-            addLog(2, f"Cannot read file {filename}. IOError at Python!", "SinoteUserInterfaceActivity")
-        except Exception as e:
-            addLog(2, f"Cannot read file {filename}. Exception: {repr(e)}", "SinoteUserInterfaceActivity")
+            self.nowFilename = str(Path(filename))
+            addLog(0, f"Successfully to read file {filename} using {usedEnc} encoding! ✅", "SinoteUserInterfaceActivity")
         else:
-            addLog(0, f"Successfully to read file {filename}!", "SinoteUserInterfaceActivity")
+            addLog(2, f"Cannot read file {filename}. Tried all encodings but failed! Or other Exception out! ❌", "SinoteUserInterfaceActivity")
+            w = QMessageBox(None, loadJson("MessageBox")["msgbox.title.error"], loadJson("MessageBox")["msgbox.error.fileCannotRead"], buttons=QMessageBox.StandardButton.Ok)
+            w.exec()
+
 
 
 class MainWindow(QMainWindow):
@@ -456,7 +481,7 @@ class MainWindow(QMainWindow):
         debugLog("Setting up User Interface...")
         debugLog("Setting up Text Edit Area...")
         self.textEditArea = QTabWidget()
-        self.tabTextEdits: list[QPlainTextEdit | None] = []
+        self.tabTextEdits: list[SinotePlainTextEdit | None] = []
         self.textEditArea.tabBar().setMaximumHeight(60)
         self.textEditArea.setTabsClosable(True)
         self.textEditArea.setMovable(True)
@@ -515,12 +540,19 @@ class MainWindow(QMainWindow):
         super().show()
         debugLog("Show Application Successfully!")
 
+    def closeEvent(self, event: QCloseEvent) -> None:
+        debugLog("CloseEvent triggered 🤓")
+        self.close()
+        event.accept()
+
     def close(self) -> None:
         debugLog("Attempting to close 🤓")
         self.hide()
         self.editorThread.quit()
         self.editorThread.wait()
+        debugLog("Successfully to close ✅")
         super().close()
+        application.quit()
 
     def tempOpenFile(self) -> None:
         """
@@ -530,6 +562,9 @@ class MainWindow(QMainWindow):
         get, _ = QFileDialog.getOpenFileName(self, loadJson("EditorUI")["editor.window.temps.openfile"], filter = "All File (*)")
         if get:
             debugLog(f"Get FileDialog return Information: {get} ✅")
+            debugLog("Saving changes... 🪲")
+            self.textEditArea.currentWidget().autoSave()
+            debugLog("Save changes successfully! ✅")
             self.textEditArea.currentWidget().readFile(get)
 
     def saveAs(self) -> None:
@@ -561,6 +596,21 @@ class MainWindow(QMainWindow):
         self.textEditArea.addTab(temp, loadJson("EditorUI")["editor.tab.new_file"])
         temp.setFilename = self.textEditArea.tabBar().setTabText
         debugLog(f"Successfully to create tab! Used: {(datetime.now() - oldDatetime).total_seconds():.2f}s ✅")
+        debugLog("Attempting to update setting... 😍")
+        self.applySettings()
+        debugLog("Successfully to update setting! ✅")
+
+    def applySettings(self):
+        fontSize: int = settingObject.getValue("fontSize")
+        fontName: str = settingObject.getValue("fontName")
+        debugLog(f"Font Size: {fontSize}, Font Name: {fontName} 😍")
+        for tab, temp in enumerate(self.tabTextEdits, 1):
+            if temp:
+                debugLog(f"Setting tab {tab}... 🤔")
+                temporary = QFont(fontName, fontSize)
+                temp.setStyleSheet(f"{temp.styleSheet()} font-family: {fontName}; font-size: {fontSize}pt;")
+                temp.setFont(temporary)
+        debugLog("Successfully to set tab! ✅")
 
     def _initBase(self):
         debugLog("Initializing Base Window... 🔎")
@@ -569,10 +619,11 @@ class MainWindow(QMainWindow):
         debugLog("Successfully to initialize ✅")
 
 automaticLoadPlugin()
-
 if __name__ == "__main__":
+    loadFonts()
     a = MainWindow()
     a.show()
     application.exec()
     addLog(0, "Successfully to exit Sinote with Process Code 0 ✅")
+    saveLog()
     sys.exit(0)

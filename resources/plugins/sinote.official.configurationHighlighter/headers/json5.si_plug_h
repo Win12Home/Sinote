@@ -1,0 +1,19 @@
+{
+  "config": {
+    "type": 1,
+    "objectName": "json5Syntax",
+    "api": [1, 1]
+  },
+  "coding": {
+    "codeName": "JSON5",
+    "fileExtension": ["json5"],
+    "keywords": ["true", "false", "null", "undefined", "Infinity", "NaN"],
+    "symbols": ["{", "}", "[", "]", ":", ",", ".", "\"", "'", "`"],
+    "remKeywords": ["//"],
+    "remKeywordsMultipleLine": ["/*", "*/"],
+    "enableSelfColorOfRemKeywordsMultipleLine": false,
+    "textKeywords": ["\"", "'", "`"],
+    "defineKeywords": ["{", "}"],
+    "pairKeywords": [["{", "}"], ["[", "]"], ["\"", "\""], ["'", "'"], ["`", "`"]]
+  }
+}

@@ -1,0 +1,18 @@
+{
+  "config": {
+    "type": 1,
+    "objectName": "goSyntax",
+    "api": [1, 1]
+  },
+  "coding": {
+    "codeName": "Go",
+    "fileExtension": ["go"],
+    "keywords": ["break", "case", "chan", "const", "continue", "default", "defer", "else", "fallthrough", "for", "func", "go", "goto", "if", "import", "interface", "map", "package", "range", "return", "select", "struct", "switch", "type", "var", "true", "false", "nil", "iota"],
+    "symbols": ["+", "-", "*", "/", "%", "=", "+=", "-=", "*=", "/=", "%=", "==", "!=", ">", "<", ">=", "<=", "&&", "||", "!", "&", "|", "^", "~", "&^", "<<", ">>", "&=", "|=", "^=", "&^=", "<<=", ">>=", "++", "--", "<-", "->", ":", "::", ".", "...", ",", ";"],
+    "remKeywords": ["//"],
+    "remKeywordsMultipleLine": ["/*", "*/"],
+    "enableSelfColorOfRemKeywordsMultipleLine": true,
+    "textKeywords": ["\"", "'"],
+    "pairKeywords": [["{","}"],["(",")"],["[","]"]]
+  }
+}

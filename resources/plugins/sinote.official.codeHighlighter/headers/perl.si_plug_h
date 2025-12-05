@@ -1,0 +1,18 @@
+{
+  "config": {
+    "type": 1,
+    "objectName": "perlSyntax",
+    "api": [1, 1]
+  },
+  "coding": {
+    "codeName": "Perl Programming Language",
+    "fileExtension": ["pl", "pm", "t"],
+    "keywords": ["if", "else", "elsif", "unless", "given", "when", "while", "until", "for", "foreach", "do", "next", "last", "redo", "goto", "return", "die", "warn", "exit", "sub", "package", "require", "use", "no", "my", "our", "local", "state", "print", "printf", "say", "open", "close", "read", "write", "seek", "tell", "eof", "defined", "undef", "bless", "ref", "qw", "qr", "qx", "qq", "q", "m", "s", "tr", "y"],
+    "symbols": ["+", "-", "*", "/", "%", "=", "+=", "-=", "*=", "/=", "%=", "==", "!=", ">", "<", ">=", "<=", "&&", "||", "!", "&", "|", "^", "~", "<<", ">>", "&=", "|=", "^=", "<<=", ">>=", "++", "--", "->", "::", ".", "...", "?", ":", ",", ";", "$", "@", "%"],
+    "remKeywords": ["#"],
+    "remKeywordsMultipleLine": ["=pod", "=cut"],
+    "enableSelfColorOfRemKeywordsMultipleLine": true,
+    "textKeywords": ["\"", "'", "`"],
+    "pairKeywords": [["{","}"],["(",")"],["[","]"]]
+  }
+}

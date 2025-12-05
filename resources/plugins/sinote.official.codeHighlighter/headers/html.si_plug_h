@@ -1,0 +1,18 @@
+{
+  "config": {
+    "type": 1,
+    "objectName": "htmlSyntax",
+    "api": [1, 1]
+  },
+  "coding": {
+    "codeName": "HTML",
+    "fileExtension": ["html", "htm"],
+    "keywords": ["html", "head", "title", "body", "div", "span", "p", "a", "img", "script", "style", "link", "meta", "header", "footer", "nav", "main", "section", "article", "aside", "table", "tr", "td", "th", "thead", "tbody", "ul", "ol", "li", "form", "input", "button", "select", "option", "textarea", "label", "iframe", "canvas", "svg", "video", "audio", "source", "track"],
+    "symbols": ["<", ">", "</", "/>", "=", "\"", "'", "&", ";"],
+    "remKeywords": ["<!--", "-->"],
+    "remKeywordsMultipleLine": ["<!--", "-->"],
+    "enableSelfColorOfRemKeywordsMultipleLine": true,
+    "textKeywords": ["\"", "'"],
+    "pairKeywords": [["<",">"],["<!--","-->"]]
+  }
+}

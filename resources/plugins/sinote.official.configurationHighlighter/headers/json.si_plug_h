@@ -1,0 +1,19 @@
+{
+  "config": {
+    "type": 1,
+    "objectName": "jsonSyntax",
+    "api": [1, 1]
+  },
+  "coding": {
+    "codeName": "JSON",
+    "fileExtension": ["json", "jsonc"],
+    "keywords": ["true", "false", "null"],
+    "symbols": ["{", "}", "[", "]", ":", ",", ".", "\""],
+    "remKeywords": [],
+    "remKeywordsMultipleLine": [],
+    "enableSelfColorOfRemKeywordsMultipleLine": false,
+    "textKeywords": ["\""],
+    "defineKeywords": ["{", "}"],
+    "pairKeywords": [["{", "}"], ["[", "]"], ["\"", "\""]]
+  }
+}

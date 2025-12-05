@@ -11,11 +11,12 @@
   "item.bool.isbetaversion": true,
   "item.list.language_files": [
     "EditorUI",
-    "TrailUI"
+    "TrailUI",
+    "MessageBox"
   ],
   "item.dict.language_for": {
     "en_US": "English (United States)",
-    "ja_JP": "Japanese (Japan) (NOT REALLY ADDED)",
+    "ja_JP": "Japanese (Japan)",
     "zh_CN": "Chinese (Simplified)"
   },
   "item.text.info": "Info",

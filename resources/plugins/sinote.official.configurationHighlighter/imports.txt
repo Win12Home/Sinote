@@ -1,0 +1,5 @@
+json.si_plug_h
+json5.si_plug_h
+xml.si_plug_h
+conf.si_plug_h
+// Configuration files syntax highlighting: JSON, JSON5, XML, .conf

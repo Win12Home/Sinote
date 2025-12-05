@@ -1,0 +1,19 @@
+{
+  "config": {
+    "type": 1,
+    "objectName": "confSyntax",
+    "api": [1, 1]
+  },
+  "coding": {
+    "codeName": "Configuration",
+    "fileExtension": ["conf", "config", "cfg", "ini", "properties"],
+    "keywords": ["true", "false", "yes", "no", "on", "off", "enable", "disable", "enabled", "disabled"],
+    "symbols": ["=", ":", "#", ";", "[", "]", ".", "/", "\\"],
+    "remKeywords": ["#", ";"],
+    "remKeywordsMultipleLine": [],
+    "enableSelfColorOfRemKeywordsMultipleLine": false,
+    "textKeywords": ["\"", "'"],
+    "defineKeywords": ["[", "]"],
+    "pairKeywords": [["[", "]"], ["\"", "\""], ["'", "'"]]
+  }
+}

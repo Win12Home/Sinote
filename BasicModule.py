@@ -22,7 +22,7 @@ from pathlib import Path
 from platform import system, python_version, win32_ver, processor, libc_ver
 from traceback import format_exception
 from typing import *
-from psutil import virtual_memory, cpu_percent, swap_memory
+from psutil import virtual_memory, cpu_percent
 from getpass import getuser
 import sys, re
 
@@ -41,7 +41,7 @@ normalLogOutput: list[str] = []
 
 onlyWarning: bool = False
 
-def addLog(type: int=0, bodyText: str="N/A", activity: str | None = None):
+def addLog(type: int = 0, bodyText: str = "N/A", activity: str | None = None):
     global logInfoStatus
     typeOfLog: str = ("INFO" if (type == 0) else "WARN" if (type == 1) else "ERR" if (type == 2) else "DBG" if (type == 3) else "N/A")
     colorOfType: dict = {
@@ -163,15 +163,34 @@ def interruptSignal() -> None:
     timer.timeout.connect(lambda: None)
     timer.start(100)
 
+def loadFonts() -> None:
+    fontDatabase = QFontDatabase()
+    fontsDir = Path("./resources/fonts")
+    if not fontsDir.exists() or not fontsDir.is_dir():
+        addLog(2, "./resources/fonts/ directory isn't exists or it isn't a true directory! ❌", "LoadFontActivity")
+    if debugMode:
+        addLog(3, "Loading fonts in ./resources/fonts... 🤔", "LoadFontActivity")
+    loadedFontNums: int = 0
+    totalFontNums: int = 0
+    for temp in list(fontsDir.rglob("*.ttf")) + list(fontsDir.rglob("*.otf")):
+        totalFontNums += 1
+        loadReturn: int = fontDatabase.addApplicationFont(str(temp))
+        if loadReturn != -1:
+            fontDatabase.applicationFontFamilies(loadReturn)
+            loadedFontNums+=1
+            if debugMode:
+                addLog(3, f"Successfully to load font {temp.name} ✅", "LoadFontActivity")
+        else:
+            addLog(2, f"Failed to load font {temp.name} ❌", "LoadFontActivity")
+    if debugMode:
+        addLog(3, f"Successfully to load all the fonts! Total: {totalFontNums} Loaded: {loadedFontNums} Not loaded: {totalFontNums - loadedFontNums}", "LoadFontActivity")
+
 sys.excepthook = lambda a,b,c: errExceptionHook(a,b,c)
 
 debugMode: bool = False
 
-loadedJson: dict = {}
-
 # basicInfo will be BaseInfo.json
 basicInfo: dict = {}
-
 
 lang = "en_US"
 try:
@@ -186,6 +205,17 @@ except:
 
 # Look at the system
 args = [i.lower() for i in sys.argv]
+
+normalSetting: dict = {
+    "fontName": "Fira Code",
+    "fontSize": 12,
+    "language": "en_US",
+    "debugmode": False
+}
+
+setting: dict = {
+
+}
 
 if "--debug-mode" in args or "-db" in args:
     debugMode = True
@@ -250,6 +280,47 @@ def outputDeveloperDebugInformation():
     addLog(3, "For Developer Debug, Output your own PC's environment! 🤓", "OutputDeveloperDebugInformationActivity")
     addLog(3, f"Platform: {system()} Python: {python_version()} Win32 Version*: {" ".join(win32_ver())} | Linux LIBC Ver*: {" ".join(libc_ver())}", "OutputDeveloperDebugInformationActivity")
     addLog(3, "Note: If some error occurred, please send log to the developer 💥", "OutputDeveloperDebugInformationActivity")
+
+
+class Setting:
+    def __init__(self):
+        global setting
+        # Automatic receive setting
+        self.noFileAutoGenerate()
+        # Automatic Lex setting file
+        try:
+            if debugMode:
+                addLog(3, "Attempting to load setting.json5...", "SettingLexerActivity")
+            with open("./setting.json5", "r", encoding="utf-8") as f:
+                lexed: dict = normalSetting | loads(f.read())
+            if not isinstance(lexed, dict):
+                raise
+            else:
+                setting = lexed
+                if debugMode:
+                    addLog(3, "Successfully to load setting.json5!", "SettingLexerActivity")
+        except Exception:
+            addLog(2, "Cannot load setting.json5!", "SettingLexerActivity")
+            self.noFileAutoGenerate(mustToGenerate=True)
+
+    def setValue(self, key: str, value: str) -> None:
+        global setting
+        if key in normalSetting.keys():
+            setting[key] = value
+
+    def getValue(self, key: str) -> Any | None:
+        return setting.get(key, None)
+
+    def noFileAutoGenerate(self, mustToGenerate: bool = False) -> None:
+        global setting
+        if debugMode:
+            addLog(3, "Checking setting.json5 exists, if not exists, automatic generate instead." if not mustToGenerate else "Argument mustToGenerate is true, generating a new setting...")
+        if not Path("./setting.json5").exists() or mustToGenerate:
+            with open("./setting.json5", "w", encoding="utf-8") as f:
+                f.write(dumps(normalSetting, ensure_ascii=False))
+            if debugMode:
+                addLog(3, "Successfully to generate a new setting!")
+        setting = normalSetting
 
 
 class LoadPluginBase:
@@ -361,8 +432,8 @@ class LoadPluginBase:
             self._add_keyword_rules()
             self._add_symbol_rules()
             self._add_single_comment_rules()
-            self._add_multi_comment_rules()
             self._add_string_rules()
+            self._add_multi_comment_rules()
 
         def _add_keyword_rules(self):
             for keyword in self.keywords:
@@ -403,30 +474,58 @@ class LoadPluginBase:
                 self.highlight_rules.append((pattern, self.string_format))
 
         def highlightBlock(self, text: str):
+            self.setCurrentBlockState(0)
+            self.highlight_multi_line_comments(text)
             for pattern, format in self.highlight_rules:
                 match_iterator = pattern.globalMatch(text)
                 while match_iterator.hasNext():
                     match = match_iterator.next()
-                    self.setFormat(match.capturedStart(), match.capturedLength(), format)
+                    start_pos = match.capturedStart()
+                    end_pos = match.capturedStart() + match.capturedLength()
+                    if not self.is_in_multiline_comment(start_pos, end_pos, text):
+                        self.setFormat(start_pos, match.capturedLength(), format)
 
-            self.setCurrentBlockState(0)
-            self.highlight_multi_line_comments(text)
+        def is_in_multiline_comment(self, start: int, end: int, text: str) -> bool:
+            if not self.multi_line_patterns or not self.enableSelfColor:
+                return False
+            for multi_line in self.multi_line_patterns:
+                start_iter = multi_line['start'].globalMatch(text)
+                while start_iter.hasNext():
+                    start_match = start_iter.next()
+                    s = start_match.capturedStart()
+                    end_match = multi_line['end'].match(text, s + start_match.capturedLength())
+                    if end_match.hasMatch():
+                        e = end_match.capturedEnd()
+                    else:
+                        if self.previousBlockState() == 1:
+                            s = 0
+                        e = len(text)
+                    if s <= start and e >= end:
+                        return True
+            return False
 
         def highlight_multi_line_comments(self, text: str):
             if not self.multi_line_patterns or not self.enableSelfColor:
                 return
-
             for multi_line in self.multi_line_patterns:
-                start_match = multi_line['start'].match(text)
-                end_match = multi_line['end'].match(text)
-
-                if start_match.hasMatch():
-                    start_index = start_match.capturedStart()
+                if self.previousBlockState() == 1:
+                    end_match = multi_line['end'].match(text)
                     if end_match.hasMatch():
-                        end_index = end_match.capturedEnd()
-                        self.setFormat(start_index, end_index - start_index, multi_line['format'])
+                        self.setFormat(0, end_match.capturedEnd(), multi_line['format'])
+                        self.setCurrentBlockState(0)
+                    else:
+                        self.setFormat(0, len(text), multi_line['format'])
+                        self.setCurrentBlockState(1)
+                start_iter = multi_line['start'].globalMatch(text)
+                while start_iter.hasNext():
+                    start_match = start_iter.next()
+                    start_index = start_match.capturedStart()
+                    end_match = multi_line['end'].match(text, start_index + start_match.capturedLength())
+                    if end_match.hasMatch():
+                        self.setFormat(start_index, end_match.capturedEnd(), multi_line['format'])
                     else:
                         self.setFormat(start_index, len(text) - start_index, multi_line['format'])
+                        self.setCurrentBlockState(1)
 
     class LazyCustomizeSyntaxHighlighter:
         def __init__(self, syntaxList: list, parent: QTextDocument = None):
@@ -939,6 +1038,12 @@ class LoadPluginInfo:
         addLog(2, f"Cannot load plugin that directory name is \"{self.projName}\"")
         addLog(2, f"Reason: {error}")
 
+settingObject = Setting()
+if settingObject.getValue("debugmode"):
+    if debugMode:
+        addLog(0, "Don't open debug mode twice! (ADVICE)", "SettingLexerActivity")
+    debugMode = True
+    addLog(3, "Debug mode opened from setting.json5!", "SettingLexerActivity")
 
 addLog(bodyText=f"Import Modules Finish! Used {(datetime.now() - beforeDatetime).total_seconds()}secs")
 addLog(bodyText=r"   _____ _             __          ______    ___ __            ")

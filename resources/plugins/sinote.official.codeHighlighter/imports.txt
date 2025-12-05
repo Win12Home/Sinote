@@ -1,5 +1,20 @@
 cpp.si_plug_h
 python.si_plug_h
-// Automatically load C++ & Python Code Highlighter and save it to LazyCustomizeSyntaxHighlighter
+cpl.si_plug_h
+rust.si_plug_h
+java.si_plug_h
+perl.si_plug_h
+kotlin.si_plug_h
+javascript.si_plug_h
+typescript.si_plug_h
+html.si_plug_h
+css.si_plug_h
+php.si_plug_h
+go.si_plug_h
+ruby.si_plug_h
+swift.si_plug_h
+csharp.si_plug_h
+sql.si_plug_h
+// Automatically load ALL THE LANGUAGES! C++ & Python & C & Rust & Java & Perl & Kotlin & JS & TS & HTML & CSS & PHP & Go & Ruby & Swift & C# & SQL Code Highlighter and save it to LazyCustomizeSyntaxHighlighter
 shell.si_plug_h
 // BASH is too magic!

@@ -1,0 +1,11 @@
+{
+  "icon": null,
+  "name": "Sinote Configuration File Highlighter",
+  "objectName": "sinote.official.configurationHighlighter",
+  "version": "1.0.0",
+  "versionIterate": 1,
+  "author": [
+    "Win12Home"
+  ],
+  "description": "Configuration files syntax highlighting support: JSON, JSON5, XML, .conf"
+}
