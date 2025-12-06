@@ -32,7 +32,7 @@ filterwarnings("ignore", category=DeprecationWarning)
 
 application = QApplication([])
 
-apply_stylesheet(application,"dark_blue.xml")
+apply_stylesheet(application,"light_blue.xml")
 
 apiVersion: tuple = (1,0,1)
 sinoteVersion: str = "sinote-2025.01.00842-initial-preview-beta"

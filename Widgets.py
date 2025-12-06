@@ -35,6 +35,9 @@ syntaxHighlighter Struct:
 outputDeveloperDebugInformation()
 
 def automaticLoadPlugin() -> None:
+    if "--dont-load-any-plugin" in args or "-displug" in args:
+        addLog(0, "--dont-load-any-plugin or -displug activated, no any plugins will be loaded!")
+        return
     if not Path("./resources/plugins/").exists():
         addLog(1, "Failed to load all the Plugins, Reason: ./resources/plugins/ not exists ❌")
         return
@@ -123,12 +126,15 @@ class LineNumberWidget(QWidget):
         super().__init__(editor)
         self.editor = editor
         self.setFixedWidth(40)
-        self.setCursor(Qt.CursorShape.LastCursor)
+        self.setCursor(Qt.CursorShape.IBeamCursor)
+        self.borderWidth = 1
+        self.borderColor = QColor("#ABABAB")
 
     def paintEvent(self, event):
         painter = QPainter(self)
-        painter.fillRect(event.rect(), self.palette().window().color())
-        block = self.editor.firstVisibleBlock()
+        painter.setPen(QPen(self.borderColor, self.borderWidth)) # Draw Border at right
+        painter.drawLine(self.width() - 1, 0, self.width() - 1, self.height())
+        block = self.editor.firstVisibleBlock() # Magic Line
         blockNumber = block.blockNumber()
         top = self.editor.blockBoundingGeometry(block).translated(self.editor.contentOffset()).top()
         bottom = top + self.editor.blockBoundingRect(block).height()
@@ -464,6 +470,9 @@ class SinotePlainTextEdit(SpacingSupportEdit):
             w = QMessageBox(None, loadJson("MessageBox")["msgbox.title.error"], loadJson("MessageBox")["msgbox.error.fileCannotRead"], buttons=QMessageBox.StandardButton.Ok)
             w.exec()
 
+
+class SettingObject(QWidget):
+    ... # Doing...
 
 
 class MainWindow(QMainWindow):
