@@ -1,6 +1,6 @@
 {
-  "msgbox.title.error": "错误",
-  "msgbox.title.warning": "警告",
-  "msgbox.title.info": "信息",
-  "msgbox.error.fileCannotRead": "无法阅读{}！我们也不知道这是咋了\n编码不可用？还是权限错误？检查一下吧！！"
+  "msgbox.title.error": "Error",
+  "msgbox.title.warning": "Warning",
+  "msgbox.title.info": "Information",
+  "msgbox.error.fileCannotRead": "File {} cannot read! We don't know what's happening!\nEncoding wasn't match? Or Permission Denied? Please check your document!"
 }
