@@ -108,7 +108,7 @@ def criticalLogSaver(err_type, err_value, err_tb) -> None:
     Path("./log/").mkdir(exist_ok=True)
     Path("./log/critical/").mkdir(exist_ok=True)
     string: str = f"Current Log:\n  {"\n  ".join(normalLogOutput)}\nError:\n  {"\n  ".join(format_exception(err_value))}\nFirmware Information:\n  CPU: {processor()}\n  CPU Usage: {cpu_percent(interval=1)}\n  RAM Used: {virtual_memory().used / (1024*1024)}MB\n  RAM Total: {virtual_memory().total / (1024*1024)}MB\n  Platform: {system()}\nDate\n  {datetime.now().strftime("%Y-%m-%d %H:%M:%S")}\nPlease feedback to developer yet!"
-    with open(f"./log/critical/criticalLog-{datetime.now().strftime("%Y-%m-%d %H.%M.%S")}.log","w") as f:
+    with open(f"./log/critical/criticalLog-{datetime.now().strftime("%Y-%m-%d %H.%M.%S")}.log","w",encoding="utf-8") as f:
         f.write(string)
 
 keyboardInterruptProcess: bool = False
@@ -192,6 +192,8 @@ debugMode: bool = False
 # basicInfo will be BaseInfo.json
 basicInfo: dict = {}
 
+# Check Arguments
+
 lang = "en_US"
 try:
     with open("./resources/language/{}/BaseInfo.json".format(lang),"r",encoding="utf-8") as f:
@@ -201,15 +203,13 @@ except:
     err("0x00000001")
     quit(1)
 
-# Check Arguments
-
 # Look at the system
 args = [i.lower() for i in sys.argv]
 
 normalSetting: dict = {
     "fontName": "Fira Code",
     "fontSize": 12,
-    "language": "en_US",
+    "language": getdefaultlocale()[0],
     "debugmode": False
 }
 
@@ -261,6 +261,7 @@ def checkVersionForPopup():
         w = QMessageBox.warning(None,basicInfo["item.text.warn"],basicInfo["item.text.betaverdesc"])
 
 alreadyLoaded: dict[str, dict] = {}   # Cache Language File (What is @lru_cache? I cannot be got it.)
+alreadyLoadedBase: dict[str, dict] = {}    # Whoa en_US is my needed!
 
 def loadJson(jsonName: str):
     global alreadyLoaded
@@ -271,9 +272,13 @@ def loadJson(jsonName: str):
     if jsonName in alreadyLoaded.keys():
         if debugMode: addLog(3, f"{jsonName}.json Cache hit 💥", "FileConfigActivity")
         return alreadyLoaded[jsonName]
-    with open("./resources/language/{}/{}.json".format(lang, jsonName)) as f:
+    temp: dict = {}
+    with open("./resources/language/en_US/{}.json".format(jsonName),"r",encoding="utf-8") as f:
+        if debugMode: addLog(3, f"Reading {jsonName}.json in en_US for support other text of not supported.")
+        temp = loads(f.read())  # Cache it
+    with open("./resources/language/{}/{}.json".format(lang, jsonName),"r",encoding="utf-8") as f:
         if debugMode: addLog(3, f"Attempting to load {jsonName}.json and cache it ✅", "FileConfigActivity")
-        alreadyLoaded[jsonName] = loads(f.read())
+        alreadyLoaded[jsonName] = temp | loads(f.read())
         return alreadyLoaded[jsonName]  # Use cache for file read nullptr
 
 def outputDeveloperDebugInformation():
@@ -307,6 +312,13 @@ class Setting:
         global setting
         if key in normalSetting.keys():
             setting[key] = value
+            if debugMode:
+                addLog(3, f"Successfully to change {key} to {value}")
+            self.saveToConfig()
+
+    def saveToConfig(self) -> None:
+        with open("./setting.json5", "w", encoding="utf-8") as f:
+            f.write(dumps(setting, ensure_ascii=False))
 
     def getValue(self, key: str) -> Any | None:
         return setting.get(key, None)
@@ -1044,6 +1056,7 @@ if settingObject.getValue("debugmode"):
         addLog(0, "Don't open debug mode twice! (ADVICE)", "SettingLexerActivity")
     debugMode = True
     addLog(3, "Debug mode opened from setting.json5!", "SettingLexerActivity")
+lang = settingObject.getValue("language")
 
 addLog(bodyText=f"Import Modules Finish! Used {(datetime.now() - beforeDatetime).total_seconds()}secs")
 addLog(bodyText=r"   _____ _             __          ______    ___ __            ")

@@ -1,0 +1,51 @@
+{
+  "config": {
+    "type": 1,
+    "objectName": "arktsSyntax",
+    "api": [1, 1]
+  },
+  "coding": {
+    "codeName": "ArkTS",
+    "fileExtension": ["ets", "ts"],
+    "keywords": [
+      "break", "case", "catch", "class", "const", "continue",
+      "debugger", "default", "delete", "do", "else", "enum",
+      "export", "extends", "false", "finally", "for", "function",
+      "if", "import", "in", "instanceof", "let", "new", "null",
+      "return", "super", "switch", "this", "throw", "true",
+      "try", "typeof", "var", "void", "while", "with", "yield",
+      "async", "await", "of", "as", "from", "get", "set",
+      "static", "public", "private", "protected", "readonly",
+      "abstract", "interface", "implements", "type", "namespace",
+      "module", "declare", "constructor", "package", "require",
+      "any", "boolean", "number", "string", "symbol", "object",
+      "undefined", "never", "unknown", "bigint",
+      "struct", "builder"
+    ],
+    "symbols": [
+      "+", "-", "*", "/", "%", "**",
+      "=", "+=", "-=", "*=", "/=", "%=", "**=",
+      "==", "!=", "===", "!==",
+      ">", "<", ">=", "<=",
+      "&&", "||", "!", "??",
+      "&", "|", "^", "~", "<<", ">>", ">>>",
+      "&=", "|=", "^=", "<<=", ">>=", ">>>=",
+      "++", "--",
+      "->", "=>", "::",
+      ".", "...", "?.", "?",
+      ":", ",", ";",
+      "@", "#", "$"
+    ],
+    "remKeywords": ["//"],
+    "remKeywordsMultipleLine": ["/*", "*/"],
+    "enableSelfColorOfRemKeywordsMultipleLine": true,
+    "textKeywords": ["\"", "'", "`"],
+    "defineKeywords": ["{", "}"],
+    "pairKeywords": [
+      ["{", "}"],
+      ["(", ")"],
+      ["[", "]"],
+      ["<", ">"]
+    ]
+  }
+}

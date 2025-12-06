@@ -20,5 +20,14 @@
   "editor.tab.tab_name_unsaved": "{}*",
   "editor.tab.settings.appearance": "Appearance",
   "editor.window.temps.openfile": "Open File",
-  "editor.button.settings.back": "Back to Editor"
+  "editor.button.settings.back": "Back to Editor",
+  "editor.title.settings.appearance": "Appearance Setting",
+  "editor.title.setobj.fontname": "Editor Font Family",
+  "editor.title.setobj.fontsize": "Editor Font Size",
+  "editor.title.setobj.debugmode": "Debug Mode (Only Console)",
+  "editor.desc.setobj.fontname": "Set editor font family for look pretty, choose one of the font you've installed. Such as Source Code, Fira Code.",
+  "editor.desc.setobj.fontsize": "Set editor font size for good views, you can choose from 1px to 99px. (However, you cannot set higher or lower)",
+  "editor.desc.setobj.debugmode": "This option only works on console environment. Open Debug Mode Choice can read details of the Sinote Process.",
+  "editor.desc.setobj.debugmodeopen": "Open Debug Mode",
+  "editor.suffix.settings.size": "px"
 }

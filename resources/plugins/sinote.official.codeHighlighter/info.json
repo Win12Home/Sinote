@@ -2,10 +2,10 @@
   "icon": null,
   "name": "Sinote Code Highlighter",
   "objectName": "sinote.official.codeHighlighter",
-  "version": "1.0.0",
-  "versionIterate": 1,
+  "version": "1.1.0",
+  "versionIterate": 2,
   "author": [
     "Win12Home"
   ],
-  "description": "18+ languages syntax highlighting support: C/C++, Python, Rust, Java, Perl, Kotlin, JavaScript, TypeScript, HTML, CSS, PHP, Go, Ruby, Swift, C#, SQL, Shell"
+  "description": "20+ languages syntax highlighting support: C/C++, Python, Rust, Java, Perl, Kotlin, JavaScript, TypeScript, HTML, CSS, PHP, Go, Ruby, Swift, C#, SQL, Shell, Markdown, ArkTS"
 }

@@ -1,0 +1,43 @@
+{
+  "config": {
+    "type": 1,
+    "objectName": "markdownSyntax",
+    "api": [1, 1]
+  },
+  "coding": {
+    "codeName": "Markdown",
+    "fileExtension": ["md", "markdown", "mdown", "mkd"],
+    "keywords": [
+      "TODO", "FIXME", "NOTE", "WARNING", "IMPORTANT",
+      "true", "false", "null", "yes", "no"
+    ],
+    "symbols": [
+      "#", "##", "###", "####", "#####", "######",
+      "*", "**", "***", "_", "__", "___",
+      "-", "+", "=",
+      ">", ">>", ">>>",
+      "|", ":", "~", "~~",
+      "[", "]", "(", ")",
+      "!", "?", ".", ",",
+      "1.", "2.", "3.", "4.", "5.", "6.", "7.", "8.", "9."
+    ],
+    "remKeywords": ["<!--"],
+    "remKeywordsMultipleLine": ["<!--", "-->"],
+    "enableSelfColorOfRemKeywordsMultipleLine": true,
+    "textKeywords": ["`", "\"", "'"],
+    "defineKeywords": ["```", "```"],
+    "pairKeywords": [
+      ["[", "]"],
+      ["(", ")"],
+      ["{", "}"],
+      ["<", ">"],
+      ["*", "*"],
+      ["**", "**"],
+      ["_", "_"],
+      ["__", "__"],
+      ["~~", "~~"],
+      ["`", "`"],
+      ["```", "```"]
+    ]
+  }
+}

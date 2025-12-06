@@ -15,6 +15,9 @@ ruby.si_plug_h
 swift.si_plug_h
 csharp.si_plug_h
 sql.si_plug_h
-// Automatically load ALL THE LANGUAGES! C++ & Python & C & Rust & Java & Perl & Kotlin & JS & TS & HTML & CSS & PHP & Go & Ruby & Swift & C# & SQL Code Highlighter and save it to LazyCustomizeSyntaxHighlighter
 shell.si_plug_h
-// BASH is too magic!
+// Automatically load ALL THE LANGUAGES! C++ & Python & C & Rust & Java & Perl & Kotlin & JS & TS & HTML & CSS & PHP & Go & Ruby & Swift & C# & SQL & BASH Code Highlighter and save it to LazyCustomizeSyntaxHighlighter
+markdown.si_plug_h
+// Markdown support for documentation
+arkts.si_plug_h
+// ArkTS (HarmonyOS) support

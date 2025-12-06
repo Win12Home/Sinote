@@ -1,0 +1,12 @@
+{
+  "item.text.done": "确认",
+  "item.text.version": "版本",
+  "item.text.cancel": "取消",
+  "item.bool.isbetaversion": true,
+  "item.dict.language_for": {
+    "en_US": "英文（美国）",
+    "zh_CN": "中文（简体）"
+  },
+  "item.text.info": "信息",
+  "item.text.warn": "警告"
+}

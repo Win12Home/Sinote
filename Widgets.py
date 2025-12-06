@@ -4,7 +4,7 @@ Win12Home (C) 2025, MIT.
 """
 from pathlib import PurePath
 from BasicModule import * # Note: PySide6 was imported in BasicModule.py
-import time # Wow, I wanna sleep!
+import time # Wow, I want to sleep!
 
 def debugLog(content: str) -> None:
     if debugMode:
@@ -97,7 +97,7 @@ class AutomaticSaveThingsThread(QThread):
         if not self.parent() or not hasattr(self.parent(), "tabTextEdits"):
             debugLog("Skipped saveThings because attribute \"tabTextEdits\" destroyed! 😰")  # Automatic skip when not have attribute tabTextEdits
             return
-        for temp in (getEditor for getEditor in self.parent().tabTextEdits if getEditor is not None):   # UwU I'm lazy so I tried to use list but my memory is lazy so I edit to Generator
+        for temp in (getEditor for getEditor in self.parent().tabTextEdits if getEditor is not None):   # UwU I'm lazy, so I tried to use list but my memory is lazy, so I edit to Generator
             debugLog(f"Saving file {temp.nowFilename} ✅")
             temp.autoSave()
         debugLog("Save successfully! ✅")
@@ -119,6 +119,13 @@ class AutomaticSaveThingsThread(QThread):
     def quit(self):
         self.running = False
         debugLog("AutomaticSaveThingsThread has closed by this->quit 💥")
+
+
+class SeperatorWidget(QFrame):
+    def __init__(self, parent: QWidget=None):
+        super().__init__(parent)
+        self.setFrameShape(self.Shape.HLine)
+        self.setFrameShadow(self.Shadow.Sunken)
 
 
 class LineNumberWidget(QWidget):
@@ -472,7 +479,83 @@ class SinotePlainTextEdit(SpacingSupportEdit):
 
 
 class SettingObject(QWidget):
-    ... # Doing...
+    def __init__(self, parent: QWidget = None, text: str = "Unknown Text", desc: str = "Unknown Description"):
+        super().__init__(parent)
+        self.mainLayout: QHBoxLayout = QHBoxLayout(self)
+        self.mainLayout.setContentsMargins(15, 10, 15, 10)
+        self.mainLayout.setSpacing(20)
+        self.leftLayout: QVBoxLayout = QVBoxLayout()
+        self.leftLayout.setSpacing(5)
+        self.titleLabel: QLabel = QLabel(text)
+        self.titleLabel.setStyleSheet("font-size: 14pt; font-weight: bold;")
+        self.leftLayout.addWidget(self.titleLabel)
+        self.descLabel: QLabel = QLabel(desc)
+        self.descLabel.setStyleSheet("font-size: 10pt; color: gray;")
+        self.descLabel.setWordWrap(True)
+        self.leftLayout.addWidget(self.descLabel)
+        self.leftLayout.addStretch()
+        self.rightWidget: QWidget | None = None
+        self.mainLayout.addLayout(self.leftLayout, 3)
+        self.mainLayout.addStretch(1)
+        self.setMinimumHeight(80)
+    
+    def setText(self, text: str) -> None:
+        self.titleLabel.setText(text)
+    
+    def setDesc(self, desc: str) -> None:
+        self.descLabel.setText(desc)
+    
+    def setRightWidget(self, widget: QWidget) -> None:
+        if self.rightWidget is not None:
+            self.mainLayout.removeWidget(self.rightWidget)
+            self.rightWidget.deleteLater()
+        self.rightWidget = widget
+        self.rightWidget.setMinimumWidth(200)
+        self.rightWidget.setMaximumWidth(400)
+        self.mainLayout.addWidget(self.rightWidget, 2)
+    
+    def getRightWidget(self) -> QWidget | None:
+        return self.rightWidget
+
+
+class ComboBoxSettingObject(SettingObject):
+    def __init__(self, parent: QWidget = None, text: str = "Unknown Text", desc: str = "Unknown Description"):
+        super().__init__(parent, text, desc)
+        self.comboBox = QComboBox()
+        self.setRightWidget(self.comboBox)
+
+    def useNormalBox(self):
+        self.comboBox.deleteLater()
+        self.comboBox = QComboBox()
+        self.setRightWidget(self.comboBox)
+
+    def useFontBox(self):
+        self.comboBox.deleteLater()
+        self.comboBox = QFontComboBox()
+        self.setRightWidget(self.comboBox)
+
+class LineEditSettingObject(SettingObject):
+    def __init__(self, parent: QWidget = None, text: str = "Unknown Text", desc: str = "Unknown Description"):
+        super().__init__(parent, text, desc)
+        self.lineEdit = QLineEdit()
+        self.setRightWidget(self.lineEdit)
+
+    def useNormalEdit(self):
+        self.lineEdit.deleteLater()
+        self.lineEdit = QLineEdit()
+        self.setRightWidget(self.lineEdit)
+
+    def useSpinBox(self):
+        self.lineEdit.deleteLater()
+        self.lineEdit = QSpinBox()
+        self.setRightWidget(self.lineEdit)
+
+
+class CheckBoxSettingObject(SettingObject):
+    def __init__(self, parent: QWidget = None, text: str = "Unknown Text", desc: str = "Unknown Description"):
+        super().__init__(parent, text, desc)
+        self.checkBox = QCheckBox()
+        self.setRightWidget(self.checkBox)
 
 
 class MainWindow(QMainWindow):
@@ -529,7 +612,34 @@ class MainWindow(QMainWindow):
         self.setArea = QTabWidget()
         self.setArea.setMovable(False)
         self.setArea.setTabsClosable(False)
-        self.setArea.appearance = QWidget()
+        # Appearance Setting
+        self.setArea.appearance = QScrollArea()
+        self.setArea.appearance.vLayout = QVBoxLayout()
+        self.setArea.appearance.titleAppearance = QLabel(loadJson("EditorUI")["editor.title.settings.appearance"])
+        self.setArea.appearance.titleAppearance.setStyleSheet("font-size: 18pt; font-weight: bold; margin-bottom: 10px;") # QSS
+        self.setArea.appearance.seperator = SeperatorWidget()
+        self.setArea.appearance.fontSelect = ComboBoxSettingObject(None, loadJson("EditorUI")["editor.title.setobj.fontname"], loadJson("EditorUI")["editor.desc.setobj.fontname"])
+        self.setArea.appearance.fontSelect.useFontBox()
+        self.setArea.appearance.fontSelect.comboBox.setCurrentFont(QFont(settingObject.getValue("fontName")))
+        self.setArea.appearance.fontSelect.comboBox.currentFontChanged.connect(lambda: self.applyFont(fontName=self.setArea.appearance.fontSelect.comboBox.currentFont().family()))
+        self.setArea.appearance.fontSize = LineEditSettingObject(None, loadJson("EditorUI")["editor.title.setobj.fontsize"], loadJson("EditorUI")["editor.desc.setobj.fontsize"])
+        self.setArea.appearance.fontSize.useSpinBox()
+        self.setArea.appearance.fontSize.lineEdit.setMinimum(1)
+        self.setArea.appearance.fontSize.lineEdit.setMaximum(999)
+        self.setArea.appearance.fontSize.lineEdit.setValue(settingObject.getValue("fontSize"))
+        self.setArea.appearance.fontSize.lineEdit.textChanged.connect(lambda: self.applyFont(fontSize=self.setArea.appearance.fontSize.lineEdit.value()))
+        self.setArea.appearance.fontSize.lineEdit.setSuffix(loadJson("EditorUI")["editor.suffix.settings.size"])
+        self.setArea.appearance.debugMode = CheckBoxSettingObject(None, loadJson("EditorUI")["editor.title.setobj.debugmode"], loadJson("EditorUI")["editor.desc.setobj.debugmode"])
+        self.setArea.appearance.debugMode.checkBox.setText(loadJson("EditorUI")["editor.desc.setobj.debugmodeopen"])
+        self.setArea.appearance.debugMode.checkBox.setChecked(settingObject.getValue("debugmode"))
+        self.setArea.appearance.debugMode.checkBox.checkStateChanged.connect(lambda: settingObject.setValue("debugmode", self.setArea.appearance.debugMode.checkBox.isChecked()))
+        self.setArea.appearance.vLayout.addWidget(self.setArea.appearance.titleAppearance)
+        self.setArea.appearance.vLayout.addWidget(self.setArea.appearance.seperator)
+        self.setArea.appearance.vLayout.addWidget(self.setArea.appearance.fontSelect)
+        self.setArea.appearance.vLayout.addWidget(self.setArea.appearance.fontSize)
+        self.setArea.appearance.vLayout.addWidget(self.setArea.appearance.debugMode)
+        self.setArea.appearance.vLayout.addStretch(1)
+        self.setArea.appearance.setLayout(self.setArea.appearance.vLayout)
         self.setArea.addTab(self.setArea.appearance, loadJson("EditorUI")["editor.tab.settings.appearance"])
         self.setVerticalLayout = QVBoxLayout()
         self.setVerticalLayout.addWidget(self.backToMain)
@@ -543,6 +653,13 @@ class MainWindow(QMainWindow):
         self.editorThread.start()
         debugLog("Successfully to add frame!")
         debugLog("Successfully to set up User Interface!")
+
+    def applyFont(self, fontName: str = None, fontSize: int = None) -> None:
+        if fontName:
+            settingObject.setValue("fontName", fontName)
+        if fontSize:
+            settingObject.setValue("fontSize", fontSize)
+        self.applySettings()
 
     def show(self) -> None:
         debugLog("Showing Application...")
@@ -627,9 +744,53 @@ class MainWindow(QMainWindow):
         self.resize(1280, 760)
         debugLog("Successfully to initialize ✅")
 
+def setGlobalUIFont() -> None:
+    debugLog("Setting global UI font to MiSans... 🎨")
+    selectedFont = "MiSans VF"      # Customize!
+    globalFont = QFont(selectedFont)
+    globalFont.setPointSize(10)
+    globalFont.setStyleStrategy(QFont.StyleStrategy.PreferAntialias)
+    application.setFont(globalFont)
+    application.setStyleSheet(f"""
+        {application.styleSheet()}
+        * {{
+            font-family: "{selectedFont}";
+        }}
+        QWidget {{
+            font-family: "{selectedFont}";
+        }}
+        QLabel {{
+            font-family: "{selectedFont}";
+        }}
+        QPushButton {{
+            font-family: "{selectedFont}";
+        }}
+        QComboBox {{
+            font-family: "{selectedFont}";
+        }}
+        QSpinBox {{
+            font-family: "{selectedFont}";
+        }}
+        QCheckBox {{
+            font-family: "{selectedFont}";
+        }}
+        QMenuBar {{
+            font-family: "{selectedFont}";
+        }}
+        QMenu {{
+            font-family: "{selectedFont}";
+        }}
+        QTabWidget {{
+            font-family: "{selectedFont}";
+        }}
+    """)
+    
+    addLog(0, f"Global UI font set to: {selectedFont} ✅", "LoadFontActivity")
+
 automaticLoadPlugin()
 if __name__ == "__main__":
     loadFonts()
+    setGlobalUIFont()
     a = MainWindow()
     a.show()
     application.exec()
