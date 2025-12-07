@@ -109,12 +109,19 @@ jobs:
     steps:
       - name: Download artifacts
         uses: actions/download-artifact@v4
+        with:
+          name: sinote-artifacts-${{ github.ref_name }}
+          path: downloaded_artifacts
+
+      - name: List downloaded files
+        run: ls -la downloaded_artifacts/
+
       - name: Create Release
         uses: softprops/action-gh-release@v1
         with:
           tag_name: ${{ github.ref_name }}
           name: Sinote Editor ${{ github.ref_name }}
           generate_release_notes: true
-          files: Sinote-*.tar.gz
+          files: downloaded_artifacts/Sinote-*.tar.gz
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
