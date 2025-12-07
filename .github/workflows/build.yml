@@ -71,6 +71,7 @@ jobs:
         echo Sinote.exe %%* >> dist\Sinote\run-console.bat
     
     - name: Create version info file
+      shell: bash
       run: |
         cat > dist/Sinote/VERSION.txt << EOF
         Sinote Editor
@@ -81,6 +82,7 @@ jobs:
         EOF
     
     - name: Create installation guide
+      shell: bash
       run: |
         cat > dist/Sinote/INSTALL.md << 'EOF'
         # Sinote 安装指南
