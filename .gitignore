@@ -19,6 +19,10 @@ setting.json5
 # Logs
 log/
 
+# Oww my terrible code
+.pylintrc
+.flake8
+
 # Distribution / packaging
 .Python
 build/

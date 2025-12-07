@@ -37,11 +37,11 @@ jobs:
 
       - name: Build GUI application
         run: |
-          pyinstaller --onedir --windowed SinoteMain.py --name Sinote
+          pyinstaller --onedir --windowed SinoteMain.py --name Sinote --icon ./resources/icon.png
 
       - name: Build Console application
         run: |
-          pyinstaller --onedir --console SinoteMain.py --name Sinote_Consoled
+          pyinstaller --onedir --console SinoteMain.py --name Sinote_Consoled --icon ./resources/icon.png
 
       - name: Create flat directory structure
         shell: bash
