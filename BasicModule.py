@@ -35,7 +35,7 @@ application = QApplication([])
 apply_stylesheet(application,"light_blue.xml")
 
 apiVersion: tuple = (1,0,1)
-sinoteVersion: str = "sinote-2025.01.00842-initial-preview-beta"
+sinoteVersion: str = "sinote-2025.1.00842-initial-preview-beta"
 
 normalLogOutput: list[str] = []
 
@@ -201,7 +201,7 @@ try:
 except:
     addLog(2,"BaseInfo.json not found", "FileConfigActivity")
     err("0x00000001")
-    quit(1)
+    sys.exit(1)
 
 # Look at the system
 args = [i.lower() for i in sys.argv]
@@ -233,7 +233,7 @@ if not system().lower() in ["darwin", "linux", "windows"] and not "--bypass-syst
     addLog(2,"Your system isn't a Darwin Based, a Linux Based or Windows, cannot continue run safety, use --bypass-system-check to bypass.")
     addLog(3, "Starting error window...", "ArgumentParser")
     err("0x00000003")
-    quit(1)
+    sys.exit(1)
 
 if system().lower() in ["darwin","linux"]:
     if getuser() == "root":
@@ -252,7 +252,7 @@ for temp in basicInfo["item.list.language_files"]:
     if not Path("./resources/language/{}/{}.json".format(lang,temp)).exists():
         addLog(2,"Check Language files failed! ❌","FileConfigActivity")
         err("0x00000002")
-        quit(1)
+        sys.exit(1)
 
 
 # Check the Beta Version
@@ -268,7 +268,7 @@ def loadJson(jsonName: str):
     if not Path("./resources/language/{}/{}.json".format(lang,jsonName)).exists():
         addLog(2, "Failed to load when load this Language File: {} ❌".format(jsonName), "FileConfigActivity")
         err("0x00000002")
-        quit(1)
+        sys.exit(1)
     if jsonName in alreadyLoaded.keys():
         if debugMode: addLog(3, f"{jsonName}.json Cache hit 💥", "FileConfigActivity")
         return alreadyLoaded[jsonName]
