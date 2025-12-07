@@ -1,0 +1,118 @@
+name: Sinote Editor - Release Build
+
+on:
+  push:
+    tags:
+      - '[0-9]+.*'
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [windows-latest, ubuntu-latest, macos-latest]
+
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Python Environment
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.14'
+
+      - name: Install dependencies
+        shell: bash
+        run: |
+          echo Upgrading PIP...
+          python -m pip install --upgrade pip
+          echo Upgraded successfully!
+          echo Installing requirements and PyInstaller...
+          pip install -r requirements.txt
+          pip install pyinstaller
+          echo Successfully to install!
+
+      - name: Build GUI application
+        run: |
+          pyinstaller --onedir --windowed SinoteMain.py --name Sinote
+
+      - name: Build Console application
+        run: |
+          pyinstaller --onedir --console SinoteMain.py --name Sinote_Consoled
+
+      - name: Create flat directory structure
+        shell: bash
+        run: |
+          if [ -d "dist/Sinote_Consoled/_internal" ]; then
+            echo Removing one of two _internal directories...
+            rm -r dist/Sinote_Consoled/_internal
+            echo Successfully to remove!
+          fi
+          
+          mkdir -p bin
+          echo Made ./bin directory!
+          echo Operating...
+          if [ -d "dist/Sinote_Consoled" ]; then
+            mv dist/Sinote_Consoled/* ./bin
+          fi
+          if [ -d "dist/Sinote" ]; then
+            mv dist/Sinote/* ./bin
+          fi
+          
+          echo Operate Successfully!
+          
+          echo Copying resources...
+          cp -r resources bin/
+          echo Copied!
+          
+          echo Copying GitHub File
+          cp README.md bin/ 2>/dev/null || echo "README.md not found, skipping"
+          cp LICENSE bin/ 2>/dev/null || echo "LICENSE not found, skipping"
+          cp -r 3rd-party-license bin/ 2>/dev/null || echo "3rd-party-license not found, skipping"
+          echo Copied Successfully!
+          echo Directory of Final Binary
+          ls -la "./bin"
+
+      - name: Create version info file
+        shell: bash
+        run: |
+          echo Creating Version Information...
+          cat > bin/VERSION.txt << EOF
+          Sinote Editor (Release)
+          Version: ${{ github.ref_name }}
+          Build Date: $(date -u +"%Y-%m-%dT%H:%M:%SZ")
+          Platform: ${{ runner.os }}
+          Build Type: Dual Mode (GUI + Console)
+          EOF
+          echo Successfully to create!
+          echo Final Directory
+          ls -la "./bin"
+          echo Next Step: Upload Artifacts
+
+      - name: Package binaries
+        run: tar -czf Sinote-${{ runner.os }}.tar.gz -C bin .
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: Sinote-${{ runner.os }}-${{ github.ref_name }}
+          path: Sinote-${{ runner.os }}.tar.gz
+
+  publish:
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Download artifacts
+        uses: actions/download-artifact@v4
+      - name: Create Release
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: ${{ github.ref_name }}
+          name: Sinote Editor ${{ github.ref_name }}
+          generate_release_notes: true
+          files: Sinote-*.tar.gz
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
