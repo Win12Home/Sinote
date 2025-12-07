@@ -40,12 +40,15 @@ jobs:
       run: |
         if [ -d "dist/Sinote_Consoled/_internal" ]; then
           rm -r dist/Sinote_Consoled/_internal
+        fi
         
         mkdir -p bin
         if [ -d "dist/Sinote_Consoled" ]; then
           mv dist/Sinote_Consoled/* ./bin
+        fi
         if [ -d "dist/Sinote" ]; then
           mv dist/Sinote/* ./bin
+        fi
         
         cp -r resources bin/
         
