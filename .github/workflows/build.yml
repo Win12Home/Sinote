@@ -34,25 +34,19 @@ jobs:
     - name: Copy resources directory
       shell: bash
       run: |
-        # 复制其他必要文件
         cp README.md dist/Sinote/ 2>/dev/null || echo "README.md not found, skipping"
         cp LICENSE dist/Sinote/ 2>/dev/null || echo "LICENSE not found, skipping"
     
     - name: Create startup scripts (Linux/macOS)
       if: runner.os != 'Windows'
       run: |
-        # GUI模式启动脚本
         cat > dist/Sinote/run-gui.sh << 'EOF'
         #!/bin/bash
         cd "$(dirname "$0")"
         export LD_LIBRARY_PATH="$(pwd)/lib:$LD_LIBRARY_PATH"
-        # 如果程序支持GUI模式参数，可以在这里添加
-        # 例如: ./Sinote --gui
         ./Sinote "$@"
         EOF
         chmod +x dist/Sinote/run-gui.sh
-        
-        # 控制台模式启动脚本
         cat > dist/Sinote/run-console.sh << 'EOF'
         #!/bin/bash
         cd "$(dirname "$0")"
@@ -65,15 +59,12 @@ jobs:
       if: runner.os == 'Windows'
       shell: cmd
       run: |
-        # GUI模式启动脚本
         echo @echo off > dist\Sinote\run-gui.bat
         echo cd /d %%~dp0 >> dist\Sinote\run-gui.bat
         echo set PATH=%%~dp0\lib;%%PATH%% >> dist\Sinote\run-gui.bat
         echo REM 如果程序支持GUI模式参数，可以在这里添加 >> dist\Sinote\run-gui.bat
         echo REM 例如: Sinote.exe --gui >> dist\Sinote\run-gui.bat
         echo start Sinote.exe %%* >> dist\Sinote\run-gui.bat
-        
-        # 控制台模式启动脚本
         echo @echo off > dist\Sinote\run-console.bat
         echo cd /d %%~dp0 >> dist\Sinote\run-console.bat
         echo set PATH=%%~dp0\lib;%%PATH%% >> dist\Sinote\run-console.bat
