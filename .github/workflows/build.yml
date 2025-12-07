@@ -83,7 +83,7 @@ jobs:
         echo Copied Successfully!
         echo Directory of Final Binary
         ls -la "./bin"
-    
+
     - name: Create version info file
       shell: bash
       run: |
@@ -113,6 +113,7 @@ jobs:
 
     - name: Set build file name
       id: set_build_type
+      shell: bash
       run: |
         if [ "${{ github.event_name }}" = "pull_request" ]; then
           echo "BUILD_SUFFIX=pr-${{ github.event.number }}-unofficial" >> $GITHUB_OUTPUT

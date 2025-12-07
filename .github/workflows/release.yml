@@ -76,31 +76,6 @@ jobs:
           echo Directory of Final Binary
           ls -la "./bin"
 
-      - name: Create version info file
-        shell: bash
-        run: |
-          echo Creating Version Information...
-          cat > bin/VERSION.txt << EOF
-          Sinote Editor (Release)
-          Version: ${{ github.ref_name }}
-          Build Date: $(date -u +"%Y-%m-%dT%H:%M:%SZ")
-          Platform: ${{ runner.os }}
-          Build Type: Dual Mode (GUI + Console)
-          EOF
-          echo Successfully to create!
-          echo Final Directory
-          ls -la "./bin"
-          echo Next Step: Upload Artifacts
-
-      - name: Package binaries
-        run: tar -czf Sinote-${{ runner.os }}.tar.gz -C bin .
-
-      - name: Upload artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: Sinote-${{ runner.os }}-${{ github.ref_name }}
-          path: Sinote-${{ runner.os }}.tar.gz
-
   publish:
     needs: build
     runs-on: ubuntu-latest
