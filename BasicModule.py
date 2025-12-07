@@ -35,7 +35,7 @@ application = QApplication([])
 apply_stylesheet(application,"light_blue.xml")
 
 apiVersion: tuple = (1,0,1)
-sinoteVersion: str = "sinote-2025.1.00842-initial-preview-beta"
+sinoteVersion: str = "sinote-2025.1.00860-initial-preview-beta"
 
 normalLogOutput: list[str] = []
 
@@ -209,9 +209,11 @@ args = [i.lower() for i in sys.argv]
 normalSetting: dict = {
     "fontName": "Fira Code",
     "fontSize": 12,
+    "fallbackFont": "MiSans VF",
     "language": getdefaultlocale()[0],
     "debugmode": False,
-    "secsave": 10
+    "secsave": 10,
+    "beforeread": []
 }
 
 setting: dict = {
@@ -299,6 +301,9 @@ class Setting:
                 addLog(3, "Attempting to load setting.json5...", "SettingLexerActivity")
             with open("./setting.json5", "r", encoding="utf-8") as f:
                 lexed: dict = normalSetting | loads(f.read())
+            if not lexed.keys() is normalSetting.keys():
+                with open("setting.json5", "w", encoding="utf-8") as f:
+                    f.write(dumps(normalSetting | lexed, ensure_ascii=True))
             if not isinstance(lexed, dict):
                 raise
             else:
@@ -1057,7 +1062,8 @@ if settingObject.getValue("debugmode"):
         addLog(0, "Don't open debug mode twice! (ADVICE)", "SettingLexerActivity")
     debugMode = True
     addLog(3, "Debug mode opened from setting.json5!", "SettingLexerActivity")
-lang = settingObject.getValue("language")
+lang = settingObject.getValue("language") if Path(f"./resources/language/{settingObject.getValue("language")}").exists() else "en_US"
+basicInfo = basicInfo | loadJson("BaseInfo")
 
 addLog(bodyText=f"Import Modules Finish! Used {(datetime.now() - beforeDatetime).total_seconds()}secs")
 addLog(bodyText=r"   _____ _             __          ______    ___ __            ")
@@ -1068,5 +1074,3 @@ addLog(bodyText=r"/____/_/_/ /_/\____/\__/\___/  /_____/\__,_/_/\__/\____/_/    
 addLog(bodyText=f"Sinote Editor {sinoteVersion}, API Version: {".".join([f"{i}" for i in apiVersion])}")
 
 interruptSignal()
-
-del beforeDatetime

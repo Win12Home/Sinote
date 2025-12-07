@@ -34,5 +34,6 @@
   "editor.desc.setobj.language": "Set your language for good read.",
   "editor.desc.setobj.autosave": "Automatically Save all the file per what second.",
   "editor.suffix.settings.size": "px",
-  "editor.suffix.settings.sec": "sec"
+  "editor.suffix.settings.sec": "sec",
+  "editor.any.cannotreadfile": "Cannot read before opened file {}: Not exists"
 }

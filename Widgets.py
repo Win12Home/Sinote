@@ -25,7 +25,7 @@ autoRun: list[partial] = []
 syntaxHighlighter Struct:
 {
     "Code Name": [
-        <One LoadPluginBase.CustomizeSyntaxHighlighter>,
+        <One LoadPluginBase.LazyCustomizeSyntaxHighlighter>,
         ["appendix1","appendix2","appendix3","appendix4","appendix5","appendix6"],
         ...
     ]
@@ -65,10 +65,8 @@ def automaticLoadPlugin() -> None:
             debugPluginLog(f"Loading {key[0]}...")
             if key[1] == 1:
                 debugPluginLog(f"Checked its property! Type: SyntaxHighlighter 🔎")
-                debugPluginLog(f"Creating QSyntaxHighlighter... 🤓")
-                beforeTime = datetime.now()
-                syntaxHighlighter[key[2]] = [key[4].getObject(), key[3], key[5], key[6]]
-                debugPluginLog(f"Successfully created QSyntaxHighlighter! Used time: {(datetime.now() - beforeTime).total_seconds()}secs ✅")
+                syntaxHighlighter[key[2]] = [key[4], key[3], key[5], key[6], None]
+                debugPluginLog(f"Successfully to create! ✅")
             elif key[1] == 0:
                 debugPluginLog(f"Checked its property! Type: RunningFunc 🤓")
                 debugPluginLog(f"Appending to autoRun... 💥")
@@ -388,15 +386,24 @@ class SinotePlainTextEdit(SpacingSupportEdit):
             self.appendix = appendix
 
         def run(self) -> None:
+            global syntaxHighlighter
             debugLog(f"Finding Highlighter (*.{self.appendix})... (THREAD) 🔎")
             temp: LoadPluginBase.CustomizeSyntaxHighlighter | None = None
             temp2, temp3 = None, None
-            for _, i in syntaxHighlighter.items():
+            for k, i in syntaxHighlighter.items():
                 if self.appendix in i[1]:
                     debugLog(f"{self.appendix} is in {i[1]}, successfully to find! ✅")
-                    temp = i[0]
+                    if i[4] is not None:
+                        temp = i[4]
+                        temp2 = i[2]
+                        temp3 = i[3]
+                        debugLog("Cache Hit! Automatically use cache. 💥")
+                        break
+                    temp = i[0].getObject()
                     temp2 = i[2]
                     temp3 = i[3]
+                    syntaxHighlighter[k][4] = temp
+                    debugLog("Create cache successfully! This will be start when some file appendix same loads!")
                     break
                 else:
                     debugLog(f"{self.appendix} isn't in {i[1]}, continue find! 🔎")
@@ -568,20 +575,37 @@ class MainWindow(QMainWindow):
         self.mainFrame = QWidget()
         self.settingFrame = QWidget()
         self.editorThread = AutomaticSaveThingsThread(self, settingObject.getValue("secsave"))
+        self.setWindowIcon(QIcon("./resources/icon.png"))
         self.setCentralWidget(self.widget)
         self._initBase()
         self._setupUI()
+        self._setupTab()
+
+    def _setupTab(self):
+        if len(settingObject.getValue("beforeread")):
+            for temp in settingObject.getValue("beforeread"):
+                if not Path(temp).exists():
+                    self._createRecommendFile()
+                    self.tabTextEdits[len(self.tabTextEdits)-1].setPlainText(loadJson("EditorUI")["editor.any.cannotreadfile"].format(temp))
+                else:
+                    self._createTab(temp)
+            settingObject.setValue("beforeread", [i for i in settingObject.getValue("beforeread") if Path(i).exists()])
+        else:
+            self._createRecommendFile()
 
     def _setupUI(self):
         debugLog("Setting up User Interface...")
         debugLog("Setting up Text Edit Area...")
         self.textEditArea = QTabWidget()
+        self.addTabButton = QPushButton("+")
+        self.addTabButton.setFlat(True)
+        self.addTabButton.clicked.connect(self._createRecommendFile)
+        self.textEditArea.setCornerWidget(self.addTabButton, Qt.Corner.TopRightCorner)
         self.tabTextEdits: list[SinotePlainTextEdit | None] = []
         self.textEditArea.tabBar().setMaximumHeight(60)
         self.textEditArea.setTabsClosable(True)
         self.textEditArea.setMovable(True)
         self.textEditArea.tabCloseRequested.connect(self._requestClose)
-        self._createRecommendFile()
         debugLog("Successfully to set up Text Edit Area!")
         debugLog("Setting up Layout...")
         self.horizontalLayout = QHBoxLayout()
@@ -654,9 +678,6 @@ class MainWindow(QMainWindow):
         self.setArea.appearance.vLayout.addWidget(self.setArea.appearance.language)
         self.setArea.appearance.vLayout.addStretch(1)
         self.setArea.appearance.setLayout(self.setArea.appearance.vLayout)
-        self.setArea.editorSetting = QScrollArea()
-        self.setArea.editorSetting.vLayout = QVBoxLayout()
-        self.setArea.editorSetting.setLayout(self.setArea.editorSetting.vLayout)
         self.setArea.addTab(self.setArea.appearance, loadJson("EditorUI")["editor.tab.settings.appearance"])
         self.setVerticalLayout = QVBoxLayout()
         self.setVerticalLayout.addWidget(self.backToMain)
@@ -679,9 +700,12 @@ class MainWindow(QMainWindow):
         self.applySettings()
 
     def show(self) -> None:
+        global beforeDatetime
         debugLog("Showing Application...")
         super().show()
+        addLog(0, f"Used {(datetime.now() - beforeDatetime).total_seconds():.2f}s to load!", "SinoteUserInterfaceActivity")
         debugLog("Show Application Successfully!")
+        del beforeDatetime
 
     def closeEvent(self, event: QCloseEvent) -> None:
         debugLog("CloseEvent triggered 🤓")
@@ -689,6 +713,11 @@ class MainWindow(QMainWindow):
         event.accept()
 
     def close(self) -> None:
+        debugLog("Saving session...")
+        settingObject.setValue("beforeread", [(i.nowFilename if system().lower() != "windows" else i.nowFilename.replace("/","\\"))
+                                              for i in [i for i in self.tabTextEdits if hasattr(i, "nowFilename")] if
+                                              (i.nowFilename is not None and Path(i.nowFilename).exists())])
+        debugLog("Saved session!")
         debugLog("Attempting to close 🤓")
         self.hide()
         self.editorThread.quit()
@@ -738,6 +767,7 @@ class MainWindow(QMainWindow):
         self.tabTextEdits.append(temp)
         self.textEditArea.addTab(temp, loadJson("EditorUI")["editor.tab.new_file"])
         temp.setFilename = self.textEditArea.tabBar().setTabText
+        self.textEditArea.setCurrentIndex(len(self.tabTextEdits)-1)
         debugLog(f"Successfully to create tab! Used: {(datetime.now() - oldDatetime).total_seconds():.2f}s ✅")
         debugLog("Attempting to update setting... 😍")
         self.applySettings()

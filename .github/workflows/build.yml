@@ -3,6 +3,17 @@ name: Sinote Editor Build and Package
 on:
   push:
     branches: [ main ]
+    paths:
+      - '**.py'
+      - '.github/workflows/**'
+      - 'requirements.txt'
+      - 'resources/plugins/**'
+      - 'resources/language/**'
+      - '!README.md'
+      - '!documentation/**'
+      - '!**.test.py'
+      - '!resources/images/**'
+      - '!resources/icon.png'
   pull_request:
     branches: [ main ]
 
@@ -77,21 +88,40 @@ jobs:
       shell: bash
       run: |
         echo Creating Version Information...
-        cat > bin/VERSION.txt << EOF
+        if [ "${{ github.event_name }}" != "pull_request" ]; then
+          cat > bin/VERSION.txt << EOF
         Sinote Editor
-        Version: ${{ github.sha }}
+        Version: official @ ${{ github.sha }}
         Build Date: $(date -u +"%Y-%m-%dT%H:%M:%SZ")
         Platform: ${{ runner.os }}
         Build Type: Dual Mode (GUI + Console)
         EOF
+        else
+          cat > bin/VERSION.txt << EOF
+        Sinote Editor (Unofficial, PR)
+        PR Number: PR # ${{ github.event.number }}
+        Build Date: $(date -u +"%Y-%m-%dT%H:%M:%SZ")
+        Platform: ${{ runner.os }}
+        Build Type: Dual Mode (GUI + Console)
+        
+        NOTICE: Pull Request Action is not a official generation.
+        EOF
+        fi  
         echo Successfully to create!
         echo Final Directory
         ls -la "./bin"
-        echo Next Step: Upload Artifacts
-    
+
+    - name: Set build file name
+      id: set_build_type
+      run: |
+        if [ "${{ github.event_name }}" = "pull_request" ]; then
+          echo "BUILD_SUFFIX=pr-${{ github.event.number }}-unofficial" >> $GITHUB_OUTPUT
+        else
+          echo "BUILD_SUFFIX=${{ github.ref_name }}-${{ github.sha }}-official" >> $GITHUB_OUTPUT
+        fi
+
     - name: Upload Artifacts
       uses: actions/upload-artifact@v4
       with:
-        name: Sinote-${{ runner.os }}-${{ github.sha }}
+        name: Sinote-${{ runner.os }}-${{ steps.set_build_type.outputs.BUILD_SUFFIX }}
         path: bin/
-        retention-days: 30

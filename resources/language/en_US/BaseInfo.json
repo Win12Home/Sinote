@@ -5,9 +5,9 @@
   "item.list.version": [
     "0",
     "06",
-    "25530"
+    "25542"
   ],
-  "item.list.realversion": "0.06.25530-python3.14-pyqt6",
+  "item.list.realversion": "0.06.25542-python3.14-pyside6",
   "item.bool.isbetaversion": true,
   "item.list.language_files": [
     "EditorUI",
