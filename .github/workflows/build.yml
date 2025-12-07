@@ -86,7 +86,7 @@ jobs:
         EOF
         echo Successfully to create!
         echo Final Directory
-        ls bin -la
+        ls -la "./bin"
         echo Next Step: Upload Artifacts
     
     - name: Upload Artifacts
