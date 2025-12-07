@@ -25,8 +25,11 @@
   "editor.title.setobj.fontname": "字体",
   "editor.title.setobj.fontsize": "字号",
   "editor.title.setobj.debugmode": "调试日志",
+  "editor.title.setobj.language": "语言设置",
   "editor.desc.setobj.fontname": "选择一个你已经安装的字体，让你的观感更好！",
   "editor.desc.setobj.fontsize": "设置从1px到99px的字体大小。（虽然但是，你不能直接修改setting.json5来突破范围）",
   "editor.desc.setobj.debugmode": "这个选项只工作在终端里，它会让日志输出更细节。",
-  "editor.desc.setobj.debugmodeopen": "开启调试日志"
+  "editor.desc.setobj.debugmodeopen": "开启调试日志",
+  "editor.desc.setobj.language": "设置你的语言，不然你完全看不懂啊。",
+  "editor.suffix.settings.size": "像素"
 }

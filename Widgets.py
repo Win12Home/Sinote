@@ -625,7 +625,7 @@ class MainWindow(QMainWindow):
         self.setArea.appearance.fontSize = LineEditSettingObject(None, loadJson("EditorUI")["editor.title.setobj.fontsize"], loadJson("EditorUI")["editor.desc.setobj.fontsize"])
         self.setArea.appearance.fontSize.useSpinBox()
         self.setArea.appearance.fontSize.lineEdit.setMinimum(1)
-        self.setArea.appearance.fontSize.lineEdit.setMaximum(999)
+        self.setArea.appearance.fontSize.lineEdit.setMaximum(99)
         self.setArea.appearance.fontSize.lineEdit.setValue(settingObject.getValue("fontSize"))
         self.setArea.appearance.fontSize.lineEdit.textChanged.connect(lambda: self.applyFont(fontSize=self.setArea.appearance.fontSize.lineEdit.value()))
         self.setArea.appearance.fontSize.lineEdit.setSuffix(loadJson("EditorUI")["editor.suffix.settings.size"])
@@ -633,11 +633,22 @@ class MainWindow(QMainWindow):
         self.setArea.appearance.debugMode.checkBox.setText(loadJson("EditorUI")["editor.desc.setobj.debugmodeopen"])
         self.setArea.appearance.debugMode.checkBox.setChecked(settingObject.getValue("debugmode"))
         self.setArea.appearance.debugMode.checkBox.checkStateChanged.connect(lambda: settingObject.setValue("debugmode", self.setArea.appearance.debugMode.checkBox.isChecked()))
+        self.setArea.appearance.language = ComboBoxSettingObject(None, loadJson("EditorUI")["editor.title.setobj.language"], loadJson("EditorUI")["editor.desc.setobj.language"])
+        self.setArea.appearance.language.comboBox.addItems([i for _, i in basicInfo["item.dict.language_for"].items()])
+        try:
+            self.setArea.appearance.language.comboBox.setCurrentIndex(list(basicInfo["item.dict.language_for"].keys()).index(lang))
+        except Exception:
+            self.setArea.appearance.language.comboBox.setCurrentIndex(0)
+        self.setArea.appearance.language.comboBox.currentIndexChanged.connect(lambda: {
+            settingObject.setValue("language", list(basicInfo["item.dict.language_for"].keys())[self.setArea.appearance.language.comboBox.currentIndex()]),
+            QMessageBox(QMessageBox.Icon.Information, loadJson("MessageBox")["msgbox.title.info"], loadJson("MessageBox")["msgbox.info.restartApplySet"], buttons=QMessageBox.StandardButton.Ok, parent=self).exec()
+        })
         self.setArea.appearance.vLayout.addWidget(self.setArea.appearance.titleAppearance)
         self.setArea.appearance.vLayout.addWidget(self.setArea.appearance.seperator)
         self.setArea.appearance.vLayout.addWidget(self.setArea.appearance.fontSelect)
         self.setArea.appearance.vLayout.addWidget(self.setArea.appearance.fontSize)
         self.setArea.appearance.vLayout.addWidget(self.setArea.appearance.debugMode)
+        self.setArea.appearance.vLayout.addWidget(self.setArea.appearance.language)
         self.setArea.appearance.vLayout.addStretch(1)
         self.setArea.appearance.setLayout(self.setArea.appearance.vLayout)
         self.setArea.addTab(self.setArea.appearance, loadJson("EditorUI")["editor.tab.settings.appearance"])
