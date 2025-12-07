@@ -1,0 +1,140 @@
+name: Sinote Editor Build and Package
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [windows-latest, ubuntu-latest, macos-latest]
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.14'
+    
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+        pip install pyinstaller
+    
+    - name: Build application (Console mode for flexibility)
+      run: |
+        pyinstaller --onedir --console SinoteMain.py --name Sinote --add-data "resources:resources"
+    
+    - name: Copy resources directory
+      shell: bash
+      run: |
+        # 复制其他必要文件
+        cp README.md dist/Sinote/ 2>/dev/null || echo "README.md not found, skipping"
+        cp LICENSE dist/Sinote/ 2>/dev/null || echo "LICENSE not found, skipping"
+    
+    - name: Create startup scripts (Linux/macOS)
+      if: runner.os != 'Windows'
+      run: |
+        # GUI模式启动脚本
+        cat > dist/Sinote/run-gui.sh << 'EOF'
+        #!/bin/bash
+        cd "$(dirname "$0")"
+        export LD_LIBRARY_PATH="$(pwd)/lib:$LD_LIBRARY_PATH"
+        # 如果程序支持GUI模式参数，可以在这里添加
+        # 例如: ./Sinote --gui
+        ./Sinote "$@"
+        EOF
+        chmod +x dist/Sinote/run-gui.sh
+        
+        # 控制台模式启动脚本
+        cat > dist/Sinote/run-console.sh << 'EOF'
+        #!/bin/bash
+        cd "$(dirname "$0")"
+        export LD_LIBRARY_PATH="$(pwd)/lib:$LD_LIBRARY_PATH"
+        ./Sinote "$@"
+        EOF
+        chmod +x dist/Sinote/run-console.sh
+    
+    - name: Create startup script (Windows)
+      if: runner.os == 'Windows'
+      run: |
+        # GUI模式启动脚本
+        echo "@echo off" > dist/Sinote/run-gui.bat
+        echo cd /d %%~dp0 >> dist/Sinote/run-gui.bat
+        echo set PATH=%%~dp0\lib;%%PATH%% >> dist/Sinote/run-gui.bat
+        echo REM 如果程序支持GUI模式参数，可以在这里添加 >> dist/Sinote/run-gui.bat
+        echo REM 例如: Sinote.exe --gui >> dist/Sinote/run-gui.bat
+        echo start Sinote.exe %%* >> dist/Sinote/run-gui.bat
+        
+        # 控制台模式启动脚本
+        echo "@echo off" > dist/Sinote/run-console.bat
+        echo cd /d %%~dp0 >> dist/Sinote/run-console.bat
+        echo set PATH=%%~dp0\lib;%%PATH%% >> dist/Sinote/run-console.bat
+        echo Sinote.exe %%* >> dist/Sinote/run-console.bat
+    
+    - name: Create version info file
+      run: |
+        cat > dist/Sinote/VERSION.txt << EOF
+        Sinote Editor
+        Version: ${{ github.sha }}
+        Build Date: $(date -u +"%Y-%m-%dT%H:%M:%SZ")
+        Platform: ${{ runner.os }}
+        Build Type: Console Mode (Can run GUI)
+        EOF
+    
+    - name: Create installation guide
+      run: |
+        cat > dist/Sinote/INSTALL.md << 'EOF'
+        # Sinote 安装指南
+        
+        ## Windows
+        ### GUI模式
+        1. 双击运行 `run-gui.bat` 启动GUI程序（新窗口）
+        2. 或直接运行 `Sinote.exe`
+        
+        ### 控制台模式
+        1. 双击运行 `run-console.bat` 在控制台中运行
+        2. 或在命令提示符中运行 `Sinote.exe`
+        
+        ## Linux/macOS
+        ### GUI模式
+        1. 在终端中运行 `./run-gui.sh` 启动GUI程序
+        2. 或直接运行 `./Sinote`
+        
+        ### 控制台模式
+        1. 在终端中运行 `./run-console.sh`
+        2. 或直接运行 `./Sinote`
+        
+        ## 注意事项
+        - 程序以控制台模式构建，可以同时支持GUI和控制台操作
+        - resources目录已内置于程序中，无需额外配置
+        - 如需替换库文件，请替换 `lib` 目录中的相应文件
+        
+        ## 库文件替换
+        本程序采用目录模式分发，您可以自行替换 `lib` 目录中的库文件以满足LGPL要求。
+        EOF
+    
+    - name: Compress artifacts (Unix)
+      if: runner.os != 'Windows'
+      run: |
+        cd dist
+        tar -czf Sinote-${{ runner.os }}-${{ github.sha }}.tar.gz Sinote/
+    
+    - name: Compress artifacts (Windows)
+      if: runner.os == 'Windows'
+      run: |
+        cd dist
+        7z a -tzip Sinote-${{ runner.os }}-${{ github.sha }}.zip Sinote/
+    
+    - name: Upload artifacts
+      uses: actions/upload-artifact@v3
+      with:
+        name: sinote-${{ runner.os }}-${{ github.sha }}
+        path: dist/Sinote*/
+        retention-days: 30

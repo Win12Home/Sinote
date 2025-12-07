@@ -799,12 +799,3 @@ def setGlobalUIFont() -> None:
     addLog(0, f"Global UI font set to: {selectedFont} ✅", "LoadFontActivity")
 
 automaticLoadPlugin()
-if __name__ == "__main__":
-    loadFonts()
-    setGlobalUIFont()
-    a = MainWindow()
-    a.show()
-    application.exec()
-    addLog(0, "Successfully to exit Sinote with Process Code 0 ✅")
-    saveLog()
-    sys.exit(0)
