@@ -27,108 +27,133 @@ jobs:
         pip install -r requirements.txt
         pip install pyinstaller
     
-    - name: Build application (Console mode for flexibility)
+    - name: Build GUI application
       run: |
-        pyinstaller --onedir --console SinoteMain.py --name Sinote --add-data "resources:resources"
+        pyinstaller --onedir --windowed SinoteMain.py --name Sinote
     
-    - name: Copy resources directory
+    - name: Build Console application
+      run: |
+        pyinstaller --onedir --console SinoteMain.py --name Sinote_Consoled
+    
+    - name: Create shared _internal directory
       shell: bash
       run: |
-        cp README.md dist/Sinote/ 2>/dev/null || echo "README.md not found, skipping"
-        cp LICENSE dist/Sinote/ 2>/dev/null || echo "LICENSE not found, skipping"
+        # 创建共享目录
+        mkdir -p dist/_internal/resources
+        
+        # 复制resources到共享目录
+        cp -r resources/* dist/_internal/resources/
+        
+        # 复制其他必要文件
+        cp README.md dist/_internal/ 2>/dev/null || echo "README.md not found, skipping"
+        cp LICENSE dist/_internal/ 2>/dev/null || echo "LICENSE not found, skipping"
+        
+        # 复制resources到各个程序目录（确保程序能找到）
+        cp -r resources dist/Sinote/
+        cp -r resources dist/Sinote_Consoled/
     
     - name: Create startup scripts (Linux/macOS)
       if: runner.os != 'Windows'
       run: |
-        cat > dist/Sinote/run-gui.sh << 'EOF'
+        # GUI版本启动脚本
+        cat > dist/Sinote/run.sh << 'EOF'
         #!/bin/bash
         cd "$(dirname "$0")"
         export LD_LIBRARY_PATH="$(pwd)/lib:$LD_LIBRARY_PATH"
+        export SINOTE_RESOURCES_PATH="$(pwd)/../_internal/resources"
         ./Sinote "$@"
         EOF
-        chmod +x dist/Sinote/run-gui.sh
-        cat > dist/Sinote/run-console.sh << 'EOF'
+        chmod +x dist/Sinote/run.sh
+        
+        # 控制台版本启动脚本
+        cat > dist/Sinote_Consoled/run.sh << 'EOF'
         #!/bin/bash
         cd "$(dirname "$0")"
         export LD_LIBRARY_PATH="$(pwd)/lib:$LD_LIBRARY_PATH"
-        ./Sinote "$@"
+        export SINOTE_RESOURCES_PATH="$(pwd)/../_internal/resources"
+        ./Sinote_Consoled "$@"
         EOF
-        chmod +x dist/Sinote/run-console.sh
+        chmod +x dist/Sinote_Consoled/run.sh
     
     - name: Create startup script (Windows)
       if: runner.os == 'Windows'
       shell: cmd
       run: |
-        echo @echo off > dist\Sinote\run-gui.bat
-        echo cd /d %%~dp0 >> dist\Sinote\run-gui.bat
-        echo set PATH=%%~dp0\lib;%%PATH%% >> dist\Sinote\run-gui.bat
-        echo REM 如果程序支持GUI模式参数，可以在这里添加 >> dist\Sinote\run-gui.bat
-        echo REM 例如: Sinote.exe --gui >> dist\Sinote\run-gui.bat
-        echo start Sinote.exe %%* >> dist\Sinote\run-gui.bat
-        echo @echo off > dist\Sinote\run-console.bat
-        echo cd /d %%~dp0 >> dist\Sinote\run-console.bat
-        echo set PATH=%%~dp0\lib;%%PATH%% >> dist\Sinote\run-console.bat
-        echo Sinote.exe %%* >> dist\Sinote\run-console.bat
+        # GUI版本启动脚本
+        echo @echo off > dist\Sinote\run.bat
+        echo cd /d %%~dp0 >> dist\Sinote\run.bat
+        echo set PATH=%%~dp0\lib;%%PATH%% >> dist\Sinote\run.bat
+        echo set SINOTE_RESOURCES_PATH=%%~dp0\..\_internal\resources >> dist\Sinote\run.bat
+        echo start Sinote.exe %%* >> dist\Sinote\run.bat
+        
+        # 控制台版本启动脚本
+        echo @echo off > dist\Sinote_Console\run.bat
+        echo cd /d %%~dp0 >> dist\Sinote_Console\run.bat
+        echo set PATH=%%~dp0\lib;%%PATH%% >> dist\Sinote_Console\run.bat
+        echo set SINOTE_RESOURCES_PATH=%%~dp0\..\_internal\resources >> dist\Sinote_Console\run.bat
+        echo Sinote_Console.exe %%* >> dist\Sinote_Console\run.bat
     
     - name: Create version info file
       shell: bash
       run: |
-        cat > dist/Sinote/VERSION.txt << EOF
+        cat > dist/_internal/VERSION.txt << EOF
         Sinote Editor
         Version: ${{ github.sha }}
         Build Date: $(date -u +"%Y-%m-%dT%H:%M:%SZ")
         Platform: ${{ runner.os }}
-        Build Type: Console Mode (Can run GUI)
+        Build Type: Dual Mode (GUI + Console)
         EOF
     
     - name: Create installation guide
       shell: bash
       run: |
-        cat > dist/Sinote/INSTALL.md << 'EOF'
+        cat > dist/_internal/INSTALL.md << 'EOF'
         # Sinote 安装指南
         
         ## Windows
-        ### GUI模式
-        1. 双击运行 `run-gui.bat` 启动GUI程序（新窗口）
-        2. 或直接运行 `Sinote.exe`
+        ### GUI版本
+        1. 双击运行 `Sinote/run.bat` 启动GUI程序（新窗口）
+        2. 或直接运行 `Sinote/Sinote.exe`
         
-        ### 控制台模式
-        1. 双击运行 `run-console.bat` 在控制台中运行
-        2. 或在命令提示符中运行 `Sinote.exe`
+        ### 控制台版本
+        1. 双击运行 `Sinote_Consoled/run.bat` 在控制台中运行
+        2. 或直接运行 `Sinote_Consoled/Sinote_Consoled.exe`
         
         ## Linux/macOS
-        ### GUI模式
-        1. 在终端中运行 `./run-gui.sh` 启动GUI程序
-        2. 或直接运行 `./Sinote`
+        ### GUI版本
+        1. 在终端中运行 `./Sinote/run.sh` 启动GUI程序
+        2. 或直接运行 `./Sinote/Sinote`
         
-        ### 控制台模式
-        1. 在终端中运行 `./run-console.sh`
-        2. 或直接运行 `./Sinote`
+        ### 控制台版本
+        1. 在终端中运行 `./Sinote_Consoled/run.sh`
+        2. 或直接运行 `./Sinote_Consoled/Sinote_Consoled`
         
         ## 注意事项
-        - 程序以控制台模式构建，可以同时支持GUI和控制台操作
-        - resources目录已内置于程序中，无需额外配置
-        - 如需替换库文件，请替换 `lib` 目录中的相应文件
+        - 两个版本共享 `_internal` 目录中的resources和文档
+        - 如需替换库文件，请替换各版本 `lib` 目录中的相应文件
         
         ## 库文件替换
         本程序采用目录模式分发，您可以自行替换 `lib` 目录中的库文件以满足LGPL要求。
+        
+        ## 环境变量
+        - `SINOTE_RESOURCES_PATH`: 指定resources目录路径（启动脚本已设置）
         EOF
     
     - name: Compress artifacts (Unix)
       if: runner.os != 'Windows'
       run: |
         cd dist
-        tar -czf Sinote-${{ runner.os }}-${{ github.sha }}.tar.gz Sinote/
+        tar -czf Sinote-${{ runner.os }}-${{ github.sha }}.tar.gz Sinote/ Sinote_Consoled/ _internal/
     
     - name: Compress artifacts (Windows)
       if: runner.os == 'Windows'
       run: |
         cd dist
-        7z a -tzip Sinote-${{ runner.os }}-${{ github.sha }}.zip Sinote/
+        7z a -tzip Sinote-${{ runner.os }}-${{ github.sha }}.zip Sinote/ Sinote_Consoled/ _internal/
     
     - name: Upload artifacts
       uses: actions/upload-artifact@v4
       with:
         name: sinote-${{ runner.os }}-${{ github.sha }}
-        path: dist/Sinote*/
+        path: dist/
         retention-days: 30
