@@ -3,7 +3,7 @@ name: Sinote Editor - Release Build
 on:
   push:
     tags:
-      - '[0-9]+.*'
+      - 'v*'
 
 permissions:
   contents: write
