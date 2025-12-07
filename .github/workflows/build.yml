@@ -16,7 +16,7 @@ jobs:
     steps:
     - uses: actions/checkout@v4
     
-    - name: Set up Python
+    - name: Set up Python Environment
       uses: actions/setup-python@v5
       with:
         python-version: '3.14'
@@ -34,34 +34,31 @@ jobs:
     - name: Build Console application
       run: |
         pyinstaller --onedir --console SinoteMain.py --name Sinote_Consoled
-    
+
     - name: Create flat directory structure
       shell: bash
       run: |
-        # 移动程序文件到根目录
-        if [ -d "dist/Sinote" ]; then
-          mv dist/Sinote/* dist/ 2>/dev/null || true
-          rmdir dist/Sinote 2>/dev/null || true
-        fi
+        if [ -d "dist/Sinote_Consoled/_internal" ]; then
+          rm -r dist/Sinote_Consoled/_internal
+        
+        mkdir -p bin
         if [ -d "dist/Sinote_Consoled" ]; then
-          mv dist/Sinote_Consoled/* dist/ 2>/dev/null || true
-          rmdir dist/Sinote_Consoled 2>/dev/null || true
-        fi
+          mv dist/Sinote_Consoled/* ./bin
+        if [ -d "dist/Sinote" ]; then
+          mv dist/Sinote/* ./bin
         
-        # 复制resources到根目录
-        cp -r resources dist/
+        cp -r resources bin/
         
-        # 复制其他必要文件
-        cp README.md dist/ 2>/dev/null || echo "README.md not found, skipping"
-        cp LICENSE dist/ 2>/dev/null || echo "LICENSE not found, skipping"
-        cp -r 3rd-party-license dist/ 2>/dev/null || echo "3rd-party-license not found, skipping"
+        cp README.md bin/ 2>/dev/null || echo "README.md not found, skipping"
+        cp LICENSE bin/ 2>/dev/null || echo "LICENSE not found, skipping"
+        cp -r 3rd-party-license bin/ 2>/dev/null || echo "3rd-party-license not found, skipping"
     
     
     
     - name: Create version info file
       shell: bash
       run: |
-        cat > dist/VERSION.txt << EOF
+        cat > bin/VERSION.txt << EOF
         Sinote Editor
         Version: ${{ github.sha }}
         Build Date: $(date -u +"%Y-%m-%dT%H:%M:%SZ")
@@ -69,49 +66,21 @@ jobs:
         Build Type: Dual Mode (GUI + Console)
         EOF
     
-    - name: Create installation guide
-      shell: bash
-      run: |
-        cat > dist/INSTALL.md << 'EOF'
-        # Sinote 安装指南
-        
-        ## Windows
-        ### GUI版本
-        直接运行 `Sinote.exe`
-        
-        ### 控制台版本
-        直接运行 `Sinote_Consoled.exe`
-        
-        ## Linux/macOS
-        ### GUI版本
-        直接运行 `./Sinote`
-        
-        ### 控制台版本
-        直接运行 `./Sinote_Consoled`
-        
-        ## 注意事项
-        - resources目录包含语言文件和插件
-        - _internal目录包含程序依赖库（DLL/.so文件）
-        
-        ## 库文件替换
-        本程序采用目录模式分发，您可以自行替换_internal目录中的库文件以满足LGPL要求。
-        EOF
-    
-    - name: Compress artifacts (Unix)
+    - name: Compress artifacts (macOS/Linux)
       if: runner.os != 'Windows'
       run: |
-        cd dist
+        cd bin
         tar -czf Sinote-${{ runner.os }}-${{ github.sha }}.tar.gz *
     
     - name: Compress artifacts (Windows)
       if: runner.os == 'Windows'
       run: |
-        cd dist
+        cd bin
         7z a -tzip Sinote-${{ runner.os }}-${{ github.sha }}.zip *
     
     - name: Upload artifacts
       uses: actions/upload-artifact@v4
       with:
-        name: sinote-${{ runner.os }}-${{ github.sha }}
-        path: dist/
+        name: Sinote-${{ runner.os }}-${{ github.sha }}
+        path: bin/
         retention-days: 30
