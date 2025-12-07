@@ -210,7 +210,8 @@ normalSetting: dict = {
     "fontName": "Fira Code",
     "fontSize": 12,
     "language": getdefaultlocale()[0],
-    "debugmode": False
+    "debugmode": False,
+    "secsave": 10
 }
 
 setting: dict = {

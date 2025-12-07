@@ -92,6 +92,9 @@ class AutomaticSaveThingsThread(QThread):
         self.running: bool = True
         self.ended: bool = False
 
+    def reset(self) -> None:
+        self.saveSecs = settingObject.getValue("secsave")
+
     def saveThings(self) -> None:
         debugLog(f"Automatic saving every {self.saveSecs} secs 😍")
         if not self.parent() or not hasattr(self.parent(), "tabTextEdits"):
@@ -564,7 +567,7 @@ class MainWindow(QMainWindow):
         self.widget = QStackedWidget()
         self.mainFrame = QWidget()
         self.settingFrame = QWidget()
-        self.editorThread = AutomaticSaveThingsThread(self)
+        self.editorThread = AutomaticSaveThingsThread(self, settingObject.getValue("secsave"))
         self.setCentralWidget(self.widget)
         self._initBase()
         self._setupUI()
@@ -642,6 +645,15 @@ class MainWindow(QMainWindow):
         self.setArea.appearance.language.comboBox.currentIndexChanged.connect(lambda: {
             settingObject.setValue("language", list(basicInfo["item.dict.language_for"].keys())[self.setArea.appearance.language.comboBox.currentIndex()]),
             QMessageBox(QMessageBox.Icon.Information, loadJson("MessageBox")["msgbox.title.info"], loadJson("MessageBox")["msgbox.info.restartApplySet"], buttons=QMessageBox.StandardButton.Ok, parent=self).exec()
+        })
+        self.setArea.appearance.autoSaveSec = LineEditSettingObject(None, loadJson("EditorUI")["editor.title.setobj.autosavesec"], loadJson("EditorUI")["editor.desc.setobj.autosavesec"])
+        self.setArea.appearance.autoSaveSec.useSpinBox()
+        self.setArea.appearance.autoSaveSec.lineEdit.setSuffix(loadJson("EditorUI")["editor.suffix.settings.sec"])
+        self.setArea.appearance.autoSaveSec.lineEdit.setMaximum(999)
+        self.setArea.appearance.autoSaveSec.lineEdit.setMinimum(1)
+        self.setArea.appearance.autoSaveSec.lineEdit.valueChanged.connect(lambda: {
+            settingObject.setValue("secsave", self.setArea.appearance.autoSaveSec.lineEdit.value()),
+            self.editorThread.reset()
         })
         self.setArea.appearance.vLayout.addWidget(self.setArea.appearance.titleAppearance)
         self.setArea.appearance.vLayout.addWidget(self.setArea.appearance.seperator)
