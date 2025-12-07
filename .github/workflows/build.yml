@@ -39,11 +39,14 @@ jobs:
       shell: bash
       run: |
         # 移动程序文件到根目录
-        cp -r dist/Sinote/* dist/
-        cp -r dist/Sinote_Consoled/* dist/
-        
-        # 删除空目录
-        rm -rf dist/Sinote dist/Sinote_Consoled
+        if [ -d "dist/Sinote" ]; then
+          mv dist/Sinote/* dist/ 2>/dev/null || true
+          rmdir dist/Sinote 2>/dev/null || true
+        fi
+        if [ -d "dist/Sinote_Consoled" ]; then
+          mv dist/Sinote_Consoled/* dist/ 2>/dev/null || true
+          rmdir dist/Sinote_Consoled 2>/dev/null || true
+        fi
         
         # 复制resources到根目录
         cp -r resources dist/
