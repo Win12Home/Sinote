@@ -65,7 +65,7 @@ jobs:
         cp -r resources bin/
         echo Copied!
         
-        echo Copying GitHub File (Like license/readme.md)
+        echo Copying GitHub File
         cp README.md bin/ 2>/dev/null || echo "README.md not found, skipping"
         cp LICENSE bin/ 2>/dev/null || echo "LICENSE not found, skipping"
         cp -r 3rd-party-license bin/ 2>/dev/null || echo "3rd-party-license not found, skipping"
