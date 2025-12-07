@@ -110,11 +110,16 @@ jobs:
       - name: Download artifacts
         uses: actions/download-artifact@v4
         with:
-          pattern: Sinote-*-${{ github.ref_name }}
+          pattern: Sinote-*
+          merge-multiple: true
           path: downloaded_artifacts
 
-      - name: List downloaded files
-        run: ls -la downloaded_artifacts/
+      - name: List download artifacts
+        run: |
+          echo =====================================
+          echo        Downloaded Artifacts
+          echo =====================================
+          ls -la "downloaded_artifacts/"
 
       - name: Create Release
         uses: softprops/action-gh-release@v1
