@@ -646,15 +646,6 @@ class MainWindow(QMainWindow):
             settingObject.setValue("language", list(basicInfo["item.dict.language_for"].keys())[self.setArea.appearance.language.comboBox.currentIndex()]),
             QMessageBox(QMessageBox.Icon.Information, loadJson("MessageBox")["msgbox.title.info"], loadJson("MessageBox")["msgbox.info.restartApplySet"], buttons=QMessageBox.StandardButton.Ok, parent=self).exec()
         })
-        self.setArea.appearance.autoSaveSec = LineEditSettingObject(None, loadJson("EditorUI")["editor.title.setobj.autosavesec"], loadJson("EditorUI")["editor.desc.setobj.autosavesec"])
-        self.setArea.appearance.autoSaveSec.useSpinBox()
-        self.setArea.appearance.autoSaveSec.lineEdit.setSuffix(loadJson("EditorUI")["editor.suffix.settings.sec"])
-        self.setArea.appearance.autoSaveSec.lineEdit.setMaximum(999)
-        self.setArea.appearance.autoSaveSec.lineEdit.setMinimum(1)
-        self.setArea.appearance.autoSaveSec.lineEdit.valueChanged.connect(lambda: {
-            settingObject.setValue("secsave", self.setArea.appearance.autoSaveSec.lineEdit.value()),
-            self.editorThread.reset()
-        })
         self.setArea.appearance.vLayout.addWidget(self.setArea.appearance.titleAppearance)
         self.setArea.appearance.vLayout.addWidget(self.setArea.appearance.seperator)
         self.setArea.appearance.vLayout.addWidget(self.setArea.appearance.fontSelect)
@@ -663,6 +654,9 @@ class MainWindow(QMainWindow):
         self.setArea.appearance.vLayout.addWidget(self.setArea.appearance.language)
         self.setArea.appearance.vLayout.addStretch(1)
         self.setArea.appearance.setLayout(self.setArea.appearance.vLayout)
+        self.setArea.editorSetting = QScrollArea()
+        self.setArea.editorSetting.vLayout = QVBoxLayout()
+        self.setArea.editorSetting.setLayout(self.setArea.editorSetting.vLayout)
         self.setArea.addTab(self.setArea.appearance, loadJson("EditorUI")["editor.tab.settings.appearance"])
         self.setVerticalLayout = QVBoxLayout()
         self.setVerticalLayout.addWidget(self.backToMain)
