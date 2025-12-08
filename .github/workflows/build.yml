@@ -44,6 +44,7 @@ jobs:
         echo Successfully to install!
     
     - name: Build Application Binary File (Included GUI&Consoled)
+      shell: bash
       run: |
         echo Starting parallel build...
         pyinstaller --onedir --windowed --exclude-module unittest --exclude-module PySide6.QtQuick --exclude-module PySide6.QtMultimedia --exclude-module PySide6.QtBluetooth SinoteMain.py --name Sinote --icon ./resources/icon.png &
