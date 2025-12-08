@@ -14,6 +14,8 @@ on:
       - '!**.test.py'
       - '!resources/images/**'
       - '!resources/icon.png'
+      - '!README/**'
+      - '!.gitignore'
   pull_request:
     branches: [ main ]
 
