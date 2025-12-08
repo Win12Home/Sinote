@@ -43,13 +43,13 @@ jobs:
         pip install pyinstaller
         echo Successfully to install!
     
-    - name: Build GUI application
+    - name: Build Application Binary File (Included GUI&Consoled)
       run: |
-        pyinstaller --onedir --windowed SinoteMain.py --name Sinote --icon ./resources/icon.png
-    
-    - name: Build Console application
-      run: |
-        pyinstaller --onedir --console SinoteMain.py --name Sinote_Consoled --icon ./resources/icon.png
+        echo Starting parallel build...
+        pyinstaller --onedir --windowed --exclude-module unittest --exclude-module PySide6.QtQuick --exclude-module PySide6.QtMultimedia --exclude-module PySide6.QtBluetooth SinoteMain.py --name Sinote --icon ./resources/icon.png &
+        pyinstaller --onedir --console --exclude-module unittest --exclude-module PySide6.QtQuick --exclude-module PySide6.QtMultimedia --exclude-module PySide6.QtBluetooth SinoteMain.py --name Sinote_Consoled --icon ./resources/icon.png &
+        wait
+        echo Finished application generate
 
     - name: Create flat directory structure
       shell: bash
