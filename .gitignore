@@ -13,6 +13,9 @@ IFLOW.md
 # Ignored Setting File
 setting.json5
 
+# Ignored cache dir
+cache/
+
 # Test Files
 *.test.py
 

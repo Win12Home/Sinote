@@ -5,7 +5,8 @@ from datetime import datetime
 beforeDatetime = datetime.now()
 
 from subprocess import Popen
-from json import dumps
+from json import dumps, JSONDecodeError
+from json import loads as normalLoads
 from threading import Thread
 from PySide6.QtWidgets import *
 from functools import partial
@@ -24,7 +25,7 @@ from traceback import format_exception
 from typing import *
 from psutil import virtual_memory, cpu_percent
 from getpass import getuser
-import sys, re
+import sys, re, hashlib, pickle
 
 filterwarnings("ignore", category=DeprecationWarning)
 
@@ -41,8 +42,9 @@ normalLogOutput: list[str] = []
 
 onlyWarning: bool = False
 
-def addLog(type: int = 0, bodyText: str = "N/A", activity: str | None = None):
-    global logInfoStatus
+colored: bool = True
+
+def addLogClassic(type: int = 0, bodyText: str = "N/A", activity: str | None = None, placeholder: bool = False):
     typeOfLog: str = ("INFO" if (type == 0) else "WARN" if (type == 1) else "ERR" if (type == 2) else "DBG" if (type == 3) else "N/A")
     colorOfType: dict = {
         "INFO": "cyan",
@@ -54,10 +56,16 @@ def addLog(type: int = 0, bodyText: str = "N/A", activity: str | None = None):
     nowTime: str = datetime.now().strftime("%H:%M.%S.%f")[:-3]
     logSender: str = f"SinoteLog/[red]{activity}[/red]" if activity is not None else "SinoteLog"
     normalLogOutput.append(f"[{nowTime}] [SinoteLog{f"/{activity}" if activity is not None else ""}] [{typeOfLog}] {bodyText}")
-    if onlyWarning and typeOfLog not in ["WARN", "ERR"]:
-        return
-    print(f"[[blue]{nowTime}[/blue]] [{logSender}] [[{colorOfType[typeOfLog]}]{typeOfLog}[/{colorOfType[typeOfLog]}]] {bodyText}")
+    if colored:
+        print(f"[[blue]{nowTime}[/blue]] [{logSender}] [[{colorOfType[typeOfLog]}]{typeOfLog}[/{colorOfType[typeOfLog]}]] {bodyText}")
+    else:
+        print(f"{nowTime} {"Main" if not activity else activity} {typeOfLog} {bodyText}")
 
+def owLog(type: int = 0, bodyText: str = "N/A", activity: str | None = None, mustToPrint: bool = False):
+    if type in [1, 2] or mustToPrint:  # 只输出WARN(1)和ERR(2)
+        addLogClassic(type, bodyText, activity)
+
+addLog = addLogClassic
 
 def saveLog():
     if not Path("./log").exists():
@@ -224,9 +232,14 @@ if "--debug-mode" in args or "-db" in args:
     debugMode = True
     addLog(3, "Debug Mode Started 😍", "ArgumentParser")
 
+if "--no-color" in args or "-nc" in args:
+    colored = False
+    from builtins import print
+    addLog(3, "No color started 🤔", "ArgumentParser")
+
 if "-h" in args or "--help" in args: # HelpActivity
     addLog(0, "Sinote Help is starting...", "HelpActivity")
-    QMessageBox.information(None,"Help","-h/--help: Arguments Help of Sinote\n-su/--use-root-user: Bypass check for SU User in posix env\n--bypass-system-check: Bypass System Check (Windows, Linux, Mac OS)\n-db/--debug-mode: Use Debug Mode (I/O Performance will low)\n-ow/--only-warning: Only Warning/Error in LOG")
+    QMessageBox.information(None,"Help","-h/--help: Arguments Help of Sinote\n-su/--use-root-user: Bypass check for SU User in posix env\n--bypass-system-check: Bypass System Check (Windows, Linux, Mac OS)\n-db/--debug-mode: Use Debug Mode (I/O Performance will low)\n-ow/--only-warning: Only Warning/Error in LOG\n--no-color/-nc: No color when log output\n--only-create-cache: Only create plugin caches")
     addLog(0, "Sinote Help closed, return to normal enviroment.", "HelpActivity")
     addLog(0, "Exiting...")
     sys.exit(0)
@@ -250,6 +263,7 @@ if system().lower() in ["darwin","linux"]:
 if "-ow" in args or "--only-warning" in args:
     addLog(3, "Only Warning Started 🤓", "ArgumentParser")
     onlyWarning = True
+    addLog = owLog
 
 for temp in basicInfo["item.list.language_files"]:
     if not Path("./resources/language/{}/{}.json".format(lang,temp)).exists():
@@ -257,6 +271,8 @@ for temp in basicInfo["item.list.language_files"]:
         err("0x00000002")
         sys.exit(1)
 
+# Automatic generate cache directory
+Path("./cache").mkdir(exist_ok=True)
 
 # Check the Beta Version
 def checkVersionForPopup():
@@ -266,7 +282,71 @@ def checkVersionForPopup():
 alreadyLoaded: dict[str, dict] = {}   # Cache Language File (What is @lru_cache? I cannot be got it.)
 alreadyLoadedBase: dict[str, dict] = {}    # Whoa en_US is my needed!
 
+def getFileHash(filePath):
+    try:
+        with open(filePath, 'rb') as f:
+            return hashlib.md5(f.read()).hexdigest()
+    except:
+        return ""
+
+
+def load(filePath):
+    cachePath = Path("./cache") / f"{filePath.replace("/", "_").replace("\\", "_")}.cache"
+    fileHash = getFileHash(filePath)
+
+    if cachePath.exists():
+        try:
+            with open(cachePath, "rb") as f:
+                cachedData = pickle.load(f)
+                if cachedData["savedHash"] == fileHash:
+                    if debugMode: addLog(3, "File HASH is same as the file will be load! Cache hit! 💥", "JsonCacheLoadActivity")   # Hash is good!
+                    return cachedData["ohMyData"]
+        except:
+            pass
+
+    try:
+        with open(filePath, "r", encoding="utf-8") as f:
+            content = f.read()
+        try:
+            data = normalLoads(content)
+        except JSONDecodeError:
+            data = loads(content)
+
+        cacheData = {
+            'savedHash': fileHash,
+            'ohMyData': data
+        }
+
+        try:
+            with open(cachePath, "wb") as f:
+                if debugMode: addLog(3, "Dumping and writing cache! 🤔",
+                                     "JsonCacheLoadActivity")
+                pickle.dump(cacheData, f)
+        except Exception as e:
+            addLog(1, f"Cannot write cache: {repr(e)}", "JsonCacheLoadActivity")
+
+        return data
+    except:
+        return {}
+
 def loadJson(jsonName: str):
+    global alreadyLoaded
+    
+    if jsonName in alreadyLoaded.keys():
+        if debugMode: addLog(3, f"{jsonName}.json Cache hit 💥", "FileConfigActivity")
+        return alreadyLoaded[jsonName]
+
+    if debugMode: addLog(3, f"Reading {jsonName}.json in en_US for support other text of not supported.")
+    baseData = load(f"./resources/language/en_US/{jsonName}.json")
+    if debugMode: addLog(3, f"Attempting to load {jsonName}.json and cache it ✅", "FileConfigActivity")
+    langData = load(f"./resources/language/{lang}/{jsonName}.json")
+    
+    result = baseData.copy() | langData.copy()
+    
+    alreadyLoaded[jsonName] = result   # Cache!
+    return result
+
+def oldLoadJson(jsonName: str):
     global alreadyLoaded
     if not Path("./resources/language/{}/{}.json".format(lang,jsonName)).exists():
         addLog(2, "Failed to load when load this Language File: {} ❌".format(jsonName), "FileConfigActivity")
@@ -900,16 +980,13 @@ class LoadPluginHeader:
             return -1
 
     @staticmethod
-    def readFile(file_path: str):
+    def readFile(filePath: str):
         """
         Read a file and return dict.
-        :param file_path: File Path
+        :param filePath: File Path
         :return: A dict object.
         """
-        with open(file_path,"r",encoding="utf-8") as f:
-           readStr: str = f.read()
-        # Convert JSON text to dict
-        return loads(readStr)
+        return load(filePath)
 
 class LoadPluginInfo:
     def __init__(self, projName: str):
@@ -976,7 +1053,7 @@ class LoadPluginInfo:
                 addLog(1, "Missing imports.txt, plugin will continue load but it's not USEFUL.")
                 errLite = True
             addLog(bodyText="Attempting to read info.json 🔎")
-            info: dict = LoadPluginHeader.readFile(f"./resources/plugins/{self.infoPath}")
+            info: dict = load(f"./resources/plugins/{self.infoPath}")
             if info.get("versionIterate", None) is None:
                 addLog(1, bodyText="\"versionIterate\" not found! This will be replace to 99900 (Maximum) 😰")
             addLog(bodyText="Successfully to read info.json ✅")

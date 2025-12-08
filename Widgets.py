@@ -632,10 +632,11 @@ class MainWindow(QMainWindow):
         self.setMenuBar(self.fileEditMenu)
         debugLog("Successfully to set up Menu!")
         debugLog("Setting up Setting Area...")
-        self.backToMain = QPushButton(loadJson("EditorUI")["editor.button.settings.back"])
+        self.backToMain = QPushButton("<")
+        self.backToMain.setStyleSheet(f"{self.backToMain.styleSheet()}background-color: none;")
         self.backToMain.clicked.connect(partial(self.widget.setCurrentIndex, 0))
-        self.backToMain.setMaximumWidth(250)
-        self.backToMain.setMinimumWidth(220)
+        self.backToMain.setMaximumWidth(50)
+        self.backToMain.setFlat(True)
         self.setArea = QTabWidget()
         self.setArea.setMovable(False)
         self.setArea.setTabsClosable(False)
@@ -703,7 +704,7 @@ class MainWindow(QMainWindow):
         global beforeDatetime
         debugLog("Showing Application...")
         super().show()
-        addLog(0, f"Used {(datetime.now() - beforeDatetime).total_seconds():.2f}s to load!", "SinoteUserInterfaceActivity")
+        addLog(0, f"Used {(datetime.now() - beforeDatetime).total_seconds():.2f}s to load!", "SinoteUserInterfaceActivity", True)
         debugLog("Show Application Successfully!")
         del beforeDatetime
 
@@ -833,5 +834,3 @@ def setGlobalUIFont() -> None:
     """)
     
     addLog(0, f"Global UI font set to: {selectedFont} ✅", "LoadFontActivity")
-
-automaticLoadPlugin()
