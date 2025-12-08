@@ -1,6 +1,6 @@
 # Sinote Editor
 
-***English (United States)*** | [**中文（简体）**](README/README_CN.md.)
+***English (United States)*** | [**中文（简体）**](README/README_CN.md)
 
 ## Introduction
 ![Python 3.14](https://img.shields.io/badge/Python-3.14-green) ![PySide6 6.10](https://img.shields.io/badge/PySide6-6.10-blue) ![Style Material](https://img.shields.io/badge/Style-Material%20Style-purple) ![Last Release](https://img.shields.io/badge/Last%20Release-0.06.25530-green)
