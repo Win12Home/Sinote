@@ -24,4 +24,6 @@ if __name__ == "__main__":
     a.show()
     application.exec()
     addLog(0, f"Successfully to exit Sinote! Used time: {(datetime.now() - beforeDatetime).total_seconds():.2f}s ✅")
+    if "--record-log" in args or "-rl" in args:
+        saveLog()
     sys.exit(0)

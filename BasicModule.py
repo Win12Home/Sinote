@@ -221,7 +221,8 @@ normalSetting: dict = {
     "language": getdefaultlocale()[0],
     "debugmode": False,
     "secsave": 10,
-    "beforeread": []
+    "beforeread": [],
+    "disableplugin": []
 }
 
 setting: dict = {
@@ -509,22 +510,22 @@ class LoadPluginBase:
 
         def _setup_formats(self):
             self.keyword_format = QTextCharFormat()
-            self.keyword_format.setForeground(QColor('#569CD6'))
+            self.keyword_format.setForeground(QColor('#3DACFF'))
             self.keyword_format.setFontWeight(QFont.Weight.Bold)
 
             self.symbol_format = QTextCharFormat()
-            self.symbol_format.setForeground(QColor('#D4D4D4'))
+            self.symbol_format.setForeground(QColor('#717A2A'))
 
             self.single_comment_format = QTextCharFormat()
-            self.single_comment_format.setForeground(QColor('#6A9955'))
+            self.single_comment_format.setForeground(QColor('#009400'))
             self.single_comment_format.setFontItalic(True)
 
             self.multi_comment_format = QTextCharFormat()
-            self.multi_comment_format.setForeground(QColor('#6A9955'))
+            self.multi_comment_format.setForeground(QColor('#009400'))
             self.multi_comment_format.setFontItalic(True)
 
             self.string_format = QTextCharFormat()
-            self.string_format.setForeground(QColor('#CE9178'))
+            self.string_format.setForeground(QColor('#2EFF00'))
 
         def _setup_highlighting_rules(self):
             self._add_keyword_rules()

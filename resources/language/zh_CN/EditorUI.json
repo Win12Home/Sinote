@@ -19,9 +19,11 @@
   "editor.tab.tab_name": "{}",
   "editor.tab.tab_name_unsaved": "{}（未保存）",
   "editor.tab.settings.appearance": "个性化",
+  "editor.tab.settings.plugin": "插件",
   "editor.window.temps.openfile": "打开文件",
   "editor.button.settings.back": "回到主页",
-  "editor.title.settings.appearance": "个性化",
+  "editor.title.settings.appearance": "个性化设置",
+  "editor.title.settings.plugin": "插件设置",
   "editor.title.setobj.fontname": "字体",
   "editor.title.setobj.fontsize": "字号",
   "editor.title.setobj.debugmode": "调试日志",
@@ -31,5 +33,7 @@
   "editor.desc.setobj.debugmode": "这个选项只工作在终端里，它会让日志输出更细节。",
   "editor.desc.setobj.debugmodeopen": "开启调试日志",
   "editor.desc.setobj.language": "设置你的语言，不然你完全看不懂啊。",
-  "editor.suffix.settings.size": "像素"
+  "editor.suffix.settings.size": "像素",
+  "editor.suffix.settings.sec": "秒",
+  "editor.any.cannotreadfile": "无法打开文件{}（前一个会话）：已经删除或者移动"
 }

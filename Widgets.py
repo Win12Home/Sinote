@@ -19,7 +19,7 @@ def debugPluginLog(content: str) -> None:
         thread.start()
 
 syntaxHighlighter: dict[str, list[LoadPluginBase.CustomizeSyntaxHighlighter | list[str]]] = {}
-loadedPlugin: list[dict[str, str | int | None]] = []
+loadedPlugin: dict[str, dict[str, str | int | None]] = {}
 autoRun: list[partial] = []
 """
 syntaxHighlighter Struct:
@@ -35,6 +35,7 @@ syntaxHighlighter Struct:
 outputDeveloperDebugInformation()
 
 def automaticLoadPlugin() -> None:
+    global loadedPlugin
     if "--dont-load-any-plugin" in args or "-displug" in args:
         addLog(0, "--dont-load-any-plugin or -displug activated, no any plugins will be loaded!")
         return
@@ -59,14 +60,15 @@ def automaticLoadPlugin() -> None:
             addLog(1, f"Automatic skipped {item.name}, Reason: info.json not exists ❌")
             continue
         temp = LoadPluginInfo(item.name).getValue()
-        loadedPlugin.append(temp[0])
+        loadedPlugin[temp[0]["objectName"]] = temp[0]
         debugPluginLog(f"Successfully loaded {item.name}, objectName: {temp[0]["objectName"]}. Preparing to parse... ✅")
         for key in temp[1]:
             debugPluginLog(f"Loading {key[0]}...")
             if key[1] == 1:
                 debugPluginLog(f"Checked its property! Type: SyntaxHighlighter 🔎")
-                syntaxHighlighter[key[2]] = [key[4], key[3], key[5], key[6], None]
-                debugPluginLog(f"Successfully to create! ✅")
+                before: datetime = datetime.now()
+                syntaxHighlighter[key[2]] = [key[4].getObject(), key[3], key[5], key[6]]
+                debugPluginLog(f"Successfully to create, used {(datetime.now() - before).total_seconds():.2f}s! ✅")
             elif key[1] == 0:
                 debugPluginLog(f"Checked its property! Type: RunningFunc 🤓")
                 debugPluginLog(f"Appending to autoRun... 💥")
@@ -76,6 +78,7 @@ def automaticLoadPlugin() -> None:
                 for i in key[2]:
                     if isinstance(i, partial):
                         autoRun.append(i)
+                But it's will create a unused list ([None if isinsta for i in key[2]])
                 """
                 debugPluginLog(f"Successfully to append! ✅")
     usedTime: float = (datetime.now() - beforeLoadDatetime).total_seconds()
@@ -127,7 +130,7 @@ class SeperatorWidget(QFrame):
         super().__init__(parent)
         self.setFrameShape(self.Shape.HLine)
         self.setFrameShadow(self.Shadow.Sunken)
-
+        
 
 class LineNumberWidget(QWidget):
     def __init__(self, editor):
@@ -342,6 +345,7 @@ class SinotePlainTextEdit(SpacingSupportEdit):
         self.setFilename = None
         self.nowFilename: str | None = None
         self.num: int = -1
+        self.setStyleSheet(f"{self.styleSheet()}border: none;")
 
     def autoSave(self):
         if self.nowFilename:
@@ -393,16 +397,9 @@ class SinotePlainTextEdit(SpacingSupportEdit):
             for k, i in syntaxHighlighter.items():
                 if self.appendix in i[1]:
                     debugLog(f"{self.appendix} is in {i[1]}, successfully to find! ✅")
-                    if i[4] is not None:
-                        temp = i[4]
-                        temp2 = i[2]
-                        temp3 = i[3]
-                        debugLog("Cache Hit! Automatically use cache. 💥")
-                        break
-                    temp = i[0].getObject()
+                    temp = i[0]
                     temp2 = i[2]
                     temp3 = i[3]
-                    syntaxHighlighter[k][4] = temp
                     debugLog("Create cache successfully! This will be start when some file appendix same loads!")
                     break
                 else:
@@ -418,7 +415,7 @@ class SinotePlainTextEdit(SpacingSupportEdit):
 
     def setHighlighter(self, highlighter: LoadPluginBase.CustomizeSyntaxHighlighter | None) -> None:
         debugLog("Setting another Highlighter..." if highlighter else "Cleaning Highlighter...")
-        self.highlighter = highlighter if highlighter else LoadPluginBase.CustomizeSyntaxHighlighter([[] for i in range(7)])
+        self.highlighter = highlighter if highlighter is not None else LoadPluginBase.CustomizeSyntaxHighlighter([[] for i in range(7)])
         self.highlighter.setDocument(self.document())
 
     def setFileAppendix(self, fileAppendix: str) -> None:
@@ -633,10 +630,9 @@ class MainWindow(QMainWindow):
         debugLog("Successfully to set up Menu!")
         debugLog("Setting up Setting Area...")
         self.backToMain = QPushButton("<")
-        self.backToMain.setStyleSheet(f"{self.backToMain.styleSheet()}background-color: none;")
+        self.backToMain.setStyleSheet(f"{self.backToMain.styleSheet()}background-color: none; border: none;")
         self.backToMain.clicked.connect(partial(self.widget.setCurrentIndex, 0))
         self.backToMain.setMaximumWidth(50)
-        self.backToMain.setFlat(True)
         self.setArea = QTabWidget()
         self.setArea.setMovable(False)
         self.setArea.setTabsClosable(False)
@@ -644,7 +640,7 @@ class MainWindow(QMainWindow):
         self.setArea.appearance = QScrollArea()
         self.setArea.appearance.vLayout = QVBoxLayout()
         self.setArea.appearance.titleAppearance = QLabel(loadJson("EditorUI")["editor.title.settings.appearance"])
-        self.setArea.appearance.titleAppearance.setStyleSheet("font-size: 18pt; font-weight: bold; margin-bottom: 10px;") # QSS
+        self.setArea.appearance.titleAppearance.setStyleSheet("font-size: 18px; font-weight: bold; margin-bottom: 10px;") # QSS
         self.setArea.appearance.seperator = SeperatorWidget()
         self.setArea.appearance.fontSelect = ComboBoxSettingObject(None, loadJson("EditorUI")["editor.title.setobj.fontname"], loadJson("EditorUI")["editor.desc.setobj.fontname"])
         self.setArea.appearance.fontSelect.useFontBox()
@@ -680,6 +676,17 @@ class MainWindow(QMainWindow):
         self.setArea.appearance.vLayout.addStretch(1)
         self.setArea.appearance.setLayout(self.setArea.appearance.vLayout)
         self.setArea.addTab(self.setArea.appearance, loadJson("EditorUI")["editor.tab.settings.appearance"])
+        # Plugin Setting
+        self.setArea.plugins = QScrollArea()
+        self.setArea.plugins.vLayout = QVBoxLayout()
+        self.setArea.plugins.titlePlugins = QLabel(loadJson("EditorUI")["editor.title.settings.plugin"])
+        self.setArea.plugins.titlePlugins.setStyleSheet("font-size: 18px; font-weight: bold; margin-bottom: 10px;") # Also QSS
+        self.setArea.plugins.seperator = SeperatorWidget()
+        self.setArea.plugins.vLayout.addWidget(self.setArea.plugins.titlePlugins)
+        self.setArea.plugins.vLayout.addWidget(self.setArea.plugins.seperator)
+        self.setArea.plugins.vLayout.addStretch(1)
+        self.setArea.plugins.setLayout(self.setArea.plugins.vLayout)
+        self.setArea.addTab(self.setArea.plugins, loadJson("EditorUI")["editor.tab.settings.plugin"])
         self.setVerticalLayout = QVBoxLayout()
         self.setVerticalLayout.addWidget(self.backToMain)
         self.setVerticalLayout.addWidget(self.setArea)
@@ -763,10 +770,12 @@ class MainWindow(QMainWindow):
         oldDatetime = datetime.now()
         temp = SinotePlainTextEdit()
         temp.num = len(self.tabTextEdits)
+        if not Path(filename if filename else "").exists():
+            filename = None
         if filename:
             temp.readFile(filename)
         self.tabTextEdits.append(temp)
-        self.textEditArea.addTab(temp, loadJson("EditorUI")["editor.tab.new_file"])
+        self.textEditArea.addTab(temp, loadJson("EditorUI")["editor.tab.new_file"] if not filename else str(Path(filename)))
         temp.setFilename = self.textEditArea.tabBar().setTabText
         self.textEditArea.setCurrentIndex(len(self.tabTextEdits)-1)
         debugLog(f"Successfully to create tab! Used: {(datetime.now() - oldDatetime).total_seconds():.2f}s ✅")

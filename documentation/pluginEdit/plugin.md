@@ -37,9 +37,9 @@ It gives an information of your plugin to **Sinote**.
 <br>There is a struct of ``info.json``
 ```json5
 {
-  "icon": "%pluginPath%/icon/icon.png",  // Always useSinoteVariableInString
+  "icon": "%pluginPath%/icon/icon.png",  // Always use SinoteVariableInString
   "name": "Plugin", // The plugin name
-  "objectName": "sample.plugin", // Recommend [a-zA-Z0-9]*.[a-zA-Z0-9]*, but Sinote won't match
+  "objectName": "sample.plugin", // Recommend [a-zA-Z0-9]*+.[a-zA-Z0-9]*, but Sinote won't match
   "version": "1.0.1", // The version string
   "versionIterate": 1, // Means: 1st release, for better plugin update
   "customizeRemoveString": {
@@ -60,7 +60,7 @@ Note: ``info.json`` can't edit to ``info.si_plug`` and similar.
 ```text
 python&space;syntax&space;highlighter.sp_header
 ```
-for load ```python syntax highlighter.sp_header```
+for load ``python syntax highlighter.sp_header``
 
 ## 4 End
 
