@@ -7,8 +7,10 @@ Win12Home (C) 2025, MIT.
 
 Sorry, my english bad OvO.
 Because I'm a child TAT.
-AI help me to finish 25% of these code! (Not included plugins)
+AI help me to finish 15% of these code! (Not included plugins, before 25%, rewrite SpacingSupportEdit object!!!!!!!!!!!!!!! UwU I'm proud)
 """
+from pathlib import Path
+from BasicModule import fileargs
 ### The Sinote Main Script
 from Widgets import MainWindow, addLog, saveLog, application, loadFonts, setGlobalUIFont, automaticLoadPlugin, args, beforeDatetime, datetime
 import sys
@@ -19,9 +21,13 @@ if __name__ == "__main__":
         addLog(0, "Successfully to create caches!")
         sys.exit(0)
     loadFonts()
-    setGlobalUIFont()
     a = MainWindow()
     a.show()
+    setGlobalUIFont()
+    a.themeChanged.connect(lambda: {
+        setGlobalUIFont(),
+        addLog(0, "Successfully to change theme!")
+    })
     application.exec()
     addLog(0, f"Successfully to exit Sinote! Used time: {(datetime.now() - beforeDatetime).total_seconds():.2f}s ✅")
     if "--record-log" in args or "-rl" in args:

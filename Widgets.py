@@ -60,6 +60,9 @@ def automaticLoadPlugin() -> None:
             addLog(1, f"Automatic skipped {item.name}, Reason: info.json not exists ❌")
             continue
         temp = LoadPluginInfo(item.name).getValue()
+        if temp[0]["objectName"] in settingObject.getValue("disableplugin"):
+            debugPluginLog(f"Automatic skip plugin {temp[0]["objectName"]} (DISABLED)")
+            continue
         loadedPlugin[temp[0]["objectName"]] = temp[0]
         debugPluginLog(f"Successfully loaded {item.name}, objectName: {temp[0]["objectName"]}. Preparing to parse... ✅")
         for key in temp[1]:
@@ -206,135 +209,147 @@ class SpacingSupportEdit(LineShowTextEdit):
         self.usingCodeControl: bool = False
         self.spacing: int = 4
 
-    def keyPressEvent(self, event: QKeyEvent) -> None:
-        if event.key() == Qt.Key.Key_Tab:
-            cursor = self.textCursor()
-            if cursor.hasSelection():
-                start = min(cursor.anchor(), cursor.position())
-                end = max(cursor.anchor(), cursor.position())
-                cursor.setPosition(start)
-                cursor.movePosition(QTextCursor.MoveOperation.StartOfLine)
-                start = cursor.position()
-                cursor.setPosition(end)
-                cursor.movePosition(QTextCursor.MoveOperation.EndOfLine)
-                end = cursor.position()
-                cursor.setPosition(start)
-                cursor.setPosition(end, QTextCursor.MoveMode.KeepAnchor)
-                selected_text = cursor.selectedText()
-                lines = selected_text.split('\u2029')
-                stringToIndent = " " * self.spacing
-                indentedLines = [stringToIndent + line for line in lines]
-                cursor.insertText('\u2029'.join(indentedLines))
+    def _getPosInLine(self) -> int:
+        cursor = self.textCursor()
+        originalPos: int = cursor.position()
+        cursor.movePosition(QTextCursor.MoveOperation.StartOfLine)
+        afterPos: int = cursor.position()
+        cursor.setPosition(originalPos)
+        return originalPos - afterPos
+
+    def _getBeforeText(self, position: int) -> str:
+        cursor = self.textCursor()
+        originalPos: int = cursor.position()
+        cursor.setPosition(position)
+        cursor.movePosition(QTextCursor.MoveOperation.StartOfLine, QTextCursor.MoveMode.KeepAnchor)
+        text: str = cursor.selectedText()
+        cursor.clearSelection()
+        cursor.setPosition(originalPos)
+        return text
+
+    def backIndent(self) -> None:
+        cursor = self.textCursor()
+        originalPos: int = cursor.position()
+        if not self._getBeforeText(originalPos).strip() and self._getPosInLine() >= 1:
+            inlinePos: int = self._getPosInLine()
+            returnPos: int = self.spacing if inlinePos % self.spacing == 0 else self.spacing - (inlinePos % self.spacing)
+            cursor.movePosition(QTextCursor.MoveOperation.Left, QTextCursor.MoveMode.KeepAnchor, returnPos)
+            cursor.removeSelectedText()
+            cursor.clearSelection()
+            cursor.setPosition(originalPos - returnPos)
+
+    def _multilineIndent(self, back: bool = False) -> None:
+        cursor = self.textCursor()
+        selectionStart: int = cursor.selectionStart()
+        originalPos: int = cursor.position()
+        text: list[str] = cursor.selectedText().splitlines()
+        after: list[str] = []
+        for temp in text:
+            space: int = len(temp) - len(temp.lstrip())
+            if back:
+                oneSpace: int = space % self.spacing if space % self.spacing else self.spacing
+                backSpacing: int = space - oneSpace
+                after.append(f"{backSpacing * " "}{temp[space:]}")
             else:
-                self.insertPlainText(' ' * self.spacing)
+                spacing: int = self.spacing if space % self.spacing == 0 else space % self.spacing
+                after.append(f"{spacing * " "}{temp}")
+        answer: str = "\n".join(after)
+        cursor.removeSelectedText()
+        cursor.setPosition(selectionStart)
+        cursor.insertText(answer)
+        cursor.setPosition(selectionStart)
+        cursor.movePosition(QTextCursor.MoveOperation.Right, QTextCursor.MoveMode.KeepAnchor, len(answer))
+        self.setTextCursor(cursor)
+
+    def _thisLineContent(self, position: int) -> str:
+        cursor = self.textCursor()
+        cursor.setPosition(position)
+        cursor.movePosition(QTextCursor.MoveOperation.StartOfLine)
+        cursor.movePosition(QTextCursor.MoveOperation.EndOfLine, QTextCursor.MoveMode.KeepAnchor)
+        getText: str = cursor.selectedText()
+        cursor.clearSelection()
+        cursor.setPosition(position)
+        return getText
+
+    def keyPressEvent(self, event: QKeyEvent) -> None:
+        # Rewrite keyPressEvent, AI Generate? Unuse!
+        if event.key() == Qt.Key.Key_Backtab:
+            # Same as Backspace
+            cursor = self.textCursor()
+            if len(cursor.selectedText()) > 0:
+                self._multilineIndent(True)
+            else:
+                self.backIndent()
             return
+        elif event.key() == Qt.Key.Key_Tab:
+            cursor = self.textCursor()
+            originalPos: int = cursor.position()
+            if len(cursor.selectedText()) > 0:
+                self._multilineIndent()
+                return
+            else:
+                posInLine: int = self._getPosInLine()
+                spacing: int = self.spacing if posInLine % self.spacing == 0 else self.spacing - (posInLine % self.spacing)
+                cursor.insertText(" " * spacing)
+                cursor.setPosition(originalPos + spacing)
+                return
         elif event.key() == Qt.Key.Key_Return:
             cursor = self.textCursor()
-            currentBlock = cursor.block()
-            currentText = currentBlock.text()
-            spaces = 0
-            for char in currentText:
-                if char == ' ':
-                    spaces += 1
-                else:
-                    break
-            indentLevel = spaces // self.spacing
-            super().keyPressEvent(event)
-            if indentLevel > 0:
-                stringToIndent = ' ' * (indentLevel * self.spacing)
-                self.insertPlainText(stringToIndent)
-            if self.usingCodeControl:
-                trimmed = currentText.strip()
-                for keyword in self.defineKeywords:
-                    if isinstance(keyword, str) and trimmed.endswith(keyword):
-                        self.insertPlainText(' ' * self.spacing)
-                        break
-                else:
-                    if any(trimmed.endswith(symbol) for symbol in [':', '{', '(', '[']):
-                        self.insertPlainText(' ' * self.spacing)
+            originalPos: int = cursor.position()
+            content: str = self._thisLineContent(cursor.position())
+            lineSpace: int = len(content) - len(content.lstrip())
+            cursor.insertText("\n")
+            cursor.insertText(" " * lineSpace)
+            cursor.setPosition(originalPos + lineSpace + 1)
+            self.setTextCursor(cursor)
             return
-        elif event.key() == Qt.Key.Key_Backtab:
+        elif event.text() in [i[0] for i in self.defineKeywords] or event.text() in ["(","[","{"]:
+            super().keyPressEvent(event)
             cursor = self.textCursor()
-            if cursor.hasSelection():
-                start = min(cursor.anchor(), cursor.position())
-                end = max(cursor.anchor(), cursor.position())
-                cursor.setPosition(start)
-                cursor.movePosition(QTextCursor.MoveOperation.StartOfLine)
-                start = cursor.position()
-                cursor.setPosition(end)
-                cursor.movePosition(QTextCursor.MoveOperation.EndOfLine)
-                end = cursor.position()
-                cursor.setPosition(start)
-                cursor.setPosition(end, QTextCursor.MoveMode.KeepAnchor)
-                selected_text = cursor.selectedText()
-                lines = selected_text.split('\u2029')
-                notIndentedLines = []
-                for line in lines:
-                    if line.startswith(' ' * self.spacing):
-                        notIndentedLines.append(line[self.spacing:])
-                    elif line.startswith(' '):
-                        spaces_to_remove = min(self.spacing, len(line) - len(line.lstrip()))
-                        notIndentedLines.append(line[spaces_to_remove:])
-                    else:
-                        notIndentedLines.append(line)
-
-                cursor.insertText('\u2029'.join(notIndentedLines))
+            normals: list = ["()","[]","{}"]
+            if event.text() in [i[0] for i in self.defineKeywords]:
+                cursor.insertText([i[1] for i in self.defineKeywords][[i[0] for i in self.defineKeywords].index(event.text())])
+            elif event.text() in [i[0] for i in normals]:
+                cursor.insertText([i[1] for i in normals][[i[0] for i in normals].index(event.text())])
             else:
-                cursor = self.textCursor()
-                block = cursor.block()
-                text = block.text()
-                spaces_to_remove = min(self.spacing, len(text) - len(text.lstrip()))
-                if spaces_to_remove > 0:
-                    cursor.movePosition(QTextCursor.MoveOperation.StartOfLine)
-                    cursor.movePosition(QTextCursor.MoveOperation.Right, QTextCursor.MoveMode.KeepAnchor,
-                                        spaces_to_remove)
-                    cursor.removeSelectedText()
-            return
-
-        elif event.key() in [Qt.Key.Key_ParenRight, Qt.Key.Key_BracketRight, Qt.Key.Key_BraceRight, Qt.Key.Key_QuoteDbl, Qt.Key.Key_Apostrophe]:
-            cursor = self.textCursor()
-            characterMap = {
-                Qt.Key.Key_ParenRight: ('(', ')'),
-                Qt.Key.Key_BracketRight: ('[', ']'),
-                Qt.Key.Key_BraceRight: ('{', '}'),
-                Qt.Key.Key_QuoteDbl: ('"', '"'),
-                Qt.Key.Key_Apostrophe: ("'", "'")
-            }
-            opening, closing = characterMap.get(event.key(), (None, None))
-            if opening and closing:
-                text = cursor.block().text()[:cursor.positionInBlock()]
-                if not text.rstrip().endswith(('#', '"', "'")):
-                    cursor.select(QTextCursor.SelectionType.WordUnderCursor)
-                    selectedText = cursor.selectedText()
-                    if opening in selectedText:
-                        self.insertPlainText(closing)
-                        cursor.movePosition(QTextCursor.MoveOperation.Left)
-                        self.setTextCursor(cursor)
-                        return
-
-            super().keyPressEvent(event)
+                return
+            cursor.movePosition(QTextCursor.MoveOperation.Left)
+            self.setTextCursor(cursor)
             return
         elif event.key() == Qt.Key.Key_Backspace:
             cursor = self.textCursor()
+            originalPos = cursor.position()
             if cursor.hasSelection():
                 cursor.removeSelectedText()
                 return
             if cursor.position() > 0:
-                current_pos = cursor.position()
-                cursor.movePosition(QTextCursor.MoveOperation.Left, QTextCursor.MoveMode.KeepAnchor, 2)
-                twoChars = cursor.selectedText()
-                cursor.clearSelection()
-                if twoChars in ['()', '[]', '{}', '""', "''"]:
-                    cursor.setPosition(current_pos - 1)
-                    cursor.movePosition(QTextCursor.MoveOperation.Left, QTextCursor.MoveMode.KeepAnchor, 1)
-                    cursor.removeSelectedText()
+                if self._getPosInLine() >= self.spacing:
+                    self.backIndent()
+                    if self.textCursor().position() != originalPos:
+                        return
+                if self._getPosInLine() >= 1:
+                    cursor.movePosition(QTextCursor.MoveOperation.Left, QTextCursor.MoveMode.KeepAnchor)
+                    left: str = cursor.selectedText()
+                    cursor.clearSelection()
+                    cursor.setPosition(originalPos)
+                    cursor.movePosition(QTextCursor.MoveOperation.Right, QTextCursor.MoveMode.KeepAnchor)
+                    right: str = cursor.selectedText()
+                    cursor.clearSelection()
+
+                    if f"{left}{right}" in self.defineKeywords or f"{left}{right}" in ["()", "[]", "{}"]:
+                        cursor.movePosition(QTextCursor.MoveOperation.Left)
+                        cursor.movePosition(QTextCursor.MoveOperation.Right, QTextCursor.MoveMode.KeepAnchor, 2)
+                        cursor.removeSelectedText()
+                        cursor.setPosition(originalPos - 1)
+                    else:
+                        super().keyPressEvent(event)
+                        return
                 else:
-                    cursor.setPosition(current_pos)
-                    cursor.movePosition(QTextCursor.MoveOperation.Left, QTextCursor.MoveMode.KeepAnchor, 1)
-                    cursor.removeSelectedText()
+                    super().keyPressEvent(event)
+                    return
             else:
                 super().keyPressEvent(event)
-            return
+                return
 
         super().keyPressEvent(event)
 
@@ -558,6 +573,24 @@ class LineEditSettingObject(SettingObject):
         self.setRightWidget(self.lineEdit)
 
 
+class PluginInfoLister(QTextEdit):
+    def __init__(self, parent: QWidget = None):
+        super().__init__(parent)
+        self.setStyleSheet(f"{self.styleSheet()} border: none;")
+        self.setReadOnly(True)
+
+    def setInformation(self, info: list[Any]) -> None:
+        self.clear()
+        self.setHtml(f"""
+<img src="{info[0]}">
+<br><h1>{info[1]}</h1>
+<h3>{info[2]}</h3>
+<p>Version: {info[3]}</p>
+<p>Author: {info[4]}</p>
+<p>Description: <br>{info[5]}</p>
+""")
+
+
 class CheckBoxSettingObject(SettingObject):
     def __init__(self, parent: QWidget = None, text: str = "Unknown Text", desc: str = "Unknown Description"):
         super().__init__(parent, text, desc)
@@ -566,6 +599,8 @@ class CheckBoxSettingObject(SettingObject):
 
 
 class MainWindow(QMainWindow):
+    themeChanged: Signal = Signal()
+
     def __init__(self):
         super().__init__()
         self.widget = QStackedWidget()
@@ -577,15 +612,23 @@ class MainWindow(QMainWindow):
         self._initBase()
         self._setupUI()
         self._setupTab()
+        self._automaticSetTheme()
+        self._autoApplyPluginInfo()
 
     def _setupTab(self):
-        if len(settingObject.getValue("beforeread")):
+        if len(settingObject.getValue("beforeread")) or len(fileargs) > 0:
             for temp in settingObject.getValue("beforeread"):
                 if not Path(temp).exists():
                     self._createRecommendFile()
                     self.tabTextEdits[len(self.tabTextEdits)-1].setPlainText(loadJson("EditorUI")["editor.any.cannotreadfile"].format(temp))
                 else:
-                    self._createTab(temp)
+                    self.createTab(temp)
+            for temp in [str(Path(i)) for i in fileargs]:
+                if Path(temp).exists():
+                    self.createTab(temp)
+                else:
+                    self._createRecommendFile()
+                    self.tabTextEdits[len(self.tabTextEdits)-1].setPlainText(loadJson("EditorUI")["editor.any.cannotreadfile2"].format(temp))
             settingObject.setValue("beforeread", [i for i in settingObject.getValue("beforeread") if Path(i).exists()])
         else:
             self._createRecommendFile()
@@ -640,19 +683,8 @@ class MainWindow(QMainWindow):
         self.setArea.appearance = QScrollArea()
         self.setArea.appearance.vLayout = QVBoxLayout()
         self.setArea.appearance.titleAppearance = QLabel(loadJson("EditorUI")["editor.title.settings.appearance"])
-        self.setArea.appearance.titleAppearance.setStyleSheet("font-size: 18px; font-weight: bold; margin-bottom: 10px;") # QSS
+        self.setArea.appearance.titleAppearance.setStyleSheet("font-size: 38px; font-weight: bold; margin-bottom: 10px;") # QSS
         self.setArea.appearance.seperator = SeperatorWidget()
-        self.setArea.appearance.fontSelect = ComboBoxSettingObject(None, loadJson("EditorUI")["editor.title.setobj.fontname"], loadJson("EditorUI")["editor.desc.setobj.fontname"])
-        self.setArea.appearance.fontSelect.useFontBox()
-        self.setArea.appearance.fontSelect.comboBox.setCurrentFont(QFont(settingObject.getValue("fontName")))
-        self.setArea.appearance.fontSelect.comboBox.currentFontChanged.connect(lambda: self.applyFont(fontName=self.setArea.appearance.fontSelect.comboBox.currentFont().family()))
-        self.setArea.appearance.fontSize = LineEditSettingObject(None, loadJson("EditorUI")["editor.title.setobj.fontsize"], loadJson("EditorUI")["editor.desc.setobj.fontsize"])
-        self.setArea.appearance.fontSize.useSpinBox()
-        self.setArea.appearance.fontSize.lineEdit.setMinimum(1)
-        self.setArea.appearance.fontSize.lineEdit.setMaximum(99)
-        self.setArea.appearance.fontSize.lineEdit.setValue(settingObject.getValue("fontSize"))
-        self.setArea.appearance.fontSize.lineEdit.textChanged.connect(lambda: self.applyFont(fontSize=self.setArea.appearance.fontSize.lineEdit.value()))
-        self.setArea.appearance.fontSize.lineEdit.setSuffix(loadJson("EditorUI")["editor.suffix.settings.size"])
         self.setArea.appearance.debugMode = CheckBoxSettingObject(None, loadJson("EditorUI")["editor.title.setobj.debugmode"], loadJson("EditorUI")["editor.desc.setobj.debugmode"])
         self.setArea.appearance.debugMode.checkBox.setText(loadJson("EditorUI")["editor.desc.setobj.debugmodeopen"])
         self.setArea.appearance.debugMode.checkBox.setChecked(settingObject.getValue("debugmode"))
@@ -667,12 +699,16 @@ class MainWindow(QMainWindow):
             settingObject.setValue("language", list(basicInfo["item.dict.language_for"].keys())[self.setArea.appearance.language.comboBox.currentIndex()]),
             QMessageBox(QMessageBox.Icon.Information, loadJson("MessageBox")["msgbox.title.info"], loadJson("MessageBox")["msgbox.info.restartApplySet"], buttons=QMessageBox.StandardButton.Ok, parent=self).exec()
         })
+        self.setArea.appearance.theme = ComboBoxSettingObject(None, loadJson("EditorUI")["editor.title.setobj.theme"], loadJson("EditorUI")["editor.desc.setobj.theme"])
+        self.setArea.appearance.theme.comboBox.addItems([loadJson("EditorUI")[i] for i in [f"editor.any.{k}" for k in ["light","dark"]]])
+        self.setArea.appearance.theme.comboBox.setCurrentIndex(settingObject.getValue("theme") if settingObject.getValue("theme") < 2 else 0)
+        self.setArea.appearance.theme.comboBox.currentIndexChanged.connect(
+            lambda: self.setTheme(self.setArea.appearance.theme.comboBox.currentIndex()))
         self.setArea.appearance.vLayout.addWidget(self.setArea.appearance.titleAppearance)
         self.setArea.appearance.vLayout.addWidget(self.setArea.appearance.seperator)
-        self.setArea.appearance.vLayout.addWidget(self.setArea.appearance.fontSelect)
-        self.setArea.appearance.vLayout.addWidget(self.setArea.appearance.fontSize)
         self.setArea.appearance.vLayout.addWidget(self.setArea.appearance.debugMode)
         self.setArea.appearance.vLayout.addWidget(self.setArea.appearance.language)
+        self.setArea.appearance.vLayout.addWidget(self.setArea.appearance.theme)
         self.setArea.appearance.vLayout.addStretch(1)
         self.setArea.appearance.setLayout(self.setArea.appearance.vLayout)
         self.setArea.addTab(self.setArea.appearance, loadJson("EditorUI")["editor.tab.settings.appearance"])
@@ -680,13 +716,69 @@ class MainWindow(QMainWindow):
         self.setArea.plugins = QScrollArea()
         self.setArea.plugins.vLayout = QVBoxLayout()
         self.setArea.plugins.titlePlugins = QLabel(loadJson("EditorUI")["editor.title.settings.plugin"])
-        self.setArea.plugins.titlePlugins.setStyleSheet("font-size: 18px; font-weight: bold; margin-bottom: 10px;") # Also QSS
+        self.setArea.plugins.titlePlugins.setStyleSheet("font-size: 38px; font-weight: bold; margin-bottom: 10px;") # Also QSS
         self.setArea.plugins.seperator = SeperatorWidget()
+        self.pluginInfo: list[list[Any]] = []
+        self.setArea.plugins.set = QWidget()
+        self.setArea.plugins.set.hLayout = QHBoxLayout()
+        self.setArea.plugins.set.listWidget = QListWidget()
+        self.setArea.plugins.set.listWidget.setStyleSheet(f"{self.setArea.plugins.set.listWidget.styleSheet()} QListWidget::item::selected {r"{ background-color: lightblue; }"}")
+        self.setArea.plugins.set.information = PluginInfoLister()
+        self.setArea.plugins.set.listWidget.currentTextChanged.connect(lambda: {
+            self.setArea.plugins.set.information.setInformation(["null" for i in range(7)] if len(self.pluginInfo) == 0 else self.pluginInfo[self.setArea.plugins.set.listWidget.currentRow()])
+        })
+        self.setArea.plugins.set.listWidget.itemDoubleClicked.connect(lambda: {
+            self.setThisPluginAnotherType(self.setArea.plugins.set.listWidget.currentItem())
+        })
+        self.setArea.plugins.set.hLayout.addWidget(self.setArea.plugins.set.listWidget, stretch=1)
+        self.setArea.plugins.set.hLayout.addWidget(self.setArea.plugins.set.information, stretch=2)
+        self.setArea.plugins.set.setLayout(self.setArea.plugins.set.hLayout)
         self.setArea.plugins.vLayout.addWidget(self.setArea.plugins.titlePlugins)
         self.setArea.plugins.vLayout.addWidget(self.setArea.plugins.seperator)
-        self.setArea.plugins.vLayout.addStretch(1)
+        self.setArea.plugins.vLayout.addWidget(self.setArea.plugins.set, 1)
         self.setArea.plugins.setLayout(self.setArea.plugins.vLayout)
         self.setArea.addTab(self.setArea.plugins, loadJson("EditorUI")["editor.tab.settings.plugin"])
+        # Editor Font Setting
+        self.setArea.edfont = QScrollArea()
+        self.setArea.edfont.vLayout = QVBoxLayout()
+        self.setArea.edfont.titleEditorFont = QLabel(loadJson("EditorUI")["editor.tab.settings.editorfont"])
+        self.setArea.edfont.titleEditorFont.setStyleSheet("font-size: 38px; font-weight: bold; margin-bottom: 10px;")
+        self.setArea.edfont.seperator = SeperatorWidget()
+        self.setArea.edfont.fontSelect = ComboBoxSettingObject(None, loadJson("EditorUI")["editor.title.setobj.fontname"], loadJson("EditorUI")["editor.desc.setobj.fontname"])
+        self.setArea.edfont.fontSelect.useFontBox()
+        self.setArea.edfont.fontSelect.comboBox.setCurrentFont(QFont(settingObject.getValue("fontName")))
+        self.setArea.edfont.fontSelect.comboBox.currentFontChanged.connect(lambda: self.applyFont(fontName=self.setArea.edfont.fontSelect.comboBox.currentFont().family()))
+        self.setArea.edfont.fontSize = LineEditSettingObject(None, loadJson("EditorUI")["editor.title.setobj.fontsize"], loadJson("EditorUI")["editor.desc.setobj.fontsize"])
+        self.setArea.edfont.fontSize.useSpinBox()
+        self.setArea.edfont.fontSize.lineEdit.setMinimum(1)
+        self.setArea.edfont.fontSize.lineEdit.setMaximum(99)
+        self.setArea.edfont.fontSize.lineEdit.setValue(settingObject.getValue("fontSize"))
+        self.setArea.edfont.fontSize.lineEdit.textChanged.connect(lambda: self.applyFont(fontSize=self.setArea.edfont.fontSize.lineEdit.value()))
+        self.setArea.edfont.fontSize.lineEdit.setSuffix(loadJson("EditorUI")["editor.suffix.settings.size"])
+        self.setArea.edfont.fallbackSelect = ComboBoxSettingObject(None, loadJson("EditorUI")["editor.title.setobj.fbfont"], loadJson("EditorUI")["editor.desc.setobj.fbfont"])
+        self.setArea.edfont.fallbackSelect.useFontBox()
+        self.setArea.edfont.fallbackSelect.comboBox.currentFontChanged.connect(lambda: self.applyFont(fallbackFont=self.setArea.edfont.fallbackSelect.comboBox.currentFont().family()))
+        if settingObject.getValue("fallbackFont"):
+            self.setArea.edfont.fallbackSelect.comboBox.setCurrentFont(QFont(settingObject.getValue("fallbackFont")))
+        else:
+            self.setArea.edfont.fallbackSelect.comboBox.setCurrentFont(QFont("MiSans VF"))
+        self.setArea.edfont.useFallbackFont = CheckBoxSettingObject(None, loadJson("EditorUI")["editor.title.setobj.usefbfont"], loadJson("EditorUI")["editor.desc.setobj.usefbfont"])
+        self.setArea.edfont.useFallbackFont.checkBox.setText(loadJson("EditorUI")["editor.desc.setobj.usefbfontopen"])
+        self.setArea.edfont.useFallbackFont.checkBox.checkStateChanged.connect(lambda: {
+            settingObject.setValue("useFallback", self.setArea.edfont.useFallbackFont.checkBox.isChecked()),
+            self.setArea.edfont.fallbackSelect.setDisabled(not self.setArea.edfont.useFallbackFont.checkBox.isChecked()),
+            self.applySettings()
+        })
+        self.setArea.edfont.useFallbackFont.checkBox.setChecked(settingObject.getValue("useFallback"))
+        self.setArea.edfont.vLayout.addWidget(self.setArea.edfont.titleEditorFont)
+        self.setArea.edfont.vLayout.addWidget(self.setArea.edfont.seperator)
+        self.setArea.edfont.vLayout.addWidget(self.setArea.edfont.fontSelect)
+        self.setArea.edfont.vLayout.addWidget(self.setArea.edfont.fontSize)
+        self.setArea.edfont.vLayout.addWidget(self.setArea.edfont.useFallbackFont)
+        self.setArea.edfont.vLayout.addWidget(self.setArea.edfont.fallbackSelect)
+        self.setArea.edfont.vLayout.addStretch(1)
+        self.setArea.edfont.setLayout(self.setArea.edfont.vLayout)
+        self.setArea.addTab(self.setArea.edfont, loadJson("EditorUI")["editor.tab.settings.editorfont"])
         self.setVerticalLayout = QVBoxLayout()
         self.setVerticalLayout.addWidget(self.backToMain)
         self.setVerticalLayout.addWidget(self.setArea)
@@ -700,11 +792,60 @@ class MainWindow(QMainWindow):
         debugLog("Successfully to add frame!")
         debugLog("Successfully to set up User Interface!")
 
-    def applyFont(self, fontName: str = None, fontSize: int = None) -> None:
+    def setThisPluginAnotherType(self, item: QListWidgetItem) -> None:
+        objectName: str = item.objName
+        name: str = item.name
+        if objectName in settingObject.getValue("disableplugin"):
+            item.setText(name)
+            disabledPlugin: list[str] = settingObject.getValue("disableplugin")
+            disabledPlugin.remove(objectName)
+            settingObject.setValue("disableplugin", disabledPlugin)
+        else:
+            item.setText(f"[X] {name}")
+            disabledPlugin: list[str] = settingObject.getValue("disableplugin")
+            disabledPlugin.append(objectName)
+            settingObject.setValue("disableplugin", disabledPlugin)
+
+    def _autoApplyPluginInfo(self) -> None:
+        self.pluginInfo.clear()
+        self.setArea.plugins.set.listWidget.clear()
+        for key, word in loadedPlugin.items():
+            debugLog(f"Applying Plugin Info... Current: {key} 😁")
+            icon: QPixmap = QPixmap("./resources/images/plugins.png" if word["icon"] is None or not Path(word["icon"]).exists() else word["icon"])
+            name: str = word["name"]
+            objectName: str = word["objectName"]
+            version: str = word["version"]
+            author: str = ", ".join(word["author"])
+            desc: str = word["description"]
+            self.pluginInfo.append(["./resources/images/plugins.png" if word["icon"] is None or not Path(word["icon"]).exists() else word["icon"], name, objectName, version, author, desc])
+            item: QListWidgetItem = QListWidgetItem(icon, name if objectName not in settingObject.getValue("disableplugin") else f"[X] {name}")
+            item.objName = objectName
+            item.name = name
+            self.setArea.plugins.set.listWidget.addItem(item)
+        self.setArea.plugins.set.listWidget.setCurrentRow(0)
+
+    def setTheme(self, theme: int = 0) -> None:
+        """
+        Set theme (0 for light, 1 for dark)
+        :param theme: Theme number
+        :return: NoneType
+        """
+        if not "--no-theme" in args and not "-nt" in args:
+            apply_stylesheet(application, "light_blue.xml" if not theme else "dark_blue.xml")
+            settingObject.setValue("theme", theme)
+            self.applySettings()
+            self.themeChanged.emit()
+
+    def _automaticSetTheme(self) -> None:
+        apply_stylesheet(application, "light_blue.xml" if not settingObject.getValue("theme") else "dark_blue.xml")
+
+    def applyFont(self, fontName: str = None, fontSize: int = None, fallbackFont: str = None) -> None:
         if fontName:
             settingObject.setValue("fontName", fontName)
         if fontSize:
             settingObject.setValue("fontSize", fontSize)
+        if fallbackFont:
+            settingObject.setValue("fallbackFont", fallbackFont)
         self.applySettings()
 
     def show(self) -> None:
@@ -763,9 +904,9 @@ class MainWindow(QMainWindow):
                 self.close()
 
     def _createRecommendFile(self):
-        self._createTab()
+        self.createTab()
 
-    def _createTab(self, filename: str | None = None):
+    def createTab(self, filename: str | None = None):
         debugLog(f"Creating Tab... Will load file: {filename if filename else "Nothing"} 🤓")
         oldDatetime = datetime.now()
         temp = SinotePlainTextEdit()
@@ -786,12 +927,20 @@ class MainWindow(QMainWindow):
     def applySettings(self):
         fontSize: int = settingObject.getValue("fontSize")
         fontName: str = settingObject.getValue("fontName")
-        debugLog(f"Font Size: {fontSize}, Font Name: {fontName} 😍")
+        fallbackFont: str = settingObject.getValue("fallbackFont")
+        fallBack: bool = settingObject.getValue("useFallback")
+        debugLog(f"Font Size: {fontSize}, Font Name: {fontName}, Fallback Font: {fallbackFont} 😍")
         for tab, temp in enumerate(self.tabTextEdits, 1):
             if temp:
                 debugLog(f"Setting tab {tab}... 🤔")
                 temporary = QFont(fontName, fontSize)
-                temp.setStyleSheet(f"{temp.styleSheet()} font-family: {fontName}; font-size: {fontSize}pt;")
+                if fallBack:
+                    temporary = QFont(fallbackFont, fontSize)
+                    temp.setStyleSheet(
+                        f"{temp.styleSheet()} font-family:\"{fontName}\", \"{fallbackFont}\"; font-size: {fontSize}pt;")
+                else:
+                    temp.setStyleSheet(
+                        f"{temp.styleSheet()} font-family: {fontName}; font-size: {fontSize}pt;")
                 temp.setFont(temporary)
         debugLog("Successfully to set tab! ✅")
 

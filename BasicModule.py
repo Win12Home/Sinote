@@ -33,10 +33,8 @@ filterwarnings("ignore", category=DeprecationWarning)
 
 application = QApplication([])
 
-apply_stylesheet(application,"light_blue.xml")
-
 apiVersion: tuple = (1,0,1)
-sinoteVersion: str = "sinote-2025.1.00860-initial-preview-beta"
+sinoteVersion: str = "sinote-2025.1.00860-initial-preview-beta-v0.06.25542"
 
 normalLogOutput: list[str] = []
 
@@ -62,7 +60,7 @@ def addLogClassic(type: int = 0, bodyText: str = "N/A", activity: str | None = N
         print(f"{nowTime} {"Main" if not activity else activity} {typeOfLog} {bodyText}")
 
 def owLog(type: int = 0, bodyText: str = "N/A", activity: str | None = None, mustToPrint: bool = False):
-    if type in [1, 2] or mustToPrint:  # 只输出WARN(1)和ERR(2)
+    if type in [1, 2] or mustToPrint:  # Only output WARN&ERR, What the hell of that? 
         addLogClassic(type, bodyText, activity)
 
 addLog = addLogClassic
@@ -212,15 +210,18 @@ except:
     sys.exit(1)
 
 # Look at the system
-args = [i.lower() for i in sys.argv]
+args = [i.lower() for i in sys.argv[1:] if i.lower().startswith("-")]
+fileargs = [i.lower() for i in sys.argv[1:] if not i.lower().startswith("-")]
 
 normalSetting: dict = {
     "fontName": "Fira Code",
     "fontSize": 12,
-    "fallbackFont": "MiSans VF",
+    "useFallback": False,
+    "fallbackFont": None,
     "language": getdefaultlocale()[0],
     "debugmode": False,
     "secsave": 10,
+    "theme": 1,
     "beforeread": [],
     "disableplugin": []
 }
@@ -240,7 +241,7 @@ if "--no-color" in args or "-nc" in args:
 
 if "-h" in args or "--help" in args: # HelpActivity
     addLog(0, "Sinote Help is starting...", "HelpActivity")
-    QMessageBox.information(None,"Help","-h/--help: Arguments Help of Sinote\n-su/--use-root-user: Bypass check for SU User in posix env\n--bypass-system-check: Bypass System Check (Windows, Linux, Mac OS)\n-db/--debug-mode: Use Debug Mode (I/O Performance will low)\n-ow/--only-warning: Only Warning/Error in LOG\n--no-color/-nc: No color when log output\n--only-create-cache: Only create plugin caches")
+    QMessageBox.information(None,"Help","-h/--help: Arguments Help of Sinote\n-su/--use-root-user: Bypass check for SU User in posix env\n--bypass-system-check: Bypass System Check (Windows, Linux, Mac OS)\n-db/--debug-mode: Use Debug Mode (I/O Performance will low)\n-ow/--only-warning: Only Warning/Error in LOG\n--no-color/-nc: No color when log output\n--only-create-cache: Only create plugin caches\n--no-theme/-nt: Use default style (Windows)")
     addLog(0, "Sinote Help closed, return to normal enviroment.", "HelpActivity")
     addLog(0, "Exiting...")
     sys.exit(0)
@@ -1060,6 +1061,7 @@ class LoadPluginInfo:
             addLog(bodyText="Successfully to read info.json ✅")
             addLog(bodyText="Attempting to merge info.json 🔎")
             information: dict = self.info | info
+            information["icon"] = None if not isinstance(information["icon"], str) else information["icon"].lower().replace("%pluginpath%", f"./resources/plugins/{self.projName}")
             addLog(bodyText="Successfully to merge info.json ✅")
             if information["versionIterate"] > 99900:
                 information["versionIterate"] = 99900
