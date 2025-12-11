@@ -73,8 +73,19 @@ jobs:
           cp README.md bin/ 2>/dev/null || echo "README.md not found, skipping"
           cp LICENSE bin/ 2>/dev/null || echo "LICENSE not found, skipping"
           cp -r 3rd-party-license bin/ 2>/dev/null || echo "3rd-party-license not found, skipping"
+          cp -r README bin/ 2>/dev/null || echo "README not found, skipping"
+          cp CHANGELOG.md bin/ 2>/dev/null || echo "CHANGELOG.md not found, skipping"
           echo Copied Successfully!
-          echo Directory of Final Binary
+          echo Directory of Binaries
+          ls -la "./bin"
+
+      - name: Compile Sinote CLI
+        shell: bash
+        run: |
+          rm -rf ./dist
+          pyinstaller -F -c --exclude PySide6 --exclude tkinter --exclude qt_material --exclude PIL --exclude psutil -i ./resources/images/plugins.png SinoteCLI.py -n SinoteCLI
+          cp ./dist/* ./bin
+          echo Final directory
           ls -la "./bin"
 
   publish:

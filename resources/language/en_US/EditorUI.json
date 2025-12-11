@@ -47,5 +47,8 @@
   "editor.any.cannotreadfile": "Cannot read before opened file {}: Not exists",
   "editor.any.cannotreadfile2": "Cannot read file {} that it's defined in argument: Not exists",
   "editor.any.light": "Light",
-  "editor.any.dark": "Dark"
+  "editor.any.dark": "Dark",
+  "editor.any.version": "Version",
+  "editor.any.author": "Author",
+  "editor.any.description": "Description"
 }

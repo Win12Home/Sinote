@@ -60,10 +60,10 @@ def automaticLoadPlugin() -> None:
             addLog(1, f"Automatic skipped {item.name}, Reason: info.json not exists ❌")
             continue
         temp = LoadPluginInfo(item.name).getValue()
+        loadedPlugin[temp[0]["objectName"]] = temp[0]
         if temp[0]["objectName"] in settingObject.getValue("disableplugin"):
             debugPluginLog(f"Automatic skip plugin {temp[0]["objectName"]} (DISABLED)")
             continue
-        loadedPlugin[temp[0]["objectName"]] = temp[0]
         debugPluginLog(f"Successfully loaded {item.name}, objectName: {temp[0]["objectName"]}. Preparing to parse... ✅")
         for key in temp[1]:
             debugPluginLog(f"Loading {key[0]}...")
@@ -585,9 +585,9 @@ class PluginInfoLister(QTextEdit):
 <img src="{info[0]}">
 <br><h1>{info[1]}</h1>
 <h3>{info[2]}</h3>
-<p>Version: {info[3]}</p>
-<p>Author: {info[4]}</p>
-<p>Description: <br>{info[5]}</p>
+<p>{loadJson("EditorUI")["editor.any.version"]}: {info[3]}</p>
+<p>{loadJson("EditorUI")["editor.any.author"]}: {info[4]}</p>
+<p>{loadJson("EditorUI")["editor.any.description"]}: <br>{info[5].replace("\\n", "<br>")}</p>
 """)
 
 

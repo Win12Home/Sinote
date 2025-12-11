@@ -48,7 +48,8 @@ It gives an information of your plugin to **Sinote**.
   }, // A Customize Remove String
   "author": [
     "Win12Home"
-  ] //Authors of Plugin
+  ], //Authors of Plugin
+  "description": "Description" // Description, you can use HTML context. (Automatic set \n to <br>)
 }
 ```
 Note: ``info.json`` can't edit to ``info.si_plug`` and similar.

@@ -7,5 +7,5 @@
   "author": [
     "Win12Home"
   ],
-  "description": "Configuration files syntax highlighting support: JSON, JSON5, XML, .conf"
+  "description": "A official configuration file highlight plugin.<br><strong>Support configuration files: </strong><ul><li>JSON</li><li>JSON5</li><li>.CONF</li><li>XML</li></ul>"
 }
