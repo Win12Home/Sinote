@@ -91,7 +91,7 @@ jobs:
       - name: Upload Artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: Sinote-${{ runner.os }}-${{ steps.set_build_type.outputs.BUILD_SUFFIX }}
+          name: Sinote-${{ runner.os }}-${{ github.ref_name }}
           path: bin/
 
   publish:
