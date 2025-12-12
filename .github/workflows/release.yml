@@ -88,11 +88,14 @@ jobs:
           echo Final directory
           ls -la "./bin"
 
+      - name: Package binaries
+        run: tar -czf Sinote-${{ runner.os }}.tar.gz -C bin .
+
       - name: Upload Artifacts
         uses: actions/upload-artifact@v4
         with:
           name: Sinote-${{ runner.os }}-${{ github.ref_name }}
-          path: bin/
+          path: Sinote-${{ runner.os }}.tar.gz
 
   publish:
     needs: build
