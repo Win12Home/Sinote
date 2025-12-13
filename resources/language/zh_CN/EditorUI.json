@@ -50,5 +50,6 @@
   "editor.any.dark": "暗色",
   "editor.any.version": "版本",
   "editor.any.author": "作者",
-  "editor.any.description": "描述"
+  "editor.any.description": "描述",
+  "editor.any.plaintext": "纯文本"
 }

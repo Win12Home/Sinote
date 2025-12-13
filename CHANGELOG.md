@@ -3,6 +3,8 @@
 ## Recently Build
 ***Now no any build because only Pre-release out!***
 ## Recently Pre-release
+### 0.06.26001
+1. **Add feature**: Add Status bar in the bottom of the edit area.
 ### 0.06.25542
 1. **Add feature**: Add **+** button to create new Tab. (I forgot add it in 0.06.25530)
 2. **Add feature**: It automatically restores last session every start. (It won't be restore your cursor position.)
@@ -14,5 +16,6 @@
 8. **Add feature**: Sinote is wrong, its truly name is ```Arguments++```. (JOKE) Exactly, add ``--only-create-cache``, ``--no-color/-nc``, ``--no-theme/-nt``, ``--record-log/-rl``. Look Help for learn more.
 9. **Something not important**: Add software icon.
 10. **Add feature**: Add **Plugin Setting** for config your plugin!
+11. **Add software**: Add **Sinote CLI** (SinoteCLI.py) for create plugin quickly.
 ### 0.06.25530
 1. First version, no **any** update.

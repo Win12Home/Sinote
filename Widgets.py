@@ -209,13 +209,23 @@ class SpacingSupportEdit(LineShowTextEdit):
         self.usingCodeControl: bool = False
         self.spacing: int = 4
 
-    def _getPosInLine(self) -> int:
+    def getPosInLine(self) -> int:
         cursor = self.textCursor()
         originalPos: int = cursor.position()
         cursor.movePosition(QTextCursor.MoveOperation.StartOfLine)
         afterPos: int = cursor.position()
         cursor.setPosition(originalPos)
         return originalPos - afterPos
+
+    def getLineNumber(self) -> int:
+        cursor = self.textCursor()
+        originalPos: int = cursor.position()
+        cursor.movePosition(QTextCursor.MoveOperation.Start, QTextCursor.MoveMode.KeepAnchor)
+        lineNumber: int = len(cursor.selectedText().splitlines())
+        cursor.clearSelection()
+        cursor.setPosition(originalPos)
+        lineNumber: int = 1 if lineNumber == 0 else lineNumber
+        return lineNumber
 
     def _getBeforeText(self, position: int) -> str:
         cursor = self.textCursor()
@@ -230,8 +240,8 @@ class SpacingSupportEdit(LineShowTextEdit):
     def backIndent(self) -> None:
         cursor = self.textCursor()
         originalPos: int = cursor.position()
-        if not self._getBeforeText(originalPos).strip() and self._getPosInLine() >= 1:
-            inlinePos: int = self._getPosInLine()
+        if not self._getBeforeText(originalPos).strip() and self.getPosInLine() >= 1:
+            inlinePos: int = self.getPosInLine()
             returnPos: int = self.spacing if inlinePos % self.spacing == 0 else self.spacing - (inlinePos % self.spacing)
             cursor.movePosition(QTextCursor.MoveOperation.Left, QTextCursor.MoveMode.KeepAnchor, returnPos)
             cursor.removeSelectedText()
@@ -288,7 +298,7 @@ class SpacingSupportEdit(LineShowTextEdit):
                 self._multilineIndent()
                 return
             else:
-                posInLine: int = self._getPosInLine()
+                posInLine: int = self.getPosInLine()
                 spacing: int = self.spacing if posInLine % self.spacing == 0 else self.spacing - (posInLine % self.spacing)
                 cursor.insertText(" " * spacing)
                 cursor.setPosition(originalPos + spacing)
@@ -323,11 +333,11 @@ class SpacingSupportEdit(LineShowTextEdit):
                 cursor.removeSelectedText()
                 return
             if cursor.position() > 0:
-                if self._getPosInLine() >= self.spacing:
+                if self.getPosInLine() >= self.spacing:
                     self.backIndent()
                     if self.textCursor().position() != originalPos:
                         return
-                if self._getPosInLine() >= 1:
+                if self.getPosInLine() >= 1:
                     cursor.movePosition(QTextCursor.MoveOperation.Left, QTextCursor.MoveMode.KeepAnchor)
                     left: str = cursor.selectedText()
                     cursor.clearSelection()
@@ -359,6 +369,8 @@ class SinotePlainTextEdit(SpacingSupportEdit):
         super().__init__()
         self.setFilename = None
         self.nowFilename: str | None = None
+        self.plName: str | None = None
+        self.finalEncoding: str | None = None
         self.num: int = -1
         self.setStyleSheet(f"{self.styleSheet()}border: none;")
 
@@ -372,6 +384,9 @@ class SinotePlainTextEdit(SpacingSupportEdit):
     def clear(self):
         if self.setFilename is not None:
             self.setFilename(self.num, loadJson("EditorUI")["editor.tab.tab_name_unsaved"].format(self.nowFilename))
+        self.finalEncoding = None
+        self.plName = None
+        self.nowFilename = None
         super().clear()
 
     def newFile(self):
@@ -398,6 +413,7 @@ class SinotePlainTextEdit(SpacingSupportEdit):
     class _LoadHighlighter(QThread):
         foundHighlighter = Signal(LoadPluginBase.CustomizeSyntaxHighlighter)
         setPairKeywords = Signal(list)
+        setProgrammingLanguageName = Signal(str)
         noSyntax = Signal()
 
         def __init__(self, appendix: str):
@@ -409,12 +425,14 @@ class SinotePlainTextEdit(SpacingSupportEdit):
             debugLog(f"Finding Highlighter (*.{self.appendix})... (THREAD) 🔎")
             temp: LoadPluginBase.CustomizeSyntaxHighlighter | None = None
             temp2, temp3 = None, None
+            name: str | None = None
             for k, i in syntaxHighlighter.items():
                 if self.appendix in i[1]:
                     debugLog(f"{self.appendix} is in {i[1]}, successfully to find! ✅")
                     temp = i[0]
                     temp2 = i[2]
                     temp3 = i[3]
+                    name = k.strip()
                     debugLog("Create cache successfully! This will be start when some file appendix same loads!")
                     break
                 else:
@@ -424,6 +442,7 @@ class SinotePlainTextEdit(SpacingSupportEdit):
                 self.foundHighlighter.emit(temp)
                 temp3.append(temp2)
                 self.setPairKeywords.emit(temp3)
+                self.setProgrammingLanguageName.emit(name)
             else:
                 debugLog(r"Cannot found Syntax Highlighter ❌")
                 self.noSyntax.emit()
@@ -444,8 +463,13 @@ class SinotePlainTextEdit(SpacingSupportEdit):
         self.temp = self._LoadHighlighter(fileAppendix)
         self.temp.foundHighlighter.connect(self.setHighlighter)
         self.temp.setPairKeywords.connect(self._setPairKeywords)
+        self.temp.setProgrammingLanguageName.connect(self._setPlName)
         self.temp.noSyntax.connect(self._setNoSyntax)
         self.temp.start()
+
+    def _setPlName(self, plName: str) -> None:
+        self.plName = plName
+        self.cursorPositionChanged.emit() # For trigger StatusBar update
 
     def _setPairKeywords(self, arg: list) -> None:
         self.defineKeywords = arg
@@ -455,6 +479,7 @@ class SinotePlainTextEdit(SpacingSupportEdit):
         self.defineKeywords = []
         self.setHighlighter(None)
         self.usingCodeControl = False
+        self.plName = None
 
     def readFile(self, filename: str) -> None:
         addLog(0, f"Attempting to read file {filename}...", "SinoteUserInterfaceActivity")
@@ -465,14 +490,13 @@ class SinotePlainTextEdit(SpacingSupportEdit):
         # Try different encodings and support Chinese(GBK/GB2312)
         encodings = ["utf-8", "utf-16", "gbk", "gb2312", "latin-1", "windows-1252", "utf-32", "ascii"]
         content: str | None = None
-        usedEnc: str | None = None
         
         for encoding in encodings:
             try:
                 debugLog(f"Trying reading with encoding {encoding.upper()} 🤔")
                 with open(filename, "r", encoding=encoding) as f:
                     content = f.read()
-                    usedEnc = encoding
+                    self.finalEncoding = encoding.upper()
                     debugLog(f"Successfully to read {filename} with {encoding} encoding! {len(content) / 8 / 1024:.2f}KiB {len(content.splitlines())} lines")
                 break
             except UnicodeDecodeError or LookupError:
@@ -493,11 +517,19 @@ class SinotePlainTextEdit(SpacingSupportEdit):
             if self.setFilename is not None:
                 self.setFilename(self.num, loadJson("EditorUI")["editor.tab.tab_name"].format(Path(filename).name))
             self.nowFilename = str(Path(filename))
-            addLog(0, f"Successfully to read file {filename} using {usedEnc} encoding! ✅", "SinoteUserInterfaceActivity")
+            addLog(0, f"Successfully to read file {filename} using {self.finalEncoding} encoding! ✅", "SinoteUserInterfaceActivity")
         else:
             addLog(2, f"Cannot read file {filename}. Tried all encodings but failed! Or other Exception out! ❌", "SinoteUserInterfaceActivity")
             w = QMessageBox(None, loadJson("MessageBox")["msgbox.title.error"], loadJson("MessageBox")["msgbox.error.fileCannotRead"], buttons=QMessageBox.StandardButton.Ok)
             w.exec()
+
+class StatusBar(QStatusBar):
+    def __init__(self, parent: QWidget = None):
+        super().__init__(parent)
+
+    def updateStatusBar(self, editor: SinotePlainTextEdit):
+        self.showMessage(f"{editor.getLineNumber()}:{editor.getPosInLine()}  {editor.plName if editor.plName else loadJson("EditorUI")["editor.any.plaintext"]}  {editor.finalEncoding if editor.finalEncoding else ""}", timeout=999900*1000)
+        self.update()
 
 
 class SettingObject(QWidget):
@@ -790,6 +822,10 @@ class MainWindow(QMainWindow):
         self.widget.setCurrentIndex(0)
         self.editorThread.start()
         debugLog("Successfully to add frame!")
+        debugLog("Adding statusBar...")
+        self.statusBar = StatusBar()
+        self.setStatusBar(self.statusBar)
+        debugLog("Successfully to add statusBar!")
         debugLog("Successfully to set up User Interface!")
 
     def setThisPluginAnotherType(self, item: QListWidgetItem) -> None:
@@ -911,6 +947,8 @@ class MainWindow(QMainWindow):
         oldDatetime = datetime.now()
         temp = SinotePlainTextEdit()
         temp.num = len(self.tabTextEdits)
+        temp.cursorPositionChanged.connect(lambda: self.statusBar.updateStatusBar(temp))
+        self.statusBar.updateStatusBar(temp)
         if not Path(filename if filename else "").exists():
             filename = None
         if filename:

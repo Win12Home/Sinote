@@ -50,5 +50,6 @@
   "editor.any.dark": "Dark",
   "editor.any.version": "Version",
   "editor.any.author": "Author",
-  "editor.any.description": "Description"
+  "editor.any.description": "Description",
+  "editor.any.plaintext": "Plain Text"
 }

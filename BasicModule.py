@@ -34,7 +34,7 @@ filterwarnings("ignore", category=DeprecationWarning)
 application = QApplication([])
 
 apiVersion: tuple = (1,0,1)
-sinoteVersion: str = "sinote-2025.1.00860-initial-preview-beta-v0.06.25542"
+sinoteVersion: str = "sinote-2025.1.00861-initial-preview-beta-v0.06.26001"
 
 normalLogOutput: list[str] = []
 
@@ -552,18 +552,16 @@ class LoadPluginBase:
                 self.highlight_rules.append((pattern, self.single_comment_format))
 
         def _add_multi_comment_rules(self):
-            if len(self.remKeywordsMultipleLine) >= 2 and self.enableSelfColor:
+            if len(self.remKeywordsMultipleLine) >= 2:
                 start_mark, end_mark = self.remKeywordsMultipleLine[0], self.remKeywordsMultipleLine[1]
-                pattern = QRegularExpression(
-                    re.escape(start_mark) + r'.*?' + re.escape(end_mark),
-                    QRegularExpression.PatternOption.DotMatchesEverythingOption
-                )
-                self.highlight_rules.append((pattern, self.multi_comment_format))
-
+                # 根据enableSelfColor决定使用哪种格式
+                format_to_use = self.multi_comment_format if self.enableSelfColor else self.string_format
+                
+                # 只添加跨行模式，不添加单行规则
                 self.multi_line_patterns.append({
                     'start': QRegularExpression(re.escape(start_mark)),
                     'end': QRegularExpression(re.escape(end_mark)),
-                    'format': self.multi_comment_format
+                    'format': format_to_use
                 })
 
         def _add_string_rules(self):
@@ -575,27 +573,69 @@ class LoadPluginBase:
 
         def highlightBlock(self, text: str):
             self.setCurrentBlockState(0)
-            self.highlight_multi_line_comments(text)
+            stringRanges = self._findStringRanges(text)
             for pattern, format in self.highlight_rules:
-                match_iterator = pattern.globalMatch(text)
-                while match_iterator.hasNext():
-                    match = match_iterator.next()
-                    start_pos = match.capturedStart()
-                    end_pos = match.capturedStart() + match.capturedLength()
-                    if not self.is_in_multiline_comment(start_pos, end_pos, text):
-                        self.setFormat(start_pos, match.capturedLength(), format)
+                matchIterator = pattern.globalMatch(text)
+                while matchIterator.hasNext():
+                    match = matchIterator.next()
+                    startPos = match.capturedStart()
+                    endPos = match.capturedStart() + match.capturedLength()
+                    if format == self.single_comment_format:
+                        if not self._isInString(startPos, stringRanges):
+                            self.setFormat(startPos, match.capturedLength(), format)
+                    elif format == self.multi_comment_format:
+                        continue
+                    else:
+                        self.setFormat(startPos, match.capturedLength(), format)
+            self.highlightMultiLineComments(text)
+        
+        def _findStringRanges(self, text: str) -> list:
+            """
+            Find String ranges
+            :param text: text of string
+            :return: a list
+            """
+            stringRanges = []
+            i = 0
+            n = len(text)
+            
+            while i < n:
+                if text[i] in self.textKeywords:
+                    quoteChar = text[i]
+                    start = i
+                    i += 1
+                    while i < n:
+                        if text[i] == "\\":
+                            i += 2
+                        elif text[i] == quoteChar:
+                            i += 1
+                            break
+                        else:
+                            i += 1
+                    
+                    stringRanges.append((start, i))
+                else:
+                    i += 1
+            
+            return stringRanges
+        
+        def _isInString(self, pos: int, stringRanges: list) -> bool:
+            for start, end in stringRanges:
+                if start <= pos < end:
+                    return True
+            return False
 
-        def is_in_multiline_comment(self, start: int, end: int, text: str) -> bool:
-            if not self.multi_line_patterns or not self.enableSelfColor:
+        def isInMultilineComment(self, start: int, end: int, text: str) -> bool:
+            if not self.multi_line_patterns:
                 return False
-            for multi_line in self.multi_line_patterns:
-                start_iter = multi_line['start'].globalMatch(text)
-                while start_iter.hasNext():
-                    start_match = start_iter.next()
-                    s = start_match.capturedStart()
-                    end_match = multi_line['end'].match(text, s + start_match.capturedLength())
-                    if end_match.hasMatch():
-                        e = end_match.capturedEnd()
+            for multiLine in self.multi_line_patterns:
+                startIter = multiLine['start'].globalMatch(text)
+                while startIter.hasNext():
+                    startMatch = startIter.next()
+                    s = startMatch.capturedStart()
+                    endMatch = multiLine['end'].match(text, s + startMatch.capturedLength())
+                    if endMatch.hasMatch():
+                        e = endMatch.capturedEnd()
                     else:
                         if self.previousBlockState() == 1:
                             s = 0
@@ -604,28 +644,53 @@ class LoadPluginBase:
                         return True
             return False
 
-        def highlight_multi_line_comments(self, text: str):
-            if not self.multi_line_patterns or not self.enableSelfColor:
+        def highlightMultiLineComments(self, text: str):
+            if not self.multi_line_patterns:
                 return
-            for multi_line in self.multi_line_patterns:
+            
+            # 默认状态是0（不在多行注释中）
+            self.setCurrentBlockState(0)
+            
+            for multiLine in self.multi_line_patterns:
+                startIndex = 0
+                
+                # 如果前一个块处于多行注释状态，先处理这种情况
                 if self.previousBlockState() == 1:
-                    end_match = multi_line['end'].match(text)
-                    if end_match.hasMatch():
-                        self.setFormat(0, end_match.capturedEnd(), multi_line['format'])
-                        self.setCurrentBlockState(0)
+                    # 在当前文本中查找结束标记
+                    endMatch = multiLine['end'].match(text, startIndex)
+                    if endMatch.hasMatch():
+                        # 找到结束标记，高亮到结束位置
+                        endIndex = endMatch.capturedEnd()
+                        self.setFormat(0, endIndex, multiLine['format'])
+                        startIndex = endIndex  # 从结束位置继续搜索
+                        self.setCurrentBlockState(0)  # 重置状态
                     else:
-                        self.setFormat(0, len(text), multi_line['format'])
-                        self.setCurrentBlockState(1)
-                start_iter = multi_line['start'].globalMatch(text)
-                while start_iter.hasNext():
-                    start_match = start_iter.next()
-                    start_index = start_match.capturedStart()
-                    end_match = multi_line['end'].match(text, start_index + start_match.capturedLength())
-                    if end_match.hasMatch():
-                        self.setFormat(start_index, end_match.capturedEnd(), multi_line['format'])
+                        # 没有找到结束标记，整行都是多行注释
+                        self.setFormat(0, len(text), multiLine['format'])
+                        self.setCurrentBlockState(1)  # 保持多行注释状态
+                        return  # 已经处理完整行
+                
+                # 在剩余文本中查找多行注释
+                while startIndex < len(text):
+                    # 查找开始标记
+                    startMatch = multiLine['start'].match(text, startIndex)
+                    if not startMatch.hasMatch():
+                        break  # 没有更多开始标记
+                    
+                    startIdx = startMatch.capturedStart()
+                    
+                    # 查找对应的结束标记
+                    endMatch = multiLine['end'].match(text, startIdx + startMatch.capturedLength())
+                    if endMatch.hasMatch():
+                        # 找到结束标记，高亮整个多行注释块
+                        endIdx = endMatch.capturedEnd()
+                        self.setFormat(startIdx, endIdx - startIdx, multiLine['format'])
+                        startIndex = endIdx  # 从结束位置继续搜索
                     else:
-                        self.setFormat(start_index, len(text) - start_index, multi_line['format'])
-                        self.setCurrentBlockState(1)
+                        # 没有找到结束标记，从开始标记到行尾都是多行注释
+                        self.setFormat(startIdx, len(text) - startIdx, multiLine['format'])
+                        self.setCurrentBlockState(1)  # 设置多行注释状态
+                        return  # 已经处理完整行
 
     class LazyCustomizeSyntaxHighlighter:
         def __init__(self, syntaxList: list, parent: QTextDocument = None):
