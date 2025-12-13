@@ -286,8 +286,8 @@ alreadyLoadedBase: dict[str, dict] = {}    # Whoa en_US is my needed!
 
 def getFileHash(filePath):
     try:
-        with open(filePath, 'rb') as f:
-            return hashlib.md5(f.read()).hexdigest()
+        with open(filePath, "rb") as f:
+            return hashlib.blake2b(f.read()).hexdigest()
     except:
         return ""
 
@@ -647,50 +647,37 @@ class LoadPluginBase:
         def highlightMultiLineComments(self, text: str):
             if not self.multi_line_patterns:
                 return
-            
-            # 默认状态是0（不在多行注释中）
+
             self.setCurrentBlockState(0)
             
             for multiLine in self.multi_line_patterns:
                 startIndex = 0
-                
-                # 如果前一个块处于多行注释状态，先处理这种情况
                 if self.previousBlockState() == 1:
-                    # 在当前文本中查找结束标记
                     endMatch = multiLine['end'].match(text, startIndex)
                     if endMatch.hasMatch():
-                        # 找到结束标记，高亮到结束位置
                         endIndex = endMatch.capturedEnd()
                         self.setFormat(0, endIndex, multiLine['format'])
-                        startIndex = endIndex  # 从结束位置继续搜索
-                        self.setCurrentBlockState(0)  # 重置状态
+                        startIndex = endIndex
+                        self.setCurrentBlockState(0)
                     else:
-                        # 没有找到结束标记，整行都是多行注释
                         self.setFormat(0, len(text), multiLine['format'])
-                        self.setCurrentBlockState(1)  # 保持多行注释状态
-                        return  # 已经处理完整行
-                
-                # 在剩余文本中查找多行注释
+                        self.setCurrentBlockState(1)
+                        return
                 while startIndex < len(text):
-                    # 查找开始标记
                     startMatch = multiLine['start'].match(text, startIndex)
                     if not startMatch.hasMatch():
-                        break  # 没有更多开始标记
+                        break
                     
                     startIdx = startMatch.capturedStart()
-                    
-                    # 查找对应的结束标记
                     endMatch = multiLine['end'].match(text, startIdx + startMatch.capturedLength())
                     if endMatch.hasMatch():
-                        # 找到结束标记，高亮整个多行注释块
                         endIdx = endMatch.capturedEnd()
                         self.setFormat(startIdx, endIdx - startIdx, multiLine['format'])
-                        startIndex = endIdx  # 从结束位置继续搜索
+                        startIndex = endIdx
                     else:
-                        # 没有找到结束标记，从开始标记到行尾都是多行注释
                         self.setFormat(startIdx, len(text) - startIdx, multiLine['format'])
-                        self.setCurrentBlockState(1)  # 设置多行注释状态
-                        return  # 已经处理完整行
+                        self.setCurrentBlockState(1)
+                        return
 
     class LazyCustomizeSyntaxHighlighter:
         def __init__(self, syntaxList: list, parent: QTextDocument = None):

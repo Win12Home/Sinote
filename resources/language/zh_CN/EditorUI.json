@@ -22,6 +22,7 @@
   "editor.tab.settings.plugin": "插件",
   "editor.tab.settings.editorfont": "字体",
   "editor.window.temps.openfile": "打开文件",
+  "editor.window.temps.saveas": "另存为",
   "editor.button.settings.back": "回到主页",
   "editor.title.settings.appearance": "个性化设置",
   "editor.title.settings.plugin": "插件设置",

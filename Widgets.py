@@ -34,59 +34,68 @@ syntaxHighlighter Struct:
 
 outputDeveloperDebugInformation()
 
-def automaticLoadPlugin() -> None:
-    global loadedPlugin
-    if "--dont-load-any-plugin" in args or "-displug" in args:
-        addLog(0, "--dont-load-any-plugin or -displug activated, no any plugins will be loaded!")
-        return
-    if not Path("./resources/plugins/").exists():
-        addLog(1, "Failed to load all the Plugins, Reason: ./resources/plugins/ not exists ❌")
-        return
-    if not Path("./resources/plugins/").is_dir():
-        addLog(1, "Failed to load all the Plugins, Reason: ./resources/plugins/ not a folder ❌")
-        return
-    dirs = list(Path("./resources/plugins/").iterdir())
-    debugPluginLog(f"Total: {len(dirs)}, Starting load... 💥")
-    beforeLoadDatetime: datetime = datetime.now()
-    for item in dirs:
-        debugPluginLog(f"Loading {item.name}")
-        if not item.is_dir():
-            addLog(0, f"Automatic skipped {item.name}, Reason: not a folder ❌")
-            continue
+class AutoLoadPlugin(QThread):
+    loadedOne = Signal()
+    loadNameChanged = Signal(str)
+    loadTotal = Signal(int)
+    processFinished = Signal()
 
-        infoJson: Path | PurePath = item / "info.json"
+    def run(self) -> None:
+        global loadedPlugin, syntaxHighlighter, autoRun
+        if "--dont-load-any-plugin" in args or "-displug" in args:
+            addLog(0, "--dont-load-any-plugin or -displug activated, no any plugins will be loaded!")
+            return
+        if not Path("./resources/plugins/").exists():
+            addLog(1, "Failed to load all the Plugins, Reason: ./resources/plugins/ not exists ❌")
+            return
+        if not Path("./resources/plugins/").is_dir():
+            addLog(1, "Failed to load all the Plugins, Reason: ./resources/plugins/ not a folder ❌")
+            return
+        dirs = list(Path("./resources/plugins/").iterdir())
+        self.loadTotal.emit(len(dirs))
+        debugPluginLog(f"Total: {len(dirs)}, Starting load... 💥")
+        beforeLoadDatetime: datetime = datetime.now()
+        for item in dirs:
+            debugPluginLog(f"Loading {item.name}")
+            if not item.is_dir():
+                addLog(0, f"Automatic skipped {item.name}, Reason: not a folder ❌")
+                continue
 
-        if not (infoJson.exists()):
-            addLog(1, f"Automatic skipped {item.name}, Reason: info.json not exists ❌")
-            continue
-        temp = LoadPluginInfo(item.name).getValue()
-        loadedPlugin[temp[0]["objectName"]] = temp[0]
-        if temp[0]["objectName"] in settingObject.getValue("disableplugin"):
-            debugPluginLog(f"Automatic skip plugin {temp[0]["objectName"]} (DISABLED)")
-            continue
-        debugPluginLog(f"Successfully loaded {item.name}, objectName: {temp[0]["objectName"]}. Preparing to parse... ✅")
-        for key in temp[1]:
-            debugPluginLog(f"Loading {key[0]}...")
-            if key[1] == 1:
-                debugPluginLog(f"Checked its property! Type: SyntaxHighlighter 🔎")
-                before: datetime = datetime.now()
-                syntaxHighlighter[key[2]] = [key[4].getObject(), key[3], key[5], key[6]]
-                debugPluginLog(f"Successfully to create, used {(datetime.now() - before).total_seconds():.2f}s! ✅")
-            elif key[1] == 0:
-                debugPluginLog(f"Checked its property! Type: RunningFunc 🤓")
-                debugPluginLog(f"Appending to autoRun... 💥")
-                [autoRun.append(i) if isinstance(i, partial) else None for i in key[2]]
-                """
-                This code definitely equals
-                for i in key[2]:
-                    if isinstance(i, partial):
-                        autoRun.append(i)
-                But it's will create a unused list ([None if isinsta for i in key[2]])
-                """
-                debugPluginLog(f"Successfully to append! ✅")
-    usedTime: float = (datetime.now() - beforeLoadDatetime).total_seconds()
-    debugPluginLog(f"Successfully to load plugins! ✅ Used {usedTime:.3f}s")
-    debugPluginLog(f"An assessment for Sinote: {"Use a new computer instead 🤔💀" if usedTime / len(dirs) > 1.0 else "Too slow 💀" if usedTime / len(dirs) > 0.8 else "A bit slow 😰" if usedTime / len(dirs) > 0.65 else "Good load 😍"}")
+            infoJson: Path | PurePath = item / "info.json"
+            if not (infoJson.exists()):
+                addLog(1, f"Automatic skipped {item.name}, Reason: info.json not exists ❌")
+                continue
+            temp = LoadPluginInfo(item.name).getValue()
+            loadedPlugin[temp[0]["objectName"]] = temp[0]
+            self.loadNameChanged.emit(temp[0]["name"])
+            if temp[0]["objectName"] in settingObject.getValue("disableplugin"):
+                debugPluginLog(f"Automatic skip plugin {temp[0]["objectName"]} (DISABLED)")
+                self.loadedOne.emit()
+                continue
+            debugPluginLog(f"Successfully loaded {item.name}, objectName: {temp[0]["objectName"]}. Preparing to parse... ✅")
+            for key in temp[1]:
+                debugPluginLog(f"Loading {key[0]}...")
+                if key[1] == 1:
+                    debugPluginLog(f"Checked its property! Type: SyntaxHighlighter 🔎")
+                    before: datetime = datetime.now()
+                    syntaxHighlighter[key[2]] = [key[4], key[3], key[5], key[6]]
+                elif key[1] == 0:
+                    debugPluginLog(f"Checked its property! Type: RunningFunc 🤓")
+                    debugPluginLog(f"Appending to autoRun... 💥")
+                    [autoRun.append(i) if isinstance(i, partial) else None for i in key[2]]
+                    """
+                    This code definitely equals
+                    for i in key[2]:
+                        if isinstance(i, partial):
+                            autoRun.append(i)
+                    But it's will create a unused list ([None if isinsta for i in key[2]])
+                    """
+                    debugPluginLog(f"Successfully to append! ✅")
+            self.loadedOne.emit()
+        usedTime: float = (datetime.now() - beforeLoadDatetime).total_seconds()
+        debugPluginLog(f"Successfully to load plugins! ✅ Used {usedTime:.3f}s")
+        debugPluginLog(f"An assessment for Sinote: {"Use a new computer instead 🤔💀" if usedTime / len(dirs) > 1.0 else "Too slow 💀" if usedTime / len(dirs) > 0.8 else "A bit slow 😰" if usedTime / len(dirs) > 0.65 else "Good load 😍"}")
+        self.processFinished.emit()
 
 
 class AutomaticSaveThingsThread(QThread):
@@ -411,10 +420,10 @@ class SinotePlainTextEdit(SpacingSupportEdit):
         super().paste()
 
     class _LoadHighlighter(QThread):
-        foundHighlighter = Signal(LoadPluginBase.CustomizeSyntaxHighlighter)
+        foundHighlighter = Signal(LoadPluginBase.LazyCustomizeSyntaxHighlighter)
         setPairKeywords = Signal(list)
-        setProgrammingLanguageName = Signal(str)
         noSyntax = Signal()
+        test = Signal()
 
         def __init__(self, appendix: str):
             super().__init__()
@@ -433,23 +442,22 @@ class SinotePlainTextEdit(SpacingSupportEdit):
                     temp2 = i[2]
                     temp3 = i[3]
                     name = k.strip()
-                    debugLog("Create cache successfully! This will be start when some file appendix same loads!")
                     break
                 else:
                     debugLog(f"{self.appendix} isn't in {i[1]}, continue find! 🔎")
+            self.test.emit()
             if temp is not None:
                 debugLog(r"Emit found Syntax Highlighter 💥")
                 self.foundHighlighter.emit(temp)
                 temp3.append(temp2)
                 self.setPairKeywords.emit(temp3)
-                self.setProgrammingLanguageName.emit(name)
             else:
                 debugLog(r"Cannot found Syntax Highlighter ❌")
                 self.noSyntax.emit()
 
-    def setHighlighter(self, highlighter: LoadPluginBase.CustomizeSyntaxHighlighter | None) -> None:
+    def setHighlighter(self, highlighter: Any) -> None:
         debugLog("Setting another Highlighter..." if highlighter else "Cleaning Highlighter...")
-        self.highlighter = highlighter if highlighter is not None else LoadPluginBase.CustomizeSyntaxHighlighter([[] for i in range(7)])
+        self.highlighter = highlighter.getObject() if highlighter is not None else LoadPluginBase.CustomizeSyntaxHighlighter([[] for i in range(7)])
         self.highlighter.setDocument(self.document())
 
     def setFileAppendix(self, fileAppendix: str) -> None:
@@ -461,15 +469,10 @@ class SinotePlainTextEdit(SpacingSupportEdit):
         debugLog("Successfully remove Highlighter ✅")
         debugLog("Searching Highlighter 🔎")
         self.temp = self._LoadHighlighter(fileAppendix)
-        self.temp.foundHighlighter.connect(self.setHighlighter)
-        self.temp.setPairKeywords.connect(self._setPairKeywords)
-        self.temp.setProgrammingLanguageName.connect(self._setPlName)
-        self.temp.noSyntax.connect(self._setNoSyntax)
+        self.temp.foundHighlighter.connect(lambda a: self.setHighlighter(a), Qt.ConnectionType.SingleShotConnection)
+        self.temp.setPairKeywords.connect(lambda a: self._setPairKeywords(a), Qt.ConnectionType.QueuedConnection)
+        self.temp.noSyntax.connect(self._setNoSyntax, Qt.ConnectionType.QueuedConnection)
         self.temp.start()
-
-    def _setPlName(self, plName: str) -> None:
-        self.plName = plName
-        self.cursorPositionChanged.emit() # For trigger StatusBar update
 
     def _setPairKeywords(self, arg: list) -> None:
         self.defineKeywords = arg
@@ -522,14 +525,6 @@ class SinotePlainTextEdit(SpacingSupportEdit):
             addLog(2, f"Cannot read file {filename}. Tried all encodings but failed! Or other Exception out! ❌", "SinoteUserInterfaceActivity")
             w = QMessageBox(None, loadJson("MessageBox")["msgbox.title.error"], loadJson("MessageBox")["msgbox.error.fileCannotRead"], buttons=QMessageBox.StandardButton.Ok)
             w.exec()
-
-class StatusBar(QStatusBar):
-    def __init__(self, parent: QWidget = None):
-        super().__init__(parent)
-
-    def updateStatusBar(self, editor: SinotePlainTextEdit):
-        self.showMessage(f"{editor.getLineNumber()}:{editor.getPosInLine()}  {editor.plName if editor.plName else loadJson("EditorUI")["editor.any.plaintext"]}  {editor.finalEncoding if editor.finalEncoding else ""}", timeout=999900*1000)
-        self.update()
 
 
 class SettingObject(QWidget):
@@ -630,6 +625,48 @@ class CheckBoxSettingObject(SettingObject):
         self.setRightWidget(self.checkBox)
 
 
+class SplashScreen(QDialog):
+    def __init__(self):
+        super().__init__()
+        self.setWindowFlag(Qt.WindowType.SplashScreen)
+        self.setMinimumWidth(500)
+        self.layout_: QVBoxLayout = QVBoxLayout()
+        self.image = QLabel()
+        self.loadedPlugin: int = 0
+        self.totals: int = 0
+        self.setStyleSheet("background-color:white;color:black;")
+        self.nowLoading: str = "IDLE"
+        self.pixmap = QPixmap("./resources/icon.png").scaled(QSize(256, 256))
+        self.image.setPixmap(self.pixmap)
+        self.label = QLabel()
+        self.label.setStyleSheet("text-align: center;")
+        self.label.setText(loadJson("LoadingScreen")["loading.text.loadplugin"].format("IDLE", "0", "Summing..."))
+        self.layout_.addWidget(self.image, 1, Qt.AlignmentFlag.AlignHCenter)
+        self.layout_.addWidget(self.label, alignment=Qt.AlignmentFlag.AlignHCenter)
+        self.setLayout(self.layout_)
+
+    def setTotal(self, total: int):
+        self.totals = total
+        self.label.setText(loadJson("LoadingScreen")["loading.text.loadplugin"].format(self.nowLoading, "0", total))
+        self.repaint()
+
+    def setPluginName(self, name:str):
+        self.nowLoading = name
+        self.label.setText(
+            loadJson("LoadingScreen")["loading.text.loadplugin"].format(self.nowLoading, self.loadedPlugin,
+                                                                        self.totals))
+        self.repaint()
+
+    def addOne(self):
+        self.loadedPlugin += 1
+        self.label.setText(loadJson("LoadingScreen")["loading.text.loadplugin"].format(self.nowLoading, self.loadedPlugin, self.totals))
+        self.repaint()
+
+    def finishedPluginLoad(self):
+        self.label.setText(loadJson("LoadingScreen")["loading.text.loadfont"])
+        self.repaint()
+
+
 class MainWindow(QMainWindow):
     themeChanged: Signal = Signal()
 
@@ -652,7 +689,8 @@ class MainWindow(QMainWindow):
             for temp in settingObject.getValue("beforeread"):
                 if not Path(temp).exists():
                     self._createRecommendFile()
-                    self.tabTextEdits[len(self.tabTextEdits)-1].setPlainText(loadJson("EditorUI")["editor.any.cannotreadfile"].format(temp))
+                    self.tabTextEdits[len(self.tabTextEdits) - 1].setPlainText(
+                        loadJson("EditorUI")["editor.any.cannotreadfile"].format(temp))
                 else:
                     self.createTab(temp)
             for temp in [str(Path(i)) for i in fileargs]:
@@ -660,7 +698,8 @@ class MainWindow(QMainWindow):
                     self.createTab(temp)
                 else:
                     self._createRecommendFile()
-                    self.tabTextEdits[len(self.tabTextEdits)-1].setPlainText(loadJson("EditorUI")["editor.any.cannotreadfile2"].format(temp))
+                    self.tabTextEdits[len(self.tabTextEdits) - 1].setPlainText(
+                        loadJson("EditorUI")["editor.any.cannotreadfile2"].format(temp))
             settingObject.setValue("beforeread", [i for i in settingObject.getValue("beforeread") if Path(i).exists()])
         else:
             self._createRecommendFile()
@@ -715,25 +754,38 @@ class MainWindow(QMainWindow):
         self.setArea.appearance = QScrollArea()
         self.setArea.appearance.vLayout = QVBoxLayout()
         self.setArea.appearance.titleAppearance = QLabel(loadJson("EditorUI")["editor.title.settings.appearance"])
-        self.setArea.appearance.titleAppearance.setStyleSheet("font-size: 38px; font-weight: bold; margin-bottom: 10px;") # QSS
+        self.setArea.appearance.titleAppearance.setStyleSheet(
+            "font-size: 38px; font-weight: bold; margin-bottom: 10px;")  # QSS
         self.setArea.appearance.seperator = SeperatorWidget()
-        self.setArea.appearance.debugMode = CheckBoxSettingObject(None, loadJson("EditorUI")["editor.title.setobj.debugmode"], loadJson("EditorUI")["editor.desc.setobj.debugmode"])
+        self.setArea.appearance.debugMode = CheckBoxSettingObject(None,
+                                                                  loadJson("EditorUI")["editor.title.setobj.debugmode"],
+                                                                  loadJson("EditorUI")["editor.desc.setobj.debugmode"])
         self.setArea.appearance.debugMode.checkBox.setText(loadJson("EditorUI")["editor.desc.setobj.debugmodeopen"])
         self.setArea.appearance.debugMode.checkBox.setChecked(settingObject.getValue("debugmode"))
-        self.setArea.appearance.debugMode.checkBox.checkStateChanged.connect(lambda: settingObject.setValue("debugmode", self.setArea.appearance.debugMode.checkBox.isChecked()))
-        self.setArea.appearance.language = ComboBoxSettingObject(None, loadJson("EditorUI")["editor.title.setobj.language"], loadJson("EditorUI")["editor.desc.setobj.language"])
+        self.setArea.appearance.debugMode.checkBox.checkStateChanged.connect(
+            lambda: settingObject.setValue("debugmode", self.setArea.appearance.debugMode.checkBox.isChecked()))
+        self.setArea.appearance.language = ComboBoxSettingObject(None,
+                                                                 loadJson("EditorUI")["editor.title.setobj.language"],
+                                                                 loadJson("EditorUI")["editor.desc.setobj.language"])
         self.setArea.appearance.language.comboBox.addItems([i for _, i in basicInfo["item.dict.language_for"].items()])
         try:
-            self.setArea.appearance.language.comboBox.setCurrentIndex(list(basicInfo["item.dict.language_for"].keys()).index(lang))
+            self.setArea.appearance.language.comboBox.setCurrentIndex(
+                list(basicInfo["item.dict.language_for"].keys()).index(lang))
         except Exception:
             self.setArea.appearance.language.comboBox.setCurrentIndex(0)
         self.setArea.appearance.language.comboBox.currentIndexChanged.connect(lambda: {
-            settingObject.setValue("language", list(basicInfo["item.dict.language_for"].keys())[self.setArea.appearance.language.comboBox.currentIndex()]),
-            QMessageBox(QMessageBox.Icon.Information, loadJson("MessageBox")["msgbox.title.info"], loadJson("MessageBox")["msgbox.info.restartApplySet"], buttons=QMessageBox.StandardButton.Ok, parent=self).exec()
+            settingObject.setValue("language", list(basicInfo["item.dict.language_for"].keys())[
+                self.setArea.appearance.language.comboBox.currentIndex()]),
+            QMessageBox(QMessageBox.Icon.Information, loadJson("MessageBox")["msgbox.title.info"],
+                        loadJson("MessageBox")["msgbox.info.restartApplySet"], buttons=QMessageBox.StandardButton.Ok,
+                        parent=self).exec()
         })
-        self.setArea.appearance.theme = ComboBoxSettingObject(None, loadJson("EditorUI")["editor.title.setobj.theme"], loadJson("EditorUI")["editor.desc.setobj.theme"])
-        self.setArea.appearance.theme.comboBox.addItems([loadJson("EditorUI")[i] for i in [f"editor.any.{k}" for k in ["light","dark"]]])
-        self.setArea.appearance.theme.comboBox.setCurrentIndex(settingObject.getValue("theme") if settingObject.getValue("theme") < 2 else 0)
+        self.setArea.appearance.theme = ComboBoxSettingObject(None, loadJson("EditorUI")["editor.title.setobj.theme"],
+                                                              loadJson("EditorUI")["editor.desc.setobj.theme"])
+        self.setArea.appearance.theme.comboBox.addItems(
+            [loadJson("EditorUI")[i] for i in [f"editor.any.{k}" for k in ["light", "dark"]]])
+        self.setArea.appearance.theme.comboBox.setCurrentIndex(
+            settingObject.getValue("theme") if settingObject.getValue("theme") < 2 else 0)
         self.setArea.appearance.theme.comboBox.currentIndexChanged.connect(
             lambda: self.setTheme(self.setArea.appearance.theme.comboBox.currentIndex()))
         self.setArea.appearance.vLayout.addWidget(self.setArea.appearance.titleAppearance)
@@ -748,16 +800,20 @@ class MainWindow(QMainWindow):
         self.setArea.plugins = QScrollArea()
         self.setArea.plugins.vLayout = QVBoxLayout()
         self.setArea.plugins.titlePlugins = QLabel(loadJson("EditorUI")["editor.title.settings.plugin"])
-        self.setArea.plugins.titlePlugins.setStyleSheet("font-size: 38px; font-weight: bold; margin-bottom: 10px;") # Also QSS
+        self.setArea.plugins.titlePlugins.setStyleSheet(
+            "font-size: 38px; font-weight: bold; margin-bottom: 10px;")  # Also QSS
         self.setArea.plugins.seperator = SeperatorWidget()
         self.pluginInfo: list[list[Any]] = []
         self.setArea.plugins.set = QWidget()
         self.setArea.plugins.set.hLayout = QHBoxLayout()
         self.setArea.plugins.set.listWidget = QListWidget()
-        self.setArea.plugins.set.listWidget.setStyleSheet(f"{self.setArea.plugins.set.listWidget.styleSheet()} QListWidget::item::selected {r"{ background-color: lightblue; }"}")
+        self.setArea.plugins.set.listWidget.setStyleSheet(
+            f"{self.setArea.plugins.set.listWidget.styleSheet()} QListWidget::item::selected {r"{ background-color: lightblue; }"}")
         self.setArea.plugins.set.information = PluginInfoLister()
         self.setArea.plugins.set.listWidget.currentTextChanged.connect(lambda: {
-            self.setArea.plugins.set.information.setInformation(["null" for i in range(7)] if len(self.pluginInfo) == 0 else self.pluginInfo[self.setArea.plugins.set.listWidget.currentRow()])
+            self.setArea.plugins.set.information.setInformation(
+                ["null" for i in range(7)] if len(self.pluginInfo) == 0 else self.pluginInfo[
+                    self.setArea.plugins.set.listWidget.currentRow()])
         })
         self.setArea.plugins.set.listWidget.itemDoubleClicked.connect(lambda: {
             self.setThisPluginAnotherType(self.setArea.plugins.set.listWidget.currentItem())
@@ -822,10 +878,6 @@ class MainWindow(QMainWindow):
         self.widget.setCurrentIndex(0)
         self.editorThread.start()
         debugLog("Successfully to add frame!")
-        debugLog("Adding statusBar...")
-        self.statusBar = StatusBar()
-        self.setStatusBar(self.statusBar)
-        debugLog("Successfully to add statusBar!")
         debugLog("Successfully to set up User Interface!")
 
     def setThisPluginAnotherType(self, item: QListWidgetItem) -> None:
@@ -947,8 +999,6 @@ class MainWindow(QMainWindow):
         oldDatetime = datetime.now()
         temp = SinotePlainTextEdit()
         temp.num = len(self.tabTextEdits)
-        temp.cursorPositionChanged.connect(lambda: self.statusBar.updateStatusBar(temp))
-        self.statusBar.updateStatusBar(temp)
         if not Path(filename if filename else "").exists():
             filename = None
         if filename:

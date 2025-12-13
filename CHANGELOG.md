@@ -4,7 +4,8 @@
 ***Now no any build because only Pre-release out!***
 ## Recently Pre-release
 ### 0.06.26001
-1. **Add feature**: Add Status bar in the bottom of the edit area.
+1. **Add feature**: Add Loading Screen when Sinote is loading plugin or loading font.
+2. **Fix issue**: Fix issue ``When trigger Save As, it will be pop out a Exception Window``
 ### 0.06.25542
 1. **Add feature**: Add **+** button to create new Tab. (I forgot add it in 0.06.25530)
 2. **Add feature**: It automatically restores last session every start. (It won't be restore your cursor position.)
