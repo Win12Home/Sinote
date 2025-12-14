@@ -1,7 +1,9 @@
 """
 Sinote Plugin CLI (spcli)
-Win12Home (C) GPL v2.0.
+Win12Home (C) MIT.
 """
+# Huh, I even not notice I edit MIT to GPL v2.0. Now I have edited.
+from json import JSONDecodeError
 from rich import print
 from typing import *
 import sys
@@ -36,9 +38,12 @@ commandDocs: dict[Any, Any] = {
     "check": [
         "Check this plugin.",
         [
-            "Directory path of your plugin."
+            "Directory path of your plugin. (1 to 50)"
         ],
-        [],
+        [
+            "[purple]-npb/--no-progress-bar[/purple] Disable Progress bar when loading files that more than 2 (Include 2).",
+            "[purple]-q/--quiet[/purple] Quiet to load"
+        ],
         False
     ]
 }
@@ -48,6 +53,8 @@ primaryArgList: list[str] = [
     "check",
     "help"
 ]
+
+hidedPrint: list[str] = []
 
 def fatalError(content: AnyStr) -> None:
     print(f"[red]fatal:[/red] {content}")
@@ -152,6 +159,158 @@ class CLIUsages:
         tasks.close()
         print("Successfully to make a template.")
 
+    @staticmethod
+    def print(*values):
+        hidedPrint.append(" ".join(values))
+
+    @staticmethod
+    def checkTemplate(where: str, quiet: bool = False) -> Any:
+        if quiet:
+            print = CLIUsages.print
+        else:
+            from rich import print as print_
+            print = print_
+        print("[red]Attempting[/red] to check normal structure")
+        from pathlib import Path
+        from json import loads
+        from json5 import loads as json5loads
+        if not Path(where).exists():
+            fatalError(f"{where} does not exist.")
+            return [1, 0]
+        if not Path(where).is_dir():
+            fatalError(f"{where} is not a directory or it's a link.")
+            return [1, 0]
+        print("[green]Successfully[/green] to check normal structure")
+        print("[red]Attempting[/red] to check plugin")
+        errors: int = 0
+        warns: int = 0
+        whereImports: Path = Path(where) / "imports.txt"
+        whereInfo: Path = Path(where) / "info.json"
+        whereHeaders: Path = Path(where) / "headers"
+        if not whereInfo.exists():
+            print("[red]Error: [/red]info.json does not exist.")
+            return [1, 0]
+        elif not whereInfo.is_file():
+            print("[red]Error: [/red]info.json is not a file.")
+            return [1, 0]
+        else:
+            info: dict[str, Any] = {}
+            try:
+                with open(str(whereInfo), "r", encoding="utf-8") as f:
+                    info = loads(f.read())
+            except JSONDecodeError:
+                with open(str(whereInfo), "r", encoding="utf-8") as f:
+                    info = json5loads(f.read())
+            except Exception as e:
+                print(f"[red]Reading Error:[/red] Reason (__repr__): {repr(e)} (info.json)")
+                errors += 1
+            if len(info.keys()) != 0:
+                infoKeys: dict[Any, Any] = {
+                    "icon": lambda x: x is None or isinstance(x, str),
+                    "name": lambda x: isinstance(x, str),
+                    "objectName": lambda x: isinstance(x, str),
+                    "version": lambda x: isinstance(x, str),
+                    "versionIterate": lambda x: isinstance(x, int)
+                }
+                notNeeded: dict[Any, Any] = {
+                    "customizeRemoveString": lambda x: isinstance(x, dict),
+                    "author": lambda x: isinstance(x, list),
+                    "description": lambda x: isinstance(x, str)
+                }
+                for k, w in info.items():
+                    if not k in infoKeys.keys() and not k in notNeeded.keys():
+                        print(f"[yellow]Warning: [/yellow]{k} is not a valid header key. (Of course you can keep it)")
+                        warns += 1
+                    elif k in infoKeys.keys():
+                        if not infoKeys[k](w):
+                            print(f"[yellow]Error: [/yellow]{str(type(w))} is not a valid type for {k}.")
+                            errors += 1
+                    elif k in notNeeded.keys():
+                        if not notNeeded[k](w):
+                            print(f"[yellow]Error: [/yellow]{str(type(w))} is not a valid type for {k}.")
+                            errors += 1
+            else:
+                print("[red]Error: [/red]info.json has no keys or read failed!")
+                errors += 1
+        if not whereImports.exists():
+            print("[yellow]Warning: [/yellow]imports.txt does not exist.")
+            warns += 1
+        elif whereImports.exists() and whereImports.is_file():
+            if not whereHeaders.exists():
+                print("[red]Error:[/red] header directory does not exist.")
+                errors += 1
+                return [errors, warns]
+            if not whereHeaders.is_dir():
+                print("[red]Error:[/red] header directory is not a directory.")
+                errors += 1
+                return [errors, warns]
+            try:
+                imports: list[Path] = []
+                with open(str(whereImports), "r", encoding="utf-8") as f:
+                    imports = [whereHeaders / i.replace("$space;"," ") for i in f.read().splitlines() if not i.strip().startswith("//")]
+                for i in imports:
+                    success: bool = True
+                    print(f"[blue]Checking[/blue] header file {i.name}")
+                    if not i.exists():
+                        print(f"[yellow]Warning: [/yellow]{str(i)} do not exist.")
+                        warns += 1
+                    elif not i.is_file():
+                        print(f"[yellow]Warning: [/yellow]{str(i)} do not a file.")
+                        warns += 1
+                    else:
+                        headerStruct: dict[str, Any] = {
+                            "type": lambda x: isinstance(x, int),
+                            "api": lambda x: isinstance(x, list),
+                            "objectName": lambda x: isinstance(x, str)
+                        }
+                        notNeeded: dict[str, Any] = {
+                            "enableCustomizeCommandRun": lambda x: isinstance(x, bool),
+                            "useSinoteVariableInString": lambda x: isinstance(x, bool),
+                        }
+                        finallyGet: dict[str, Any] = {}
+                        try:
+                            with open(str(i), "r", encoding="utf-8") as f:
+                                finallyGet = loads(f.read())
+                        except JSONDecodeError:
+                            with open(str(i), "r", encoding="utf-8") as f:
+                                finallyGet = json5loads(f.read())
+                        except Exception as e:
+                            print(f"[red]Reading Error:[/red] Reason (__repr__): {repr(e)}")
+                            errors += 1
+                            success = False
+                            continue
+                        if "config" not in finallyGet.keys():
+                            print("[red]Header Error: [/red] \"config\" item is needed in per header!")
+                            errors += 1
+                            success = False
+                            continue
+                        if not isinstance(finallyGet["config"], dict):
+                            print("[red]Header Error: [/red] \"config\" item must be a Dict in per header!")
+                            errors += 1
+                            success = False
+                            continue
+                        for k, w in finallyGet["config"].items():
+                            if k not in headerStruct.keys() and k not in notNeeded.keys():
+                                print(f"[yellow]Warning: [/yellow]{k} is not a valid header key. (Of course you can keep it)")
+                                warns += 1
+                                success = False
+                            if k in headerStruct.keys():
+                                if not headerStruct[k](w):
+                                    print(f"[yellow]Error: [/yellow]{str(type(w))} is not a valid type for {k}.")
+                                    errors += 1
+                                    success = False
+                            if k in notNeeded.keys():
+                                if not notNeeded[k](w):
+                                    print(f"[yellow]Error: [/yellow]{str(type(w))} is not a valid type for {k}.")
+                                    errors += 1
+                                    success = False
+                    print(f"{i.name} is {"[green]a normal header file :)[/green]" if success else "[red]not valid.[/red]"}")
+            except Exception as e:
+                print(f"[red]Reading Error:[/red] Reason (__repr__): {repr(e)}")
+                errors += 1
+        print("[green]Successfully[/green] to check plugin")
+        return [errors, warns]
+
 
 class CLIError:
     @staticmethod
@@ -160,6 +319,35 @@ class CLIError:
             fatalError(f"{command} need {min} arguments, got {max} arguments.")
             return
         fatalError(f"{command} need {min} to {max} arguments, got {got} arguments.")
+
+
+class ArgumentParser:
+    @staticmethod
+    def checkArgumentOfCommandCheck(args: list[str]) -> list[bool] | None:
+        parsed: list[list[str]] = [lexArgument(i) for i in args]
+        valids: list[str] = [
+            "-q",
+            "--quiet",
+            "--npb",
+            "--no-progress-bar"
+        ]
+        normal: list[bool] = [
+            False,
+            False
+        ]
+        for temp in parsed:
+            if not temp[0] in valids:
+                print(f"[yellow]warn: [/yellow]{temp[0]} is not a valid option.")
+                continue
+            elif len(temp) >= 2:
+                print(f"[yellow]warn: [/yellow]{temp[0]} is only a boolean option, not an argument-needed option.")
+                continue
+            if temp[0] in ["--no-progress-bar", "-npb"]:
+                normal[1] = True
+            elif temp[0] in ["--quiet", "-q"]:
+                normal[0] = True
+        return normal
+
 
 version: str = "0.1.0-compatible-with-api-1.0.1"
 
@@ -199,4 +387,52 @@ if command == "create":
     CLIError.argumentNumberNotValid("create", 1, len(primaryArgs) - 1)
     sys.exit(1)
 if command == "check":
-    fatalError(f"Command \"check\" did not truly realized.")
+    args: list[bool] = ArgumentParser.checkArgumentOfCommandCheck(notRequiredArgs)
+    if len(primaryArgs) == 2 and not args[0]:
+        a = CLIUsages.checkTemplate(primaryArgs[1])
+        if isinstance(a, list):
+            print()
+            print(f"[red]Errors:[/red] {a[0]} [yellow]Warnings:[/yellow] {a[1]} {"\nThis plugin was [green]passed[/green]!" if a[0] == 0 and a[1] == 0 else "\nThis plugin[red] is not valid[/red]"}")
+    elif len(primaryArgs) > 2 and len(primaryArgs) <= 51 and not args[1]:
+        totals: list[list[str | int]] = []
+        from pathlib import Path
+        from tqdm import tqdm
+        for i in tqdm(primaryArgs[1:], desc="Checking plugins...", unit=" plugins"):
+            a = CLIUsages.checkTemplate(i, True)
+            if isinstance(a, list):
+                totals.append([
+                    str(Path(i)),
+                    a[0],
+                    a[1]
+                ])
+        print()
+        allPassed: bool = True
+        for i in totals:
+            if i[1] + i[2] != 0:
+                allPassed = False
+            print(f"Plugin in [green]{i[0]}[/green]: [red]Errors: [/red]{i[1]} [yellow]Warning: [/yellow]{i[2]}")
+        if not allPassed:
+            print("\n".join(hidedPrint))
+        print()
+        print(f"All {len(totals)} plugins [green]passed[/green]." if allPassed else "Someone plugins [red]failed[/red]! Check your plugin [strong]please![/strong]")
+    elif len(primaryArgs) > 1 and len(primaryArgs) <= 51:
+        from tqdm import tqdm
+        if len(primaryArgs) > 2:
+            allPassed: bool = True
+            if args[1]:
+                for i in primaryArgs[1:]:
+                    a = CLIUsages.checkTemplate(i, args[0])
+                    if a[0] + a[1] != 0:
+                        allPassed = False
+            else:
+                for i in tqdm(primaryArgs[1:], desc="Checking plugins...", unit=" plugins"):
+                    a = CLIUsages.checkTemplate(i, args[0])
+                    if a[0] + a[1] != 0:
+                        allPassed = False
+            print()
+            print(
+                f"All {len(primaryArgs) - 1} plugins [green]passed[/green]." if allPassed else "Someone plugins [red]failed[/red]! Check your plugin [strong]please![/strong]")
+    else:
+        CLIError.argumentNumberNotValid("check", 1, 50, len(primaryArgs) - 1)
+        sys.exit(1)
+    sys.exit(0)
