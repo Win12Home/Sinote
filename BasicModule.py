@@ -25,7 +25,9 @@ from traceback import format_exception
 from typing import *
 from psutil import virtual_memory, cpu_percent
 from getpass import getuser
-import sys, re, hashlib, pickle
+from enum import Enum
+from multipledispatch import dispatch
+import sys, re, pickle, hashlib
 
 filterwarnings("ignore", category=DeprecationWarning)
 
@@ -41,6 +43,49 @@ normalLogOutput: list[str] = []
 onlyWarning: bool = False
 
 colored: bool = True
+
+class SafetyList(list):
+    """
+    A Safety dictionary
+    """
+    class OutErrors(Enum):
+        NotFoundInIndex = 0
+
+    def index(self, __value: Any, __start: int = 0, __end: int = None) -> int | OutErrors:
+        if __value not in self[__start:__end] if __end is not None else __value not in self[__start:]:
+            return self.OutErrors.NotFoundInIndex
+        return super().index(__value, __start, __end if __end is not None else len(self))
+
+
+class SafetyDict(dict):
+    """
+    A safety dictionary for language load
+    It won't be raise KeyError at all!
+    Like {"abc":"def"}
+    dict_Initialized["abd"] -> return "abd"
+    """
+    class Properties(Enum):
+        ReturnNormalItem = 0
+        ReturnNormalize = 1
+
+    def __getitem__(self, item: Any) -> Any:
+        if item in self:
+            return super().__getitem__(item)
+        return item
+
+    @dispatch(object)
+    def get(self, _key: Any):
+        return super().get(_key)
+
+    @dispatch(object, object)
+    def get(self, _key: Any, _default: Any):
+        return super().get(_key, _default)
+
+    @dispatch(object, Properties, object)
+    def get(self, _key: Any, _prop: Properties, _default: Any = None):
+        default: Any = _default if _prop.value == 1 else _key
+        return super().get(_key, default)
+
 
 def addLogClassic(type: int = 0, bodyText: str = "N/A", activity: str | None = None, placeholder: bool = False):
     typeOfLog: str = ("INFO" if (type == 0) else "WARN" if (type == 1) else "ERR" if (type == 2) else "DBG" if (type == 3) else "N/A")
@@ -281,16 +326,16 @@ def checkVersionForPopup():
     if basicInfo["item.bool.isbetaversion"]:
         w = QMessageBox.warning(None,basicInfo["item.text.warn"],basicInfo["item.text.betaverdesc"])
 
-alreadyLoaded: dict[str, dict] = {}   # Cache Language File (What is @lru_cache? I cannot be got it.)
-alreadyLoadedBase: dict[str, dict] = {}    # Whoa en_US is my needed!
+alreadyLoaded: SafetyDict[str, dict] = {}   # Cache Language File (What is @lru_cache? I cannot be got it.)
+alreadyLoadedBase: SafetyDict[str, dict] = {}    # Whoa en_US is my needed!
+
 
 def getFileHash(filePath):
     try:
         with open(filePath, "rb") as f:
-            return hashlib.blake2b(f.read()).hexdigest()
+            return hashlib.md5(f.read()).hexdigest()
     except:
         return ""
-
 
 def load(filePath):
     cachePath = Path("./cache") / f"{filePath.replace("/", "_").replace("\\", "_")}.cache"
@@ -300,6 +345,9 @@ def load(filePath):
         try:
             with open(cachePath, "rb") as f:
                 cachedData = pickle.load(f)
+                if debugMode:
+                    addLog(3, f"File HASH: {cachedData["savedHash"]}", "JsonCacheLoadActivity")
+                    addLog(3, f"Now File HASH: {fileHash}")
                 if cachedData["savedHash"] == fileHash:
                     if debugMode: addLog(3, "File HASH is same as the file will be load! Cache hit! 💥", "JsonCacheLoadActivity")   # Hash is good!
                     return cachedData["ohMyData"]
@@ -343,7 +391,7 @@ def loadJson(jsonName: str):
     if debugMode: addLog(3, f"Attempting to load {jsonName}.json and cache it ✅", "FileConfigActivity")
     langData = load(f"./resources/language/{lang}/{jsonName}.json")
     
-    result = baseData.copy() | langData.copy()
+    result = SafetyDict(baseData.copy() | langData.copy())
     
     alreadyLoaded[jsonName] = result   # Cache!
     return result
@@ -370,6 +418,9 @@ def outputDeveloperDebugInformation():
     addLog(3, "For Developer Debug, Output your own PC's environment! 🤓", "OutputDeveloperDebugInformationActivity")
     addLog(3, f"Platform: {system()} Python: {python_version()} Win32 Version*: {" ".join(win32_ver())} | Linux LIBC Ver*: {" ".join(libc_ver())}", "OutputDeveloperDebugInformationActivity")
     addLog(3, "Note: If some error occurred, please send log to the developer 💥", "OutputDeveloperDebugInformationActivity")
+
+def applyStylesheet(application: QApplication, theme: str) -> None:
+    apply_stylesheet(application, theme, extra={"QMenu": {"height": 20, "padding": "5px 10px 7px 10px"}})
 
 
 class Setting:
@@ -421,6 +472,10 @@ class Setting:
             if debugMode:
                 addLog(3, "Successfully to generate a new setting!")
         setting = normalSetting
+
+
+class SinoteErrors:
+    class ItemNotValid(Exception): ...
 
 
 class LoadPluginBase:
@@ -773,8 +828,47 @@ class Variables:
         return value
 
 
+class Shortcut(QObject):
+    """
+    How to use it?
+    put this->keyPressEvent to your own keyPressEvent function. （不是从Stack overflow里抄来的）
+    put this->keyReleaseEvent to your own keyReleaseEvent function.
+    """
+    shortcutHandled: Signal = Signal(int)
+    
+    def __init__(self):
+        super().__init__()
+        self._shortcutList: dict[int, set[int]] = {}
+        self._pressedKeys: set[int] = set()
+
+    def keyPressEvent(self, event: QKeyEvent) -> None:
+        if debugMode: addLog(3, f"Key pressed: {event.key()}", "ShortcutActivity")
+        if not event.isAutoRepeat() and event.key() not in self._pressedKeys:
+            self._pressedKeys.add(event.key())
+
+        if self._pressedKeys in self._shortcutList.values():  # It will be slow when shortcut pressed, but it will be dash! when shortcut not pressed. O(n)
+            for itemNumber, key in self._shortcutList.items():
+                if key == self._pressedKeys:
+                    self.shortcutHandled.emit(itemNumber)
+                    break
+
+    def keyReleaseEvent(self, event: QKeyEvent) -> None:
+        if debugMode: addLog(3, f"Key released: {event.key()}", "ShortcutActivity")
+        if not event.isAutoRepeat() and event.key() in self._pressedKeys:
+            self._pressedKeys.discard(event.key())
+
+    def addItem(self, keys: list[Qt.Key], itemNumber: int) -> None:
+        if itemNumber not in self._shortcutList:
+            self._shortcutList[itemNumber] = set([i.value for i in keys if hasattr(i, "value")])
+            return
+        raise SinoteErrors.ItemNotValid(f"{itemNumber} has probably in the shortcut list.")
+
+    def discardItem(self, itemNumber: int) -> None:
+        self._shortcutList.pop(itemNumber)
+
+
 class FunctionLexerSet:
-    def __init__(self, listOfFunc: list[str | int | dict], translateVariables: bool = True):
+    def __init__(self, listOfFunc: list[str | int | dict | dict], translateVariables: bool = True):
         self._listOfFunc = listOfFunc
         self._varObj = Variables()
         self._needVar = translateVariables
@@ -849,9 +943,10 @@ class FunctionLexerSet:
         """
         returnlist: list[partial] = []
         for i in self._listOfFunc:
-            if not i[0] in self._if.keys():
-                addLog(2, "Not compatible with this command!", "FunctionLexerActivity")
+            if i[0] not in self._if.keys():
+                addLog(2, f"Not compatible with this command! Number: {i[0]}", "FunctionLexerActivity")
                 continue
+            LoadPluginBase.logIfDebug(f"Number: {i[0]}, Function: {self._if[i[0]]}")
             if i[0] == 0:
                 returnlist.append(partial(self._if[i[0]], i[1]))
             elif i[0] == 2:
@@ -870,8 +965,8 @@ class FunctionLexerSet:
 
 
 class ParseFunctions:
-    def __init__(self, list_: list, customizeVar: bool = True):
-        self._list: list = list_
+    def __init__(self, list_: dict, customizeVar: bool = True):
+        self._list: dict = list_
         self._customizeVar = customizeVar
 
     def getValue(self) -> list | None:
@@ -880,21 +975,31 @@ class ParseFunctions:
         :return: list[partial] or None
         """
         verifiedlist: list = []
-        for line, temp in enumerate(self._list, 1):
-            LoadPluginBase.logIfDebug(f"Checking line {line}... (OwO)")
-            if temp[0] not in LoadPluginBase.functions.keys():
-                LoadPluginBase.logIfDebug(f"Error In Line {line}: Functions is not defined!")
-                continue
-            if temp[0] == 7:
-                addLog(1, f"USEFUNC Function will be define in API 1.0.3, now API Version is {".".join(apiVersion)}")
-                continue
-            verifiedlist.append(temp)
-            LoadPluginBase.logIfDebug(f"Successfully to Check line {line}! No problem! (UwU) I'm proud!")
+        LoadPluginBase.logIfDebug(f"Get funcs: {self._list}")
+        for funcName, funcContent in self._list.items():
+            LoadPluginBase.logIfDebug(f"Checking function {funcName}...")
+            for line, temp in enumerate(funcContent, 1):
+                LoadPluginBase.logIfDebug(f"Checking line {line}... (OwO)")
+                if len(temp) == 0:
+                    LoadPluginBase.logIfDebug(f"Error In Line {line}: No any functions")
+                    continue
+                if temp[0] not in LoadPluginBase.functions.keys():
+                    LoadPluginBase.logIfDebug(f"Error In Line {line}: Function {temp[0]} is not defined!")
+                    continue
+                if temp[0] == 7:
+                    addLog(1, f"USEFUNC Function will be define in API 1.0.3, now API Version is {".".join(apiVersion)}")
+                    continue
+                after: list = temp
+                after[0] = LoadPluginBase.functions[temp[0]]
+                verifiedlist.append(temp)
+                LoadPluginBase.logIfDebug(f"Successfully to Check line {line}! No problem! (UwU) I'm proud!")
+            LoadPluginBase.logIfDebug(f"Already checked function {funcName}!")
 
         LoadPluginBase.logIfDebug(f"Successfully to Check all the Function List, Total: {len(self._list)} Passed: {len(verifiedlist)} Skipped: {len(self._list)-len(verifiedlist)}")
 
         try:
             temp = FunctionLexerSet(verifiedlist).getValue()
+            LoadPluginBase.logIfDebug(f"Successfully to lex! Value: {temp}")
             return temp
         except Exception as e:
             addLog(2, f"Failed to parse! Reason: {repr(e)}")
@@ -948,10 +1053,10 @@ class LoadPluginHeader:
             items.append(config.get("type", 0) if isinstance(self.header["config"].get("type", 0), int) else 0)
             if items[1] == 0:
                 # Check functions and runFunc
-                functions: dict | None = self.header.get("function", None)
+                functions: dict | None = self.header.get("functions", None)
                 runFunc: list | None = self.header.get("runFunc",None)
                 if not functions or not runFunc or config["enableCustomizeCommandRun"] == False:
-                    addLog(1, f"File \"{self.filename}\" is a Placeholder File ('Cause no function and runFunc)")
+                    addLog(1, f"File \"{self.filename}\" is a Placeholder File ('Cause no function and runFunc, or \"enableCustomizeCommandRun\" not enabled)")
                     # Interrupt
                     return None
                 realFuncs: dict = {}
@@ -978,7 +1083,7 @@ class LoadPluginHeader:
                             if LoadPluginBase.functions.get(k[0].lower(), None) is None:
                                 addLog(1,f"Ignored {line}th line in the {funcName} function 'caused {k[0]} isn't a real function there.")
                                 continue
-                            k[0] = LoadPluginBase.functions.get(k[0].lower())
+                            k[0] = k[0].lower()
                             temp.append(k)
                         realFuncs[funcName] = temp
                 # look for runFunc

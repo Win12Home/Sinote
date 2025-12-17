@@ -44,12 +44,15 @@ class AutoLoadPlugin(QThread):
         global loadedPlugin, syntaxHighlighter, autoRun
         if "--dont-load-any-plugin" in args or "-displug" in args:
             addLog(0, "--dont-load-any-plugin or -displug activated, no any plugins will be loaded!")
+            self.processFinished.emit()
             return
         if not Path("./resources/plugins/").exists():
             addLog(1, "Failed to load all the Plugins, Reason: ./resources/plugins/ not exists ❌")
+            self.processFinished.emit()
             return
         if not Path("./resources/plugins/").is_dir():
             addLog(1, "Failed to load all the Plugins, Reason: ./resources/plugins/ not a folder ❌")
+            self.processFinished.emit()
             return
         dirs = list(Path("./resources/plugins/").iterdir())
         self.loadTotal.emit(len(dirs))
@@ -65,6 +68,7 @@ class AutoLoadPlugin(QThread):
             if not (infoJson.exists()):
                 addLog(1, f"Automatic skipped {item.name}, Reason: info.json not exists ❌")
                 continue
+            self.loadNameChanged.emit(item.name)
             temp = LoadPluginInfo(item.name).getValue()
             loadedPlugin[temp[0]["objectName"]] = temp[0]
             self.loadNameChanged.emit(temp[0]["name"])
@@ -82,7 +86,8 @@ class AutoLoadPlugin(QThread):
                 elif key[1] == 0:
                     debugPluginLog(f"Checked its property! Type: RunningFunc 🤓")
                     debugPluginLog(f"Appending to autoRun... 💥")
-                    [autoRun.append(i) if isinstance(i, partial) else None for i in key[2]]
+                    if isinstance(key[2], list):
+                        [autoRun.append(i) if isinstance(i, partial) else None for i in key[2]]
                     """
                     This code definitely equals
                     for i in key[2]:
@@ -292,7 +297,24 @@ class SpacingSupportEdit(LineShowTextEdit):
 
     def keyPressEvent(self, event: QKeyEvent) -> None:
         # Rewrite keyPressEvent, AI Generate? Unuse!
-        if event.key() == Qt.Key.Key_Backtab:
+        if event.key() == Qt.Key.Key_Home:
+            cursor = self.textCursor()
+            originalPos: int = cursor.position()
+            if self._getBeforeText(originalPos).strip() == "":
+                cursor.movePosition(QTextCursor.MoveOperation.StartOfLine)
+            else:
+                lineSpace: int = len(self._thisLineContent(originalPos)) - len(self._thisLineContent(originalPos).lstrip())
+                cursor.movePosition(QTextCursor.MoveOperation.StartOfLine)
+                cursor.movePosition(QTextCursor.MoveOperation.Right, QTextCursor.MoveMode.MoveAnchor, lineSpace)
+            self.setTextCursor(cursor)
+            return
+        elif event.key() == Qt.Key.Key_End:
+            cursor = self.textCursor()
+            originalPos: int = cursor.position()
+            cursor.movePosition(QTextCursor.MoveOperation.EndOfLine)
+            self.setTextCursor(cursor)
+            return
+        elif event.key() == Qt.Key.Key_Backtab:
             # Same as Backspace
             cursor = self.textCursor()
             if len(cursor.selectedText()) > 0:
@@ -315,17 +337,45 @@ class SpacingSupportEdit(LineShowTextEdit):
         elif event.key() == Qt.Key.Key_Return:
             cursor = self.textCursor()
             originalPos: int = cursor.position()
-            content: str = self._thisLineContent(cursor.position())
-            lineSpace: int = len(content) - len(content.lstrip())
-            cursor.insertText("\n")
-            cursor.insertText(" " * lineSpace)
-            cursor.setPosition(originalPos + lineSpace + 1)
-            self.setTextCursor(cursor)
+            leftStr, rightStr = "", ""
+            cursor.movePosition(QTextCursor.MoveOperation.Left, QTextCursor.MoveMode.KeepAnchor)
+            leftStr = cursor.selectedText()
+            cursor.clearSelection()
+            cursor.setPosition(originalPos)
+            cursor.movePosition(QTextCursor.MoveOperation.Right, QTextCursor.MoveMode.KeepAnchor)
+            rightStr = cursor.selectedText()
+            cursor.clearSelection()
+            cursor.setPosition(originalPos)
+            defineKeywords: list[list[str]] = [[i[0], i[1]] for i in self.defineKeywords]
+            index = SafetyList([i[0] for i in defineKeywords]).index(leftStr)
+            if index != SafetyList.OutErrors.NotFoundInIndex and (defineKeywords[index][1] == rightStr or defineKeywords[index][1].strip() == ""):
+                cursor.movePosition(QTextCursor.MoveOperation.EndOfLine, QTextCursor.MoveMode.KeepAnchor)
+                afterText: str = cursor.selectedText()
+                cursor.removeSelectedText()
+                cursor.setPosition(originalPos)
+                content: str = self._thisLineContent(cursor.position())
+                lineSpace: int = len(content) - len(content.lstrip())
+                cursor.insertText(f"\n{" " * (lineSpace + self.spacing)}{"\n" + " " * lineSpace + afterText if not (defineKeywords[index][1].strip() == "") else afterText}")
+                cursor.clearSelection()
+                cursor.setPosition(originalPos + lineSpace + (len(afterText) if defineKeywords[index][1].strip() == "" else 0) + self.spacing + 1)
+                self.setTextCursor(cursor)
+            else:
+                content: str = self._thisLineContent(cursor.position())
+                lineSpace: int = len(content) - len(content.lstrip())
+                cursor.insertText("\n")
+                cursor.insertText(" " * lineSpace)
+                cursor.setPosition(originalPos + lineSpace + 1)
+                self.setTextCursor(cursor)
             return
         elif event.text() in [i[0] for i in self.defineKeywords] or event.text() in ["(","[","{"]:
             super().keyPressEvent(event)
             cursor = self.textCursor()
             normals: list = ["()","[]","{}"]
+            defineKeywords: list[list[str]] = [[i[0], i[1]] for i in self.defineKeywords] + [[i[0], i[1]] for i in normals]
+            index = SafetyList([i[0] for i in defineKeywords]).index(event.text())
+            if index != SafetyList.OutErrors.NotFoundInIndex:
+                if defineKeywords[index][1].strip() == "":
+                    return
             if event.text() in [i[0] for i in self.defineKeywords]:
                 cursor.insertText([i[1] for i in self.defineKeywords][[i[0] for i in self.defineKeywords].index(event.text())])
             elif event.text() in [i[0] for i in normals]:
@@ -334,6 +384,16 @@ class SpacingSupportEdit(LineShowTextEdit):
                 return
             cursor.movePosition(QTextCursor.MoveOperation.Left)
             self.setTextCursor(cursor)
+            return
+        elif event.key() == Qt.Key.Key_Delete:
+            cursor = self.textCursor()
+            originalPos = cursor.position()
+            if cursor.hasSelection():
+                cursor.removeSelectedText()
+                return
+            cursor.movePosition(QTextCursor.MoveOperation.Right, QTextCursor.MoveMode.KeepAnchor)
+            cursor.removeSelectedText()
+            cursor.setPosition(originalPos)
             return
         elif event.key() == Qt.Key.Key_Backspace:
             cursor = self.textCursor()
@@ -374,8 +434,16 @@ class SpacingSupportEdit(LineShowTextEdit):
 
 
 class SinotePlainTextEdit(SpacingSupportEdit):
+    @overload
+    def __init__(self, parent: QWidget):
+        ...
+
+    @overload
     def __init__(self):
-        super().__init__()
+        ...
+
+    def __init__(self, parent: QWidget = None):
+        super().__init__(parent)
         self.setFilename = None
         self.nowFilename: str | None = None
         self.plName: str | None = None
@@ -391,8 +459,6 @@ class SinotePlainTextEdit(SpacingSupportEdit):
             debugLog(f"Successfully to save file {self.nowFilename}")
 
     def clear(self):
-        if self.setFilename is not None:
-            self.setFilename(self.num, loadJson("EditorUI")["editor.tab.tab_name_unsaved"].format(self.nowFilename))
         self.finalEncoding = None
         self.plName = None
         self.nowFilename = None
@@ -401,23 +467,8 @@ class SinotePlainTextEdit(SpacingSupportEdit):
     def newFile(self):
         self.clear()
         if self.setFilename is not None:
-            self.setFilename(self.num, loadJson("EditorUI")["editor.tab.new_file"])
+            self.setFilename(self.parent().indexOf(self), loadJson("EditorUI")["editor.tab.new_file"])
         self.nowFilename = None
-
-    def undo(self):
-        if self.setFilename is not None:
-            self.setFilename(self.num, loadJson("EditorUI")["editor.tab.tab_name_unsaved"].format(self.nowFilename))
-        super().undo()
-
-    def redo(self):
-        if self.setFilename is not None:
-            self.setFilename(self.num, loadJson("EditorUI")["editor.tab.tab_name_unsaved"].format(self.nowFilename))
-        super().redo()
-
-    def paste(self):
-        if self.setFilename is not None:
-            self.setFilename(self.num, loadJson("EditorUI")["editor.tab.tab_name_unsaved"].format(self.nowFilename))
-        super().paste()
 
     class _LoadHighlighter(QThread):
         foundHighlighter = Signal(LoadPluginBase.LazyCustomizeSyntaxHighlighter)
@@ -518,7 +569,7 @@ class SinotePlainTextEdit(SpacingSupportEdit):
             self.setPlainText(content)
             self.setFileAppendix(Path(filename).suffix[1:])
             if self.setFilename is not None:
-                self.setFilename(self.num, loadJson("EditorUI")["editor.tab.tab_name"].format(Path(filename).name))
+                self.setFilename(self.parent().indexOf(self), loadJson("EditorUI")["editor.tab.tab_name"].format(Path(filename).name))
             self.nowFilename = str(Path(filename))
             addLog(0, f"Successfully to read file {filename} using {self.finalEncoding} encoding! ✅", "SinoteUserInterfaceActivity")
         else:
@@ -635,12 +686,12 @@ class SplashScreen(QDialog):
         self.loadedPlugin: int = 0
         self.totals: int = 0
         self.setStyleSheet("background-color:white;color:black;")
-        self.nowLoading: str = "IDLE"
+        self.nowLoading: str = "null"
         self.pixmap = QPixmap("./resources/icon.png").scaled(QSize(256, 256))
         self.image.setPixmap(self.pixmap)
         self.label = QLabel()
         self.label.setStyleSheet("text-align: center;")
-        self.label.setText(loadJson("LoadingScreen")["loading.text.loadplugin"].format("IDLE", "0", "Summing..."))
+        self.label.setText(loadJson("LoadingScreen")["loading.text.loadplugin"].format("null", "0", "Summing..."))
         self.layout_.addWidget(self.image, 1, Qt.AlignmentFlag.AlignHCenter)
         self.layout_.addWidget(self.label, alignment=Qt.AlignmentFlag.AlignHCenter)
         self.setLayout(self.layout_)
@@ -672,6 +723,7 @@ class MainWindow(QMainWindow):
 
     def __init__(self):
         super().__init__()
+        self.shortcut = Shortcut()
         self.widget = QStackedWidget()
         self.mainFrame = QWidget()
         self.settingFrame = QWidget()
@@ -707,6 +759,7 @@ class MainWindow(QMainWindow):
     def _setupUI(self):
         debugLog("Setting up User Interface...")
         debugLog("Setting up Text Edit Area...")
+        self.folder: QTreeWidget = QTreeWidget()
         self.textEditArea = QTabWidget()
         self.addTabButton = QPushButton("+")
         self.addTabButton.setFlat(True)
@@ -720,26 +773,35 @@ class MainWindow(QMainWindow):
         debugLog("Successfully to set up Text Edit Area!")
         debugLog("Setting up Layout...")
         self.horizontalLayout = QHBoxLayout()
+        self.horizontalLayout.addWidget(self.folder)
         self.horizontalLayout.addWidget(self.textEditArea)
         self.horizontalLayout.setStretch(0, 1)
+        self.horizontalLayout.setStretch(1, 3)
         self.mainFrame.setLayout(self.horizontalLayout)
         debugLog("Successfully to set up Layout!")
         debugLog("Setting up Menu...")
         self.fileEditMenu = QMenuBar()
         self.fileEditMenu.fileEdit = QMenu(loadJson("EditorUI")["editor.menu.files"])
+        self.fileEditMenu.editMenu = QMenu(loadJson("EditorUI")["editor.menu.edit"])
         # Actions Define
-        createFile = QAction(loadJson("EditorUI")["editor.menu.files.newfile"], self)
+        createFile = QAction(loadJson("EditorUI")["editor.menu.files.newfile"], self, icon=QIcon.fromTheme(QIcon.ThemeIcon.DocumentNew))
         createFile.triggered.connect(lambda: self.textEditArea.currentWidget().newFile())
-        openFile = QAction(loadJson("EditorUI")["editor.menu.temps.openfile"], self)
+        openFile = QAction(loadJson("EditorUI")["editor.menu.temps.openfile"], self, icon=QIcon.fromTheme(QIcon.ThemeIcon.DocumentOpen))
         openFile.triggered.connect(self.tempOpenFile)
-        saveAs = QAction(loadJson("EditorUI")["editor.menu.files.saveas"], self)
+        saveAs = QAction(loadJson("EditorUI")["editor.menu.files.saveas"], self, icon=QIcon.fromTheme(QIcon.ThemeIcon.DocumentSaveAs))
         saveAs.triggered.connect(self.saveAs)
-        setting = QAction(loadJson("EditorUI")["editor.menu.files.settings"], self)
+        setting = QAction(loadJson("EditorUI")["editor.menu.files.settings"], self, icon=QIcon.fromTheme(QIcon.ThemeIcon.Computer))
         setting.triggered.connect(partial(self.widget.setCurrentIndex, 1))
-        exitProg = QAction(loadJson("EditorUI")["editor.menu.files.exit"], self)
+        exitProg = QAction(loadJson("EditorUI")["editor.menu.files.exit"], self, icon=QIcon.fromTheme(QIcon.ThemeIcon.ApplicationExit))
         exitProg.triggered.connect(self.close)
         self.fileEditMenu.fileEdit.addActions([createFile, openFile, saveAs, setting, exitProg])
+        undo = QAction(loadJson("EditorUI")["editor.menu.edit.undo"], self, icon=QIcon.fromTheme(QIcon.ThemeIcon.EditRedo))
+        undo.triggered.connect(lambda: self.textEditArea.currentWidget().undo())
+        redo = QAction(loadJson("EditorUI")["editor.menu.edit.redo"], self, icon=QIcon.fromTheme(QIcon.ThemeIcon.EditUndo))
+        redo.triggered.connect(lambda: self.textEditArea.currentWidget().redo())
+        self.fileEditMenu.editMenu.addActions([undo, redo])
         self.fileEditMenu.addMenu(self.fileEditMenu.fileEdit)
+        self.fileEditMenu.addMenu(self.fileEditMenu.editMenu)
         self.setMenuBar(self.fileEditMenu)
         debugLog("Successfully to set up Menu!")
         debugLog("Setting up Setting Area...")
@@ -808,7 +870,7 @@ class MainWindow(QMainWindow):
         self.setArea.plugins.set.hLayout = QHBoxLayout()
         self.setArea.plugins.set.listWidget = QListWidget()
         self.setArea.plugins.set.listWidget.setStyleSheet(
-            f"{self.setArea.plugins.set.listWidget.styleSheet()} QListWidget::item::selected {r"{ background-color: lightblue; }"}")
+            f"{self.setArea.plugins.set.listWidget.styleSheet()} QListWidget::item::selected {r"{ background-color: lightblue; color: grey;}"}")
         self.setArea.plugins.set.information = PluginInfoLister()
         self.setArea.plugins.set.listWidget.currentTextChanged.connect(lambda: {
             self.setArea.plugins.set.information.setInformation(
@@ -878,7 +940,42 @@ class MainWindow(QMainWindow):
         self.widget.setCurrentIndex(0)
         self.editorThread.start()
         debugLog("Successfully to add frame!")
+        debugLog("Adding shortcuts...")
+        self.shortcut.addItem([Qt.Key.Key_Control, Qt.Key.Key_Alt, Qt.Key.Key_S], 1)
+        self.shortcut.addItem([Qt.Key.Key_Control, Qt.Key.Key_N], 2)
+        self.shortcut.addItem([Qt.Key.Key_Control, Qt.Key.Key_Shift, Qt.Key.Key_S], 3)
+        self.shortcut.addItem([Qt.Key.Key_Control, Qt.Key.Key_Q], 4)
+        self.shortcut.shortcutHandled.connect(self._analyzeShortcut)
+        debugLog("Successfully to add shortcuts")
         debugLog("Successfully to set up User Interface!")
+
+    def _analyzeShortcut(self, itemNum: int) -> None:
+        if itemNum == 1:
+            if self.widget.currentIndex() == 0:
+                self.widget.setCurrentIndex(1)
+                return
+            self.widget.setCurrentIndex(0)
+        elif itemNum == 2:
+            self.textEditArea.currentWidget().newFile()
+        elif itemNum == 3:
+            self.saveAs()
+        elif itemNum == 4:
+            self.close()
+    
+    def eventFilter(self, obj: QObject, event: QEvent) -> bool:
+        if event.type() == QEvent.Type.KeyPress:
+            self.shortcut.keyPressEvent(event)
+        elif event.type() == QEvent.Type.KeyRelease:
+            self.shortcut.keyReleaseEvent(event)
+        return False
+
+    def keyPressEvent(self, event:QKeyEvent) -> None:
+        self.shortcut.keyPressEvent(event)
+        super().keyPressEvent(event)
+
+    def keyReleaseEvent(self, event: QKeyEvent) -> None:
+        self.shortcut.keyReleaseEvent(event)
+        super().keyReleaseEvent(event)
 
     def setThisPluginAnotherType(self, item: QListWidgetItem) -> None:
         objectName: str = item.objName
@@ -919,15 +1016,16 @@ class MainWindow(QMainWindow):
         :return: NoneType
         """
         if not "--no-theme" in args and not "-nt" in args:
-            apply_stylesheet(application, "light_blue.xml" if not theme else "dark_blue.xml")
+            applyStylesheet(application, "light_teal.xml" if not theme else "dark_teal.xml")
             settingObject.setValue("theme", theme)
             self.applySettings()
             self.themeChanged.emit()
 
     def _automaticSetTheme(self) -> None:
-        apply_stylesheet(application, "light_blue.xml" if not settingObject.getValue("theme") else "dark_blue.xml")
+        if not "--no-theme" in args and not "-nt" in args:
+            applyStylesheet(application, "light_teal.xml" if not settingObject.getValue("theme") else "dark_teal.xml")
 
-    def applyFont(self, fontName: str = None, fontSize: int = None, fallbackFont: str = None) -> None:
+    def applyFont(self, fontName: Optional[str] = None, fontSize: Optional[int] = None, fallbackFont: Optional[str] = None) -> None:
         if fontName:
             settingObject.setValue("fontName", fontName)
         if fontSize:
@@ -946,22 +1044,33 @@ class MainWindow(QMainWindow):
 
     def closeEvent(self, event: QCloseEvent) -> None:
         debugLog("CloseEvent triggered 🤓")
-        self.close()
-        event.accept()
+        if self.close():
+            event.accept()
+            return
+        event.ignore()
 
-    def close(self) -> None:
-        debugLog("Saving session...")
-        settingObject.setValue("beforeread", [(i.nowFilename if system().lower() != "windows" else i.nowFilename.replace("/","\\"))
-                                              for i in [i for i in self.tabTextEdits if hasattr(i, "nowFilename")] if
-                                              (i.nowFilename is not None and Path(i.nowFilename).exists())])
-        debugLog("Saved session!")
-        debugLog("Attempting to close 🤓")
-        self.hide()
-        self.editorThread.quit()
-        self.editorThread.wait()
-        debugLog("Successfully to close ✅")
-        super().close()
-        application.quit()
+    def close(self) -> bool:
+        msgbox: QMessageBox = QMessageBox(QMessageBox.Icon.Information, loadJson("MessageBox")["msgbox.title.info"], loadJson("MessageBox")["msgbox.info.sureToExit"],
+                                          buttons=QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.Cancel)
+        msgbox.setWindowIcon(self.windowIcon())
+        if msgbox.exec() == QMessageBox.StandardButton.Yes:
+            debugLog("Saving session...")
+            settingObject.setValue("beforeread", [(i.nowFilename if system().lower() != "windows" else i.nowFilename.replace("/","\\"))
+                                                  for i in [i for i in self.tabTextEdits if hasattr(i, "nowFilename")] if
+                                                  (i.nowFilename is not None and Path(i.nowFilename).exists())])
+            debugLog("Saved session!")
+            debugLog("Attempting to close 🤓")
+            self.hide()
+            self.editorThread.quit()
+            self.editorThread.wait()
+            debugLog("Successfully to close ✅")
+            super().close()
+            application.quit()
+            return True
+        return False
+
+    def openProject(self) -> None:
+        raise NotImplementedError("Function \"openProject\" isn't implemented.")
 
     def tempOpenFile(self) -> None:
         """

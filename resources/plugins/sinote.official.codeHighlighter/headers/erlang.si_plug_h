@@ -1,0 +1,37 @@
+{
+  "config": {
+    "type": 1,
+    "objectName": "erlangSyntax",
+    "api": [1, 1]
+  },
+  "coding": {
+    "codeName": "Erlang",
+    "fileExtension": ["erl", "hrl"],
+    "keywords": [
+      "module", "export", "import", "define", "include", "include_lib", "record", "type", "spec", "callback", "opaque", "behaviour", "behavior",
+      "if", "case", "of", "when", "after", "receive", "end", "fun", "try", "catch", "throw", "error", "exit",
+      "not", "and", "or", "xor", "orelse", "andalso",
+      "true", "false", "undefined",
+      "begin", "end",
+      "let", "in",
+      "query", "from", "where", "select", "union", "except", "intersect", "group", "by", "having", "order", "limit", "offset",
+      "abs", "adler32", "adler32_combine", "apply", "atom_to_binary", "atom_to_list", "binary_part", "binary_to_atom", "binary_to_existing_atom", "binary_to_float", "binary_to_integer", "binary_to_list", "binary_to_term", "bit_size", "bitstring_to_list", "byte_size", "crc32", "crc32_combine", "date", "decode_packet", "delete_element", "element", "erase", "exit", "float", "float_to_binary", "float_to_list", "garbage_collect", "get", "get_keys", "group_leader", "halt", "hd", "integer_to_binary", "integer_to_list", "is_process_alive", "length", "link", "list_to_atom", "list_to_binary", "list_to_bitstring", "list_to_existing_atom", "list_to_float", "list_to_integer", "list_to_pid", "list_to_tuple", "load_module", "make_ref", "max", "min", "module_loaded", "monitor_node", "node", "nodes", "now", "open_port", "pid_to_list", "port_close", "port_command", "port_connect", "port_control", "pre_loaded", "process_flag", "process_info", "processes", "put", "register", "registered", "round", "self", "send", "send_after", "spawn", "spawn_link", "spawn_monitor", "spawn_opt", "split_binary", "statistics", "term_to_binary", "throw", "time", "tl", "trunc", "tuple_size", "tuple_to_list", "unlink", "unregister", "whereis",
+      "list", "tuple", "map", "binary", "bitstring", "function", "pid", "port", "reference", "atom", "float", "integer"
+    ],
+    "symbols": [
+      "+", "-", "*", "/", "div", "rem", "band", "bor", "bxor", "bnot", "bsl", "bsr", "or", "xor", "not", "andalso", "orelse", "==", "/=", "=<", "<", ">=", ">==", "=::", "=:=", "=/=", "<", ">", "<=", ">=", "++", "--", "!", "=", "<-", "::", ":", "->", ";", ",", "|", "#", "$", ".", "?", "=>"
+    ],
+    "remKeywords": ["%"],
+    "remKeywordsMultipleLine": [],
+    "enableSelfColorOfRemKeywordsMultipleLine": true,
+    "textKeywords": ["\"", "'"],
+    "defineKeywords": ["(", ")"],
+    "pairKeywords": [
+      ["(", ")"],
+      ["[", "]"],
+      ["{", "}"],
+      ["<<", ">>"],
+      ["#{", "}"]
+    ]
+  }
+}

@@ -3,5 +3,6 @@
   "msgbox.title.warning": "Warning",
   "msgbox.title.info": "Information",
   "msgbox.error.fileCannotRead": "File {} cannot read! We don't know what's happening!\nEncoding wasn't match? Or Permission Denied? Please check your document!",
-  "msgbox.info.restartApplySet": "This option need to restart to apply setting. If you'd like to apply, please restart it."
+  "msgbox.info.restartApplySet": "This option need to restart to apply setting. If you'd like to apply, please restart it.",
+  "msgbox.info.sureToExit": "Are you sure to exit Sinote?"
 }

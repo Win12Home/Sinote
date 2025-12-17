@@ -86,7 +86,7 @@ A example of Python:
     "remKeywordsMultipleLine": ["\"\"\"","\"\"\""],
     "enableSelfColorOfRemKeywordsMultipleLine": false, //"""<text>""" also can use for str, this is one of different of Python
     "textKeywords": ["'","\""],
-    "defineKeywords": [":",""],  //C++: ["{","}"] VSB: ["BEGIN","END"],
+    "defineKeywords": [":"," "],  //C++: ["{","}"] VSB: ["BEGIN","END"], needed 2 values (One text)
     "pairKeywords": [["{","}"],["(",")"]/*...*/]
   }
 }
@@ -109,14 +109,14 @@ A example of Python:
 > **<span style="color:red;font-style:oblique">&#x26a0;&#xfe0f; IMPORTANT NOTICE:</span> The all the selection is required!**
 > <br>Excepted ```enableSelfColorOfRemKeywordsLikeString``` selection. (Always true)
 
-### 1.3.2 Complex Runner Define (type equals two)
+### 1.3.2 Runner Define (type equals two)
 
 > **&#x2139;&#xfe0f; NOTICE:**
 > Runner Define is very important for Your Customize Programming Language or a Programming Language that Sinote not support.
 > <br>
 > If this documentation cannot give you an ***EASY WAY TO CREATE IT***, please give me an issue in GitHub.
 
-It's difficult to create a Runner or Compiler Define for a pre-learner.<br>
+It's difficult to create a Runner or Compiler Define for a pre-learner. (However, that's not included ASM Coder and C/C++ Coder)<br>
 <br> This is an example for C++<br>
 **./headers/cpp.sph**
 ```json5
@@ -140,8 +140,8 @@ It's difficult to create a Runner or Compiler Define for a pre-learner.<br>
     "codeName": "C++",
     "fileExtension": [".cpp",".cxx"],
     "compilerSupport": ["g++.exe","gcc.exe"], // Only windows, if you need to support linux, add g++, gcc.
-    "runnerSupport": null, // No Runner
-    "compiler": "compileFunc",
+    "runnerSupport": null, // No Runner, if you don't need gdb.
+    "compiler": "compileFunc", // Compile! My File!
     "runner": "runFunc",
     "compilerDefaultArg": ["-G","-std=c++23"],
     "runnerDefaultArg": []

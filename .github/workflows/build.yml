@@ -45,13 +45,30 @@ jobs:
         pip install -r requirements.txt
         pip install pyinstaller
         echo Successfully to install!
+
+    - name: Generate Entry File
+      shell: bash
+      run: |
+        echo Generating entry of Window...
+        cat > EntryWindow.py << EOF
+        from SinoteMain import appStart
+        appStart(silent=True)
+        EOF
+        echo Generated!
+        echo Generating entry of Console...
+        cat > EntryConsole.py << EOF
+        from SinoteMain import appStart
+        # Note: This is not needed, but it's readability.
+        appStart(silent=False)
+        EOF
+        echo Generated!
     
     - name: Build Application Binary File (Included GUI&Consoled)
       shell: bash
       run: |
         echo Starting parallel build...
-        pyinstaller --onedir --windowed --exclude-module unittest --exclude-module PySide6.QtQuick --exclude-module PySide6.QtMultimedia --exclude-module PySide6.QtBluetooth SinoteMain.py --name Sinote --icon ./resources/icon.png &
-        pyinstaller --onedir --console --exclude-module unittest --exclude-module PySide6.QtQuick --exclude-module PySide6.QtMultimedia --exclude-module PySide6.QtBluetooth SinoteMain.py --name Sinote_Consoled --icon ./resources/icon.png &
+        pyinstaller --onedir --windowed --exclude-module unittest --exclude-module PySide6.QtQuick --exclude-module PySide6.QtMultimedia --exclude-module PySide6.QtBluetooth EntryWindow.py --name Sinote --icon ./resources/icon.png &
+        pyinstaller --onedir --console --exclude-module unittest --exclude-module PySide6.QtQuick --exclude-module PySide6.QtMultimedia --exclude-module PySide6.QtBluetooth EntryConsole.py --name Sinote_Consoled --icon ./resources/icon.png &
         wait
         echo Finished application generate
 

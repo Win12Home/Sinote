@@ -1,0 +1,32 @@
+{
+  "config": {
+    "type": 1,
+    "objectName": "fortranSyntax",
+    "api": [1, 1]
+  },
+  "coding": {
+    "codeName": "Fortran",
+    "fileExtension": ["f", "for", "f90", "f95", "f03", "f08"],
+    "keywords": [
+      "program", "function", "subroutine", "end", "endprogram", "endfunction", "endsubroutine", "if", "then", "else", "elseif", "endif", "do", "while", "enddo", "case", "select", "case", "endselect", "goto", "call", "return", "stop", "pause", "cycle", "exit",
+      "integer", "real", "complex", "logical", "character", "double", "precision", "dimension", "parameter", "allocatable", "target", "pointer", "intent", "optional", "save", "public", "private", "sequence", "intrinsic", "external",
+      "use", "module", "contains", "interface", "abstract", "extends", "import", "non_overridable", "pass", "generic", "operator", "assignment", "final", "procedure", "type", "endtype",
+      "open", "close", "read", "write", "print", "format", "inquire", "rewind", "backspace", "endfile", "flush",
+      "true", "false", "null", "present", "allocated", "associated", "len", "size", "kind", "bit_size", "huge", "tiny", "epsilon", "precision", "range", "radix", "digits", "maxexponent", "minexponent",
+      "and", "or", "not", "eqv", "neqv", "eq", "ne", "lt", "le", "gt", "ge"
+    ],
+    "symbols": [
+      "+", "-", "*", "/", "**", "=", "==", "/=", "<", ">", "<=", ">=", "//", "=>", ",", ";", ":", "(", ")", "[", "]", "%", "->"
+    ],
+    "remKeywords": ["C", "c", "!", "*"],
+    "remKeywordsMultipleLine": [],
+    "enableSelfColorOfRemKeywordsMultipleLine": true,
+    "textKeywords": ["\"", "'"],
+    "defineKeywords": ["program", "end", "function", "subroutine", "type"],
+    "pairKeywords": [
+      ["(", ")"],
+      ["[", "]"],
+      ["/", "/"]
+    ]
+  }
+}

@@ -1,0 +1,41 @@
+{
+  "config": {
+    "type": 1,
+    "objectName": "prologSyntax",
+    "api": [1, 1]
+  },
+  "coding": {
+    "codeName": "Prolog",
+    "fileExtension": ["pl", "pro", "P"],
+    "keywords": [
+      "module", "export", "import", "reexport", "use_module", "meta_predicate", "multifile", "discontiguous", "dynamic", "volatile", "thread_local", "table", "initialization", "goal", "include",
+      "op", "current_op", "predicate_property", "current_predicate", "current_module", "module_property", "source_file", "source_location", "prolog_load_context",
+      "true", "fail", "false", "call", "once", "ignore", "repeat", "!",
+      "if", "then", "else", "->", ";",
+      "findall", "bagof", "setof", "forall", "exists",
+      "var", "atom", "integer", "float", "number", "atomic", "compound", "ground", "nonvar", "acyclic_term", "cyclic_term",
+      "is", "=:=", "=\\=", "<", ">", "=<", ">=", "==", "\\==", "@<", "@=<", "@>", "@>=",
+      "functor", "arg", "=..", "name", "univ", "copy_term", "term_variables", "term_singletons",
+      "assert", "asserta", "assertz", "retract", "retractall", "abolish", "clause",
+      "nl", "write", "writeq", "writeln", "print", "display", "portray_clause", "format", "char_code", "char_type", "code_type", "get_char", "get_code", "peek_char", "peek_code", "put_char", "put_code",
+      "open", "close", "read", "write", "read_term", "write_term", "current_input", "current_output", "set_input", "set_output", "flush_output", "at_end_of_stream", "stream_property", "seek", "set_stream_position",
+      "consult", "reconsult", "load_files", "make_library_index", "use_foreign_library", "load_foreign_library",
+      "between", "succ", "plus", "minus", "eval", "random", "forall", "exists", "findnsols", "time", "profile", "call_with_time_limit",
+      "thread_create", "thread_join", "thread_detach", "thread_exit", "thread_signal", "thread_self", "thread_property", "mutex_create", "mutex_destroy", "mutex_lock", "mutex_trylock", "mutex_unlock", "message_queue_create", "message_queue_destroy", "thread_send_message", "thread_get_message", "thread_peek_message", "thread_wait_input"
+    ],
+    "symbols": [
+      ":-", "?-", "->", ";", ",", "|", "=", "\\=", "!", "+", "-", "*", "/", "//", "mod", "**", "^", "<", ">", "=<", ">=", "=:=", "=\\=", "==", "\\==", "@<", "@=<", "@>", "@>=", "..", ":", "$", "::"
+    ],
+    "remKeywords": ["%"],
+    "remKeywordsMultipleLine": ["/*", "*/"],
+    "enableSelfColorOfRemKeywordsMultipleLine": true,
+    "textKeywords": ["\"", "'"],
+    "defineKeywords": ["(", ")"],
+    "pairKeywords": [
+      ["(", ")"],
+      ["[", "]"],
+      ["{", "}"],
+      ["/*", "*/"]
+    ]
+  }
+}

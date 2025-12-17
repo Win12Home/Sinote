@@ -9,11 +9,9 @@ Sorry, my english bad OvO.
 Because I'm a child TAT.
 AI help me to finish 15% of these code! (Not included plugins, before 25%, rewrite SpacingSupportEdit object!!!!!!!!!!!!!!! UwU I'm proud)
 """
-from pathlib import Path
-from BasicModule import fileargs
 ### The Sinote Main Script
 from Widgets import MainWindow, addLog, saveLog, application, loadFonts, setGlobalUIFont, AutoLoadPlugin, args, \
-    beforeDatetime, datetime, SplashScreen, AutoLoadPlugin, syntaxHighlighter
+    beforeDatetime, datetime, SplashScreen, AutoLoadPlugin, autoRun, partial, owLog, addLogClassic
 import sys
 
 def startMainProcess(splashScreen: SplashScreen):
@@ -26,8 +24,13 @@ def startMainProcess(splashScreen: SplashScreen):
         setGlobalUIFont(),
         addLog(0, "Successfully to change theme!")
     })
+    [i() for i in autoRun if isinstance(i, partial)]
 
-if __name__ == "__main__":
+def appStart(silent: bool = False):
+    if silent:
+        addLog = owLog
+    else:
+        addLog = addLogClassic
     if "--only-create-cache" in args:
         LoadPlugin = AutoLoadPlugin()
         LoadPlugin.run()  # Block main process
@@ -49,3 +52,6 @@ if __name__ == "__main__":
     if "--record-log" in args or "-rl" in args:
         saveLog()
     sys.exit(0)
+
+if __name__ == "__main__":
+    appStart()

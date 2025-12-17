@@ -10,17 +10,29 @@
     "keywords": [
       "def", "class", "if", "else", "elif", "for", "while", "return",
       "import", "from", "as", "with", "try", "except", "finally",
-      "True", "False", "None", "and", "or", "not", "in", "is"
+      "True", "False", "None", "and", "or", "not", "in", "is",
+      "global", "nonlocal", "pass", "break", "continue", "yield", "lambda",
+      "assert", "del", "raise", "async", "await", "match", "case",
+      "dict", "list", "tuple", "int", "str", "type", "float", "object",
+      "bool", "set", "frozenset", "bytes", "bytearray", "range", "slice",
+      "super", "self", "cls", "property", "staticmethod", "classmethod",
+      "abs", "all", "any", "bin", "callable", "chr", "cmp", "compile", 
+      "complex", "delattr", "dir", "divmod", "enumerate", "eval", "exec",
+      "filter", "format", "getattr", "globals", "hasattr", "hash", "help",
+      "hex", "id", "input", "isinstance", "issubclass", "iter", "len",
+      "locals", "map", "max", "min", "next", "oct", "open", "ord", "pow",
+      "print", "repr", "reversed", "round", "setattr", "sorted", "sum",
+      "vars", "zip"
     ],
     "symbols": [
       "=", "==", "!=", "<", ">", "<=", ">=", "+", "-", "*", "/", "//", "%",
       "(", ")", "[", "]", "{", "}", ":", ",", ".", "->", "#", ":="
     ],
-    "remKeywords": ["#"],
+    "remKeywords": ["#", "@"],
     "remKeywordsMultipleLine": ["\"\"\"", "\"\"\""],
     "enableSelfColorOfRemKeywordsMultipleLine": false,
     "textKeywords": ["\"", "'"],
-    "defineKeywords": ["{","}"],
+    "defineKeywords": [":", " "],
     "pairKeywords": [["{","}"],["(",")"],["[","]"]]
   }
 }

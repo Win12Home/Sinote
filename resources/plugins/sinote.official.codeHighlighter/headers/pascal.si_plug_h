@@ -1,0 +1,28 @@
+{
+  "config": {
+    "type": 1,
+    "objectName": "pascalSyntax",
+    "api": [1, 1]
+  },
+  "coding": {
+    "codeName": "Pascal",
+    "fileExtension": ["pas", "pp", "inc"],
+    "keywords": [
+      "absolute", "abstract", "all", "and", "and_then", "array", "as", "asm", "attribute", "begin", "bindable", "case", "class", "const", "constructor", "destructor", "div", "do", "downto", "else", "end", "except", "export", "exports", "external", "far", "file", "finalization", "finally", "for", "forward", "function", "goto", "if", "implementation", "import", "in", "inherited", "initialization", "inline", "interface", "interrupt", "is", "label", "library", "mod", "module", "name", "near", "nil", "not", "object", "of", "on", "only", "operator", "or", "or_else", "otherwise", "packed", "pow", "private", "program", "property", "protected", "public", "published", "raise", "record", "repeat", "resident", "requires", "resourcestring", "restricted", "segment", "set", "shl", "shr", "then", "to", "try", "type", "unit", "until", "uses", "var", "virtual", "while", "with", "xor", "true", "false", "maxint", "pi"
+    ],
+    "symbols": [
+      "+", "-", "*", "/", "=", "<>", "<", ">", "<=", ">=", ":=", "@", "^", ".", "..", ",", ";", ":", "(", ")", "[", "]", "{", "}", "$", "#"
+    ],
+    "remKeywords": ["//", "{", "(*"],
+    "remKeywordsMultipleLine": ["{", "}", "(*", "*)"],
+    "enableSelfColorOfRemKeywordsMultipleLine": true,
+    "textKeywords": ["'", "'"],
+    "defineKeywords": ["begin", "end"],
+    "pairKeywords": [
+      ["(", ")"],
+      ["[", "]"],
+      ["{", "}"],
+      ["(*", "*)"]
+    ]
+  }
+}

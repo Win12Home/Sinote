@@ -1,0 +1,31 @@
+{
+  "config": {
+    "type": 1,
+    "objectName": "cobolSyntax",
+    "api": [1, 1]
+  },
+  "coding": {
+    "codeName": "COBOL",
+    "fileExtension": ["cob", "cbl", "cpy"],
+    "keywords": [
+      "ACCEPT", "ADD", "ALTER", "CALL", "CANCEL", "CLOSE", "COMPUTE", "CONTINUE", "DELETE", "DISPLAY", "DIVIDE", "ENTER", "EVALUATE", "EXIT", "GOBACK", "GO", "IF", "INITIALIZE", "INSPECT", "INVOKE", "MERGE", "MOVE", "MULTIPLY", "OPEN", "PERFORM", "READ", "RELEASE", "RETURN", "REWRITE", "SEARCH", "SET", "SORT", "START", "STOP", "STRING", "SUBTRACT", "UNSTRING", "WRITE",
+      "IDENTIFICATION", "DIVISION", "PROGRAM-ID", "AUTHOR", "DATE-WRITTEN", "DATE-COMPILED", "SECURITY", "INSTALLATION", "REMARKS", "ENVIRONMENT", "CONFIGURATION", "SECTION", "SPECIAL-NAMES", "INPUT-OUTPUT", "FILE-CONTROL", "I-O-CONTROL", "DATA", "WORKING-STORAGE", "LINKAGE", "SCREEN", "REPORT", "FILE", "FD", "SD", "01", "02", "03", "04", "05", "06", "07", "08", "09", "49", "77", "88",
+      "PIC", "PICTURE", "USAGE", "VALUE", "VALUES", "OCCURS", "TIMES", "TO", "DEPENDING", "ON", "INDEXED", "BY", "REDEFINES", "RENAMES", "EXTERNAL", "GLOBAL", "JUSTIFIED", "RIGHT", "BLANK", "WHEN", "ZERO", "ZEROS", "ZEROES", "SPACE", "SPACES", "HIGH-VALUE", "HIGH-VALUES", "LOW-VALUE", "LOW-VALUES", "QUOTE", "QUOTES", "NULL", "NULLS",
+      "COMP", "COMP-1", "COMP-2", "COMP-3", "COMP-4", "COMP-5", "BINARY", "PACKED-DECIMAL", "DISPLAY-1", "INDEX", "POINTER", "PROCEDURE-POINTER", "REFERENCE", "FUNCTION-POINTER",
+      "END-EXEC", "EXEC", "SQL", "DECLARE", "CURSOR", "PREPARE", "FETCH", "CLOSE", "CONNECT", "DISCONNECT", "COMMIT", "ROLLBACK",
+      "TRUE", "FALSE", "YES", "NO", "ON", "OFF", "IS", "NOT", "THAN", "EQUAL", "GREATER", "LESS", "AND", "OR", "NOT"
+    ],
+    "symbols": [
+      "+", "-", "*", "/", "=", "<", ">", "<=", ">=", "**", ".", ",", ";", ":", "(", ")", "[", "]", "&", "|", "~"
+    ],
+    "remKeywords": ["*"],
+    "remKeywordsMultipleLine": [],
+    "enableSelfColorOfRemKeywordsMultipleLine": true,
+    "textKeywords": ["\"", "'"],
+    "defineKeywords": ["DIVISION", "SECTION", "END"],
+    "pairKeywords": [
+      ["(", ")"],
+      ["[", "]"]
+    ]
+  }
+}

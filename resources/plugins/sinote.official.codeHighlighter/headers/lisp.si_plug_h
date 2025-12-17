@@ -1,0 +1,47 @@
+{
+  "config": {
+    "type": 1,
+    "objectName": "lispSyntax",
+    "api": [1, 1]
+  },
+  "coding": {
+    "codeName": "Lisp",
+    "fileExtension": ["lisp", "lsp", "cl", "el", "scm", "ss"],
+    "keywords": [
+      "defun", "defvar", "defconst", "defparameter", "defmacro", "defstruct", "defclass", "defmethod", "defgeneric", "define-modify-macro",
+      "lambda", "function", "quote", "setq", "setf", "let", "let*", "setq", "psetq", "setf", "psetf",
+      "if", "when", "unless", "cond", "case", "ecase", "typecase", "etypecase", "ccase",
+      "loop", "do", "do*", "dolist", "dotimes", "mapcar", "mapc", "mapcan", "maplist", "mapcon", "mapl",
+      "progn", "prog1", "prog2", "prog*", "block", "return", "return-from",
+      "catch", "throw", "tagbody", "go",
+      "and", "or", "not", "null", "eq", "eql", "equal", "equalp",
+      "t", "nil", "true", "false",
+      "car", "cdr", "caar", "cadr", "cdar", "cddr", "caaar", "caadr", "cadar", "caddr", "cdaar", "cdadr", "cddar", "cdddr", "first", "second", "third", "fourth", "fifth", "sixth", "seventh", "eighth", "ninth", "tenth", "rest",
+      "cons", "list", "list*", "append", "reverse", "nreverse", "nconc", "member", "memq", "memvl", "assoc", "assq", "assvl",
+      "length", "make-list", "make-array", "make-sequence", "make-string", "vector", "aref", "svref",
+      "apply", "funcall", "eval", "values", "values-list", "multiple-value-bind", "multiple-value-call", "multiple-value-prog1",
+      "proclaim", "declaim", "declare", "the", "check-type", "assert", "error", "warn", "signal",
+      "find", "find-if", "find-if-not", "position", "position-if", "position-if-not", "count", "count-if", "count-if-not", "remove", "remove-if", "remove-if-not", "remove-duplicates", "substitute", "substitute-if", "substitute-if-not",
+      "sort", "stable-sort", "merge", "concatenate", "subseq", "fill", "replace",
+      "read", "read-char", "read-line", "read-from-string", "write", "write-char", "write-line", "write-to-string", "prin1", "princ", "print", "format",
+      "open", "close", "with-open-file", "read-byte", "write-byte", "file-position", "file-length",
+      "load", "require", "provide", "in-package", "make-package", "find-package", "package-name", "package-nicknames", "use-package", "unuse-package", "import", "export", "shadow", "shadowing-import", "unexport", "unintern",
+      "class-of", "find-class", "make-instance", "slot-value", "slot-boundp", "slot-makunbound", "slot-exists-p", "with-slots", "with-accessors",
+      "defpackage", "in-package", "do-symbols", "do-external-symbols", "do-all-symbols", "with-package-iterator", "find-symbol", "intern", "unintern", "symbol-name", "symbol-package", "symbol-plist", "keywordp", "make-symbol", "copy-symbol", "gensym", "gentemp"
+    ],
+    "symbols": [
+      "(", ")", "'", "`", ",", ",@", "#", "'", "#'", "#", "#@", "#.", "#:", "#=", "#+", "#-", "#b", "#o", "#x", "#c", "#a", "#s", "#p", "#\\", "#|", "#(", "#*", "#:", "#0", "#1", "#2", "#3", "#4", "#5", "#6", "#7", "#8", "#9"
+    ],
+    "remKeywords": [";", "#|", "|#"],
+    "remKeywordsMultipleLine": ["#|", "|#"],
+    "enableSelfColorOfRemKeywordsMultipleLine": true,
+    "textKeywords": ["\"", "'"],
+    "defineKeywords": ["(", ")"],
+    "pairKeywords": [
+      ["(", ")"],
+      ["[", "]"],
+      ["{", "}"],
+      ["#|", "|#"]
+    ]
+  }
+}

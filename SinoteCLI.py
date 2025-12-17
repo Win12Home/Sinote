@@ -36,13 +36,14 @@ commandDocs: dict[Any, Any] = {
         False
     ],
     "check": [
-        "Check this plugin.",
+        "Check plugins.",
         [
             "Directory path of your plugin. (1 to 50)"
         ],
         [
             "[purple]-npb/--no-progress-bar[/purple] Disable Progress bar when loading files that more than 2 (Include 2).",
-            "[purple]-q/--quiet[/purple] Quiet to load"
+            "[purple]-q/--quiet[/purple] Quiet to load",
+            "[purple]--no-limit[/purple] Remove limit (once) to check lots of plugins."
         ],
         False
     ]
@@ -258,6 +259,8 @@ class CLIUsages:
                         print(f"[yellow]Warning: [/yellow]{str(i)} do not a file.")
                         warns += 1
                     else:
+                        if i.suffix.lower()[1:] not in ["sph", "si_plug_h", "spheader", "sinote_plugin_header"]:
+                            print(f"[yellow]Warning: [/yellow]There is a good new and a bad new. The good one is your suffix is creative! The bad one is {i.name}'s suffix is not valid!")
                         headerStruct: dict[str, Any] = {
                             "type": lambda x: isinstance(x, int),
                             "api": lambda x: isinstance(x, list),
@@ -271,7 +274,7 @@ class CLIUsages:
                         try:
                             with open(str(i), "r", encoding="utf-8") as f:
                                 finallyGet = loads(f.read())
-                        except JSONDecodeError:
+                        except (JSONDecodeError, ValueError):
                             with open(str(i), "r", encoding="utf-8") as f:
                                 finallyGet = json5loads(f.read())
                         except Exception as e:
@@ -328,10 +331,12 @@ class ArgumentParser:
         valids: list[str] = [
             "-q",
             "--quiet",
-            "--npb",
-            "--no-progress-bar"
+            "-npb",
+            "--no-progress-bar",
+            "--no-limit"
         ]
         normal: list[bool] = [
+            False,
             False,
             False
         ]
@@ -346,6 +351,8 @@ class ArgumentParser:
                 normal[1] = True
             elif temp[0] in ["--quiet", "-q"]:
                 normal[0] = True
+            elif temp[0] == "--no-limit":
+                normal[2] = True
         return normal
 
 
@@ -393,7 +400,7 @@ if command == "check":
         if isinstance(a, list):
             print()
             print(f"[red]Errors:[/red] {a[0]} [yellow]Warnings:[/yellow] {a[1]} {"\nThis plugin was [green]passed[/green]!" if a[0] == 0 and a[1] == 0 else "\nThis plugin[red] is not valid[/red]"}")
-    elif len(primaryArgs) > 2 and len(primaryArgs) <= 51 and not args[1]:
+    elif ((len(primaryArgs) > 2 and len(primaryArgs) <= 51) or args[2]) and not args[1]:
         totals: list[list[str | int]] = []
         from pathlib import Path
         from tqdm import tqdm
@@ -415,7 +422,7 @@ if command == "check":
             print("\n".join(hidedPrint))
         print()
         print(f"All {len(totals)} plugins [green]passed[/green]." if allPassed else "Someone plugins [red]failed[/red]! Check your plugin [strong]please![/strong]")
-    elif len(primaryArgs) > 1 and len(primaryArgs) <= 51:
+    elif (len(primaryArgs) > 1 and len(primaryArgs) <= 51) or args[2]:
         from tqdm import tqdm
         if len(primaryArgs) > 2:
             allPassed: bool = True
@@ -432,6 +439,9 @@ if command == "check":
             print()
             print(
                 f"All {len(primaryArgs) - 1} plugins [green]passed[/green]." if allPassed else "Someone plugins [red]failed[/red]! Check your plugin [strong]please![/strong]")
+        else:
+            a = CLIUsages.checkTemplate(primaryArgs[1], args[0])
+            print(f"[red]Error:[/red] {a[0]} [yellow]Warning:[/yellow] {a[1]} {"\nThis plugin was [green]passed[/green]!" if a[0] == 0 and a[1] == 0 else "\nThis plugin[red] is not valid[/red]"}")
     else:
         CLIError.argumentNumberNotValid("check", 1, 50, len(primaryArgs) - 1)
         sys.exit(1)
