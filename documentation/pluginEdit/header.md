@@ -133,12 +133,12 @@ It's difficult to create a Runner or Compiler Define for a pre-learner. (However
       ["system","%giveCompiler% %argumentOfCompiler% %originalFile% -o %pathOfFile%/%fileNameWithoutAppendix%.%binAppendix%",{"out2term": true}], // look at func.md to see function
     ],
     "runFunc": [
-      ["system","cd %pathOfFile% && %fileNameWithoutAppendix%.%binAppendix% %argumentOfRunner%"]
+      ["system","cd %pathOfFile% && %fileNameWithoutAppendix%.%binAppendix% %argumentOfRunner%",{"out2term": true}]
     ]
   },
   "coding": {
     "codeName": "C++",
-    "fileExtension": [".cpp",".cxx"],
+    "fileExtension": ["cpp","cxx"],
     "compilerSupport": ["g++.exe","gcc.exe"], // Only windows, if you need to support linux, add g++, gcc.
     "runnerSupport": null, // No Runner, if you don't need gdb.
     "compiler": "compileFunc", // Compile! My File!
@@ -177,8 +177,10 @@ This page will **teach** you how to **adjust** a setting automatically.
   },
   "functions": {
     "set_sth": [
-      ["set","sinote.editor.fontSize",11], // Adjust font size
-      ["log",0,"Adjusted fontSize to eleven!"] // Log a message there
+      ["set","fontSize",11], // Adjust font size
+      ["log",0,"Adjusted fontSize to eleven!"], // Log a message there
+      ["set", "fontName", "Source Code Pro"], // Adjust font name
+      ["set", "language", "zh_CN"] // 我~的中国心~ Adjust language to Simplified Chinese.
     ]
   },
   "runFunc": [

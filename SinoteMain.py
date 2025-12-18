@@ -24,7 +24,6 @@ def startMainProcess(splashScreen: SplashScreen):
         setGlobalUIFont(),
         addLog(0, "Successfully to change theme!")
     })
-    [i() for i in autoRun if isinstance(i, partial)]
 
 def appStart(silent: bool = False):
     if silent:

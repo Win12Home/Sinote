@@ -18,7 +18,7 @@ def debugPluginLog(content: str) -> None:
         thread.run = partial(addLog, 3, content, "SinoteMainPluginLoadActivity")
         thread.start()
 
-syntaxHighlighter: dict[str, list[LoadPluginBase.CustomizeSyntaxHighlighter | list[str]]] = {}
+syntaxHighlighter: dict[str, list[LoadPluginBase.CustomizeSyntaxHighlighter | str | List[Any]]] = {}
 loadedPlugin: dict[str, dict[str, str | int | None]] = {}
 autoRun: list[partial] = []
 """
@@ -93,7 +93,7 @@ class AutoLoadPlugin(QThread):
                     for i in key[2]:
                         if isinstance(i, partial):
                             autoRun.append(i)
-                    But it's will create a unused list ([None if isinsta for i in key[2]])
+                    But it's will create a unused list ([None if isinstance(i, partial) for i in key[2]])
                     """
                     debugPluginLog(f"Successfully to append! ✅")
             self.loadedOne.emit()
@@ -220,6 +220,7 @@ class SpacingSupportEdit(LineShowTextEdit):
     def __init__(self, parent: QWidget = None):
         super().__init__(parent)
         self.defineKeywords: list[str] = []
+        self.charSymbols: list[str] = []
         self.usingCodeControl: bool = False
         self.spacing: int = 4
 
@@ -314,6 +315,10 @@ class SpacingSupportEdit(LineShowTextEdit):
             cursor.movePosition(QTextCursor.MoveOperation.EndOfLine)
             self.setTextCursor(cursor)
             return
+        elif event.key() == Qt.Key.Key_Clear:
+            # What the hell? Who've got a keyboard that has a Clear Key? I will steal it. (Joking bro)
+            self.clear()
+            return
         elif event.key() == Qt.Key.Key_Backtab:
             # Same as Backspace
             cursor = self.textCursor()
@@ -330,14 +335,13 @@ class SpacingSupportEdit(LineShowTextEdit):
                 return
             else:
                 posInLine: int = self.getPosInLine()
-                spacing: int = self.spacing if posInLine % self.spacing == 0 else self.spacing - (posInLine % self.spacing)
+                spacing: int = self.spacing if posInLine % self.spacing == 0 else self.spacing - (posInLine % self.spacing) # 3-->3 4-->4(not zero) 5-->4
                 cursor.insertText(" " * spacing)
                 cursor.setPosition(originalPos + spacing)
                 return
         elif event.key() == Qt.Key.Key_Return:
             cursor = self.textCursor()
             originalPos: int = cursor.position()
-            leftStr, rightStr = "", ""
             cursor.movePosition(QTextCursor.MoveOperation.Left, QTextCursor.MoveMode.KeepAnchor)
             leftStr = cursor.selectedText()
             cursor.clearSelection()
@@ -737,14 +741,22 @@ class MainWindow(QMainWindow):
         self._autoApplyPluginInfo()
 
     def _setupTab(self):
+        if not isinstance(settingObject.getValue("beforeread"), dict):
+            settingObject.setValue("beforeread", dict({}))
         if len(settingObject.getValue("beforeread")) or len(fileargs) > 0:
-            for temp in settingObject.getValue("beforeread"):
-                if not Path(temp).exists():
+            result: Dict[str, int] = {}
+            for fileName, pos in settingObject.getValue("beforeread").items():
+                if not Path(fileName).exists():
                     self._createRecommendFile()
                     self.tabTextEdits[len(self.tabTextEdits) - 1].setPlainText(
-                        loadJson("EditorUI")["editor.any.cannotreadfile"].format(temp))
+                        loadJson("EditorUI")["editor.any.cannotreadfile"].format(fileName))
                 else:
-                    self.createTab(temp)
+                    result[fileName] = pos
+                    if isinstance(pos, list) or isinstance(pos, int):
+                        self.createTab(fileName, position=pos)
+                    else:
+                        addLog(2, "Position information has broken! Automatically remove position information.")
+                        self.createTab(fileName)
             for temp in [str(Path(i)) for i in fileargs]:
                 if Path(temp).exists():
                     self.createTab(temp)
@@ -752,7 +764,7 @@ class MainWindow(QMainWindow):
                     self._createRecommendFile()
                     self.tabTextEdits[len(self.tabTextEdits) - 1].setPlainText(
                         loadJson("EditorUI")["editor.any.cannotreadfile2"].format(temp))
-            settingObject.setValue("beforeread", [i for i in settingObject.getValue("beforeread") if Path(i).exists()])
+            settingObject.setValue("beforeread", result)
         else:
             self._createRecommendFile()
 
@@ -760,6 +772,7 @@ class MainWindow(QMainWindow):
         debugLog("Setting up User Interface...")
         debugLog("Setting up Text Edit Area...")
         self.folder: QTreeWidget = QTreeWidget()
+        self.folder.setHeaderHidden(True)
         self.textEditArea = QTabWidget()
         self.addTabButton = QPushButton("+")
         self.addTabButton.setFlat(True)
@@ -1041,6 +1054,16 @@ class MainWindow(QMainWindow):
         addLog(0, f"Used {(datetime.now() - beforeDatetime).total_seconds():.2f}s to load!", "SinoteUserInterfaceActivity", True)
         debugLog("Show Application Successfully!")
         del beforeDatetime
+        debugLog("Preparing to run AutoRuns...")
+        [i() for i in autoRun if isinstance(i, partial)]
+        """
+        Easy but it will return a list that per value all is NoneType.
+        You can replace it to:
+        for i in autoRun:
+            if isinstance(i, partial):
+                i()
+        """
+        self.applySettings()
 
     def closeEvent(self, event: QCloseEvent) -> None:
         debugLog("CloseEvent triggered 🤓")
@@ -1055,9 +1078,20 @@ class MainWindow(QMainWindow):
         msgbox.setWindowIcon(self.windowIcon())
         if msgbox.exec() == QMessageBox.StandardButton.Yes:
             debugLog("Saving session...")
-            settingObject.setValue("beforeread", [(i.nowFilename if system().lower() != "windows" else i.nowFilename.replace("/","\\"))
-                                                  for i in [i for i in self.tabTextEdits if hasattr(i, "nowFilename")] if
-                                                  (i.nowFilename is not None and Path(i.nowFilename).exists())])
+            beforeRead: Dict[str, int | List[int]] = {}
+            for i in self.tabTextEdits:
+                if hasattr(i, "nowFilename") and hasattr(i, "textCursor"):
+                    if i.nowFilename is not None and Path(i.nowFilename).exists() and Path(i.nowFilename).is_file():
+                        result: list[int] | int | None = None
+                        cursor = i.textCursor()
+                        if len(cursor.selectedText()) > 0:
+                            result = [min(cursor.selectionStart(), cursor.selectionEnd()), max(cursor.selectionStart(), cursor.selectionEnd())]
+                            if result[1] > len(i.toPlainText()):
+                                result = 0
+                        else:
+                            result = cursor.position()
+                        beforeRead[i.nowFilename] = result
+            settingObject.setValue("beforeread", beforeRead)
             debugLog("Saved session!")
             debugLog("Attempting to close 🤓")
             self.hide()
@@ -1103,7 +1137,7 @@ class MainWindow(QMainWindow):
     def _createRecommendFile(self):
         self.createTab()
 
-    def createTab(self, filename: str | None = None):
+    def createTab(self, filename: str | None = None, position: int = None):
         debugLog(f"Creating Tab... Will load file: {filename if filename else "Nothing"} 🤓")
         oldDatetime = datetime.now()
         temp = SinotePlainTextEdit()
@@ -1112,6 +1146,15 @@ class MainWindow(QMainWindow):
             filename = None
         if filename:
             temp.readFile(filename)
+        if position and isinstance(position, int):
+            cursor: QTextCursor = temp.textCursor()
+            cursor.setPosition(position)
+            temp.setTextCursor(cursor)
+        elif position and isinstance(position, list):
+            cursor: QTextCursor = temp.textCursor()
+            cursor.setPosition(position[0])
+            cursor.movePosition(QTextCursor.MoveOperation.Right, QTextCursor.MoveMode.KeepAnchor, position[1] - position[0])
+            temp.setTextCursor(cursor)
         self.tabTextEdits.append(temp)
         self.textEditArea.addTab(temp, loadJson("EditorUI")["editor.tab.new_file"] if not filename else str(Path(filename)))
         temp.setFilename = self.textEditArea.tabBar().setTabText
@@ -1152,7 +1195,6 @@ def setGlobalUIFont() -> None:
     selectedFont = "MiSans VF"      # Customize!
     globalFont = QFont(selectedFont)
     globalFont.setPointSize(10)
-    globalFont.setStyleStrategy(QFont.StyleStrategy.PreferAntialias)
     application.setFont(globalFont)
     application.setStyleSheet(f"""
         {application.styleSheet()}

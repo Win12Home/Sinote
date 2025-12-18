@@ -267,7 +267,7 @@ normalSetting: dict = {
     "debugmode": False,
     "secsave": 10,
     "theme": 1,
-    "beforeread": [],
+    "beforeread": {},
     "disableplugin": []
 }
 
@@ -330,14 +330,14 @@ alreadyLoaded: SafetyDict[str, dict] = {}   # Cache Language File (What is @lru_
 alreadyLoadedBase: SafetyDict[str, dict] = {}    # Whoa en_US is my needed!
 
 
-def getFileHash(filePath):
+def getFileHash(filePath: str):
     try:
         with open(filePath, "rb") as f:
             return hashlib.md5(f.read()).hexdigest()
     except:
         return ""
 
-def load(filePath):
+def load(filePath: str):
     cachePath = Path("./cache") / f"{filePath.replace("/", "_").replace("\\", "_")}.cache"
     fileHash = getFileHash(filePath)
 
@@ -447,7 +447,7 @@ class Setting:
             addLog(2, "Cannot load setting.json5!", "SettingLexerActivity")
             self.noFileAutoGenerate(mustToGenerate=True)
 
-    def setValue(self, key: str, value: str) -> None:
+    def setValue(self, key: str, value: Any) -> None:
         global setting
         if key in normalSetting.keys():
             setting[key] = value
@@ -474,8 +474,17 @@ class Setting:
         setting = normalSetting
 
 
+settingObject: Setting = Setting()
+
+
 class SinoteErrors:
     class ItemNotValid(Exception): ...
+
+class SinoteSignals(QObject):
+    functionFinished = Signal()
+
+signals: QObject = QObject()
+signals.functionFinished = Signal()
 
 
 class LoadPluginBase:
@@ -880,7 +889,8 @@ class FunctionLexerSet:
             4: self.printContentOfVariable,
             5: self.messageInput,
             6: self.system,
-            7: self.usefunc
+            7: self.usefunc,
+            100: self.set
         }
         # self._insideFunction = self._if
         # You can remove # head if you want to use self._insideFunction
@@ -936,6 +946,9 @@ class FunctionLexerSet:
         addLog(level, self.lexVariable(outText), "FunctionRunnerActivity")
         FunctionLexerSet.debugLog(f"Logged Out Customize Text, LEVEL: {level}.")
 
+    def set(self, setName: str, setContent: Any) -> None:
+        settingObject.setValue(setName, setContent)
+
     def getValue(self) -> list[partial]:
         """
         Get value
@@ -961,6 +974,8 @@ class FunctionLexerSet:
                 returnlist.append(partial(self._if[i[0]], i[1]))
             elif i[0] == 7:
                 returnlist.append(partial(self._if[i[0]], i[1]))
+            elif i[0] == 100:
+                returnlist.append(partial(self._if[i[0]], i[1], i[2]))
         return returnlist
 
 
@@ -1293,7 +1308,6 @@ class LoadPluginInfo:
         addLog(2, f"Cannot load plugin that directory name is \"{self.projName}\"")
         addLog(2, f"Reason: {error}")
 
-settingObject = Setting()
 if settingObject.getValue("debugmode"):
     if debugMode:
         addLog(0, "Don't open debug mode twice! (ADVICE)", "SettingLexerActivity")
