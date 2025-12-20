@@ -898,14 +898,60 @@ class FunctionLexerSet:
             103: self.efile,
             104: self.pfile,
             105: self.dfile,
+            106: self.afile,
+            107: self.wfile,
+            108: self.rfile,
             200: self.errbox
         }
         # self._insideFunction = self._if
         # You can remove # head if you want to use self._insideFunction
 
+    def afile(self, filePath: str, content: str) -> None:
+        FunctionLexerSet.debugLog(f"Preparing to append content to file {filePath}")
+        try:
+            with open(filePath, "a", encoding=self._getFileEncoding(filePath)) as f:
+                f.write(content)
+        except Exception as e:
+            addLog(2, f"Failed to write file {filePath}: {repr(e)}", "FunctionLexerActivity")
+        else:
+            FunctionLexerSet.debugLog(f"Append content to file {filePath} successfully")
+
+    def wfile(self, filePath: str, content: str) -> None:
+        FunctionLexerSet.debugLog(f"Preparing to write file {filePath}")
+        try:
+            with open(filePath, "w", encoding=self._getFileEncoding(filePath)) as f:
+                f.write(content)
+        except Exception as e:
+            addLog(2, f"Failed to write file {filePath}: {repr(e)}", "FunctionLexerActivity")
+        else:
+            FunctionLexerSet.debugLog(f"Wrote file successfully!")
+
+    def rfile(self, filePath: str, varName: str) -> None:
+        FunctionLexerSet.debugLog(f"Preparing to read file {filePath} to variable {varName}")
+        try:
+            with open(filePath, "r", encoding=self._getFileEncoding(filePath)) as f:
+                self._varObj.addVar(varName, f.read())
+        except Exception as e:
+            addLog(2, f"Cannot read file {filePath}: {repr(e)}", "FunctionLexerActivity")
+            self._varObj.addVar(varName, f"err {repr(e)}")
+        else:
+            FunctionLexerSet.debugLog(r"Read file successfully!")
+
     def dfile(self, filePath: str) -> None:
         FunctionLexerSet.debugLog(f"Preparing to delete file {filePath}")
-        # Waiting...
+        success: Callable = partial(FunctionLexerSet.debugLog, f"Delete file {filePath} successfully!")
+        if Path(filePath).exists():
+            try:
+                if Path(filePath).is_dir():
+                    rmtree(filePath)
+                else:
+                    Path(filePath).unlink(True)
+            except Exception as e:
+                addLog(2, f"Delete file {filePath} failed", "FunctionLexerActivity")
+            else:
+                success()
+        else:
+            success()
 
     def cfile(self, filePath: str) -> None:
         FunctionLexerSet.debugLog(f"Preparing to create a file (Path: {filePath})")

@@ -40,8 +40,8 @@ When you run this function, it will log a message (Type: INFO) and word is "Hell
 ## 2 The Built-in Function
 
 For you create a function, you need to know the built-in functions in Sinote.
-<br>***Basic*** **Function** of **Sinote**:
-
+### ***Basic*** **Function** of **Sinote**:
+**Since API 1.0.1**
  - ```print```: Print the string to the terminal. Struct: ```["print","\<string\>"]```
  - ```msgbox```: Out a Messagebox to the Main Application. Struct: ```["msgbox","\<title\>","\<content\>"]```
  - ```log```: Out customize content for log. Struct: ```["log", "\<type, 0: INFO, 1: WARN\>", "\<content\>"]```
@@ -51,8 +51,8 @@ For you create a function, you need to know the built-in functions in Sinote.
  - ```system```: Run a command in terminal. Struct: ```["system","\<command\>",{"out2term": false}]``` &#x26a0;&#xfe0f; A dangerous function
  - ```usefunc```: Use a Function. Struct: ```["usefunc","\<funcname\>"]```
 
-<br>***Advanced*** **Function** of **Sinote**:
-
+### ***Advanced*** **Function** of **Sinote**:
+**Since API 1.0.1**
  - ```set```: Set a **Sinote Setting** to customize content. Struct: ```["set","\<setting object\>","\<content\>"]```
  - ```mkdir```: Make a Directory (No error when file exists). Struct: ```["mkdir","\<directory\>"]```
  - ```cfile```: Create a file (No error when file exists). Struct: ```["cfile","\<file path\>"]```
@@ -64,9 +64,16 @@ For you create a function, you need to know the built-in functions in Sinote.
  - ```rfile```: Read a file and write the content to variable (Automatic create variable). Struct: ```["rfile","\<file path\>","\<variable name\>"]```
  - ```errbox```: Output an Error Messagebox. Struct: ```["errbox","\<error code like 0xffffffff\>"]```
 
-## 3 End
+## 3 Q&A of Function
+**Q:** Why my plugin didn't work every start time?
+<br>**A:** Did you forget put your function to `runFunc` or enable `enableCustomizeCommandRun`? If you've been did it, please open `Debug Mode` and send log to me!
+<br>*Small tips about first one*: Use `-rl -db` arguments to enable `Debug Mode` and `Record Log Mode`, the log will be saved in `location/of/sinote/log`.
+<br>**Q:** Why `system` and `usefunc` didn't work?
+<br>**A:** I'm lazy. This is a plan!
 
-> Note: This is a short Documentation, so it only has got 2 chapters.
+## 4 End
+
+> Note: This is a short Documentation, so it only has got 3 chapters.
 
 Now, you might already be learnt it, you can continue study Sinote Header, or you can finish own your tasks.
 <br>Thank you for your patient!

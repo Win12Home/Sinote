@@ -18,6 +18,7 @@ def debugPluginLog(content: str) -> None:
         thread.run = partial(addLog, 3, content, "SinoteMainPluginLoadActivity")
         thread.start()
 
+recommendFont: bool = False
 syntaxHighlighter: dict[str, list[LoadPluginBase.CustomizeSyntaxHighlighter | str | List[Any]]] = {}
 loadedPlugin: dict[str, dict[str, str | int | None]] = {}
 autoRun: list[partial] = []
@@ -1087,6 +1088,29 @@ class MainWindow(QMainWindow):
                 i()
         """
         self.applySettings()
+        if recommendFont and not Path("./DISABLE-FONT-CHECK-WARNING").exists():
+            """
+            I want to make user to experience the HURT of the EXTERNALLY_MANAGED! (Of course I use Windows)
+            
+            error: externally-managed-environment
+
+            × This environment is externally managed
+            ╰─> To install Python packages system-wide, you need to use your system package manager.
+
+            If you want to install pip packages locally, use virtual environments.
+            
+            I never use venv, of course.
+            """
+            msgbox = QMessageBox(QMessageBox.Icon.Warning, "Warning", "(Only English) You are using the Fixed Font/Normal Font in Sinote, this font will be not support some characters like Chinese/Japanese characters!\n"
+                                                                      "If you would like to disable it forever, rename DISABLE-FONT-CHECK-WARNING.1 to DISABLE-FONT-CHECK-WARNING!\n"
+                                                                      "Probably, it might generate failed.", parent=self)
+            msgbox.setWindowIcon(self.windowIcon())
+            msgbox.exec()
+            try:
+                with open("./DISABLE-FONT-CHECK-WARNING.1", "w", encoding="utf-8") as f:
+                    f.write("")
+            except Exception as e:
+                addLog(2, f"Failed to generate DISABLE-FONT-CHECK-WARNING.1! Caused: {repr(e)}")
 
     def closeEvent(self, event: QCloseEvent) -> None:
         debugLog("CloseEvent triggered 🤓")
@@ -1213,9 +1237,27 @@ class MainWindow(QMainWindow):
         self.resize(1280, 760)
         debugLog("Successfully to initialize ✅")
 
-def setGlobalUIFont() -> None:
+def setGlobalUIFont(font: str = None, recursion: bool = False) -> None:
+    global recommendFont
     debugLog("Setting global UI font to MiSans... 🎨")
-    selectedFont = "MiSans VF"      # Customize!
+    selectedFont: str = "MiSans VF" if not font else font     # Customize!
+    if selectedFont.lower().strip() not in [i.lower().strip() for i in QFontDatabase.families() if isinstance(i, str)]:
+        debugLog(f"{r"MiSans" if not font else font} isn't in font database! Try to use system recommend font. (Or Fixed font)")
+        fnt: str = QFontDatabase.systemFont(QFontDatabase.SystemFont.FixedFont).family()
+        if recursion and fnt.lower() == font.lower():
+            addLog(2, "Cool! We think fixed font is the best option! What's your system? That's so suspend!", "SinoteUserInterfaceActivity")
+            return
+        if recursion: # Why? If it is not in font database (Recommend font in macOS/Windows), use FixedFont!
+            recommendFont = True
+            debugLog(f"Oh my god! Recommend font is not in the database! We think use Fixed font instead!")
+            setGlobalUIFont(fnt, recursion=True)
+            return
+        if system().lower() == "windows":
+            fnt = "Segoe UI" if not basicInfo.get("item.option.neededmorechar", False) else "Microsoft YaHei UI"
+        elif system().lower() == "darwin":
+            fnt = "San Francisco" if not basicInfo.get("item.option.neededmorechar", False) else "Heiti SC"
+        setGlobalUIFont(fnt, recursion=True)
+        return
     globalFont = QFont(selectedFont)
     globalFont.setPointSize(10)
     application.setFont(globalFont)

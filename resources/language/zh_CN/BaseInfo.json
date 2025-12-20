@@ -8,5 +8,6 @@
     "zh_CN": "中文（简体）"
   },
   "item.text.info": "信息",
-  "item.text.warn": "警告"
+  "item.text.warn": "警告",
+  "item.option.neededmorechar": true
 }
