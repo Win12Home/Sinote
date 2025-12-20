@@ -57,7 +57,7 @@ For you create a function, you need to know the built-in functions in Sinote.
  - ```mkdir```: Make a Directory (No error when file exists). Struct: ```["mkdir","\<directory\>"]```
  - ```cfile```: Create a file (No error when file exists). Struct: ```["cfile","\<file path\>"]```
  - ```efile```: Erase/Clear a file content (No error when file not exists, if not exists, create file yet). Struct: ```["efile","\<file path\>]``` &#x26a0;&#xfe0f; A dangerous function 
- - ```pfile```: Copy a file to another file (Also no error). Struct: ```["pfile","\<original file path\>","\<new file path\>"]```
+ - ```pfile```: Copy a file to another file (Also no error). Struct: ```["pfile","\<original file path\>","\<new file path\>",<always allow new file exists (true/false), default's false>]```
  - ```dfile```: Delete a file (No error when file not exists). Struct: ```["dfile","\<file path\>"]``` &#x26a0;&#xfe0f; A dangerous function
  - ```afile```: Append customize content (String) to a file (No error when file not exists). Struct: ```["afile","\<file path\>","\<content\>]```
  - ```wfile```: Write customize content (String) to a file (Automatic create file). Struct: ```["wfile","\<file path\>","\<content\>"]```

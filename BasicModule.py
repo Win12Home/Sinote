@@ -27,6 +27,7 @@ from psutil import virtual_memory, cpu_percent
 from getpass import getuser
 from enum import Enum
 from multipledispatch import dispatch
+from shutil import *
 import sys, re, pickle, hashlib
 
 filterwarnings("ignore", category=DeprecationWarning)
@@ -527,7 +528,7 @@ class LoadPluginBase:
         101: [1, 1],
         102: [1, 1],
         103: [1, 1],
-        104: [1, 1],
+        104: [2, 3],
         105: [1, 1],
         106: [2, 2],
         107: [2, 2],
@@ -878,6 +879,7 @@ class Shortcut(QObject):
 
 class FunctionLexerSet:
     def __init__(self, listOfFunc: list[str | int | dict | dict], translateVariables: bool = True):
+        API_SUPPORT_VERSION = "1.0.1" # Not used, just a note
         self._listOfFunc = listOfFunc
         self._varObj = Variables()
         self._needVar = translateVariables
@@ -890,10 +892,99 @@ class FunctionLexerSet:
             5: self.messageInput,
             6: self.system,
             7: self.usefunc,
-            100: self.set
+            100: self.set,
+            101: self.mkdir,
+            102: self.cfile,
+            103: self.efile,
+            104: self.pfile,
+            105: self.dfile,
+            200: self.errbox
         }
         # self._insideFunction = self._if
         # You can remove # head if you want to use self._insideFunction
+
+    def dfile(self, filePath: str) -> None:
+        FunctionLexerSet.debugLog(f"Preparing to delete file {filePath}")
+        # Waiting...
+
+    def cfile(self, filePath: str) -> None:
+        FunctionLexerSet.debugLog(f"Preparing to create a file (Path: {filePath})")
+        if not Path(filePath).is_file() and Path(filePath).exists():
+            addLog(2, f"{filePath} is not a file, automatically skipped!", "FunctionLexerActivity")
+        elif Path(filePath).exists():
+            FunctionLexerSet.debugLog(f"Automatically skipped because file exists")
+        else:
+            try:
+                with open(filePath, "w", encoding="utf-8") as f:
+                    f.write("")
+            except Exception as e:
+                addLog(2, f"Failed to create file: {repr(e)}", "FunctionLexerActivity")
+            else:
+                FunctionLexerSet.debugLog(f"Successfully to create file!")
+
+    def efile(self, filePath: str) -> None:
+        FunctionLexerSet.debugLog(f"Preparing to erase content of file {filePath}")
+        if not Path(filePath).exists():
+            FunctionLexerSet.debugLog(f"File {filePath} not exists, automatically generate!")
+            self.cfile(filePath)
+        else:
+            try:
+                with open(filePath, "w", encoding=self._getFileEncoding(filePath)) as f:
+                    f.write("")
+            except Exception as e:
+                addLog(2, f"Failed to erase file: {repr(e)}", "FunctionLexerActivity")
+            else:
+                FunctionLexerSet.debugLog(f"Successfully to erase file {filePath}")
+
+    def pfile(self, originalFile: str, movePath: str, allowedExists: bool) -> None:
+        FunctionLexerSet.debugLog(f"Preparing to copy {originalFile} to {movePath}")
+        if not Path(originalFile).exists():
+            addLog(2, f"Failed to copy file: Original file is not exists", "FunctionLexerActivity")
+            return
+        if not Path(originalFile).is_file():
+            addLog(2, f"Failed to copy file: Original file is not a file", "FunctionLexerActivity")
+            return
+        if Path(movePath).exists() and not allowedExists:
+            addLog(2, f"Failed to copy file: New file already exists", "FunctionLexerActivity")
+            return
+        try:
+            copy2(originalFile, movePath)
+        except Exception as e:
+            addLog(2, f"Failed to copy file: {repr(e)}", "FunctionLexerActivity")
+        else:
+            FunctionLexerSet.debugLog(f"Successfully to copy {originalFile} to {movePath}")
+
+    def _getFileEncoding(self, filePath: str) -> str:
+        if not Path(filePath).exists():
+            return "utf-8"
+        if not Path(filePath).is_file():
+            return "utf-8"
+        encodingList: list[str] = ["utf-8", "gbk", "gb2312", "latin-1", "utf-16", "ascii", "unicode"]
+        for encoding in encodingList:
+            try:
+                with open(filePath, "r", encoding=encoding) as f:
+                    pass
+            except Exception:
+                continue
+            else:
+                return encoding
+        return "utf-8"
+
+    def mkdir(self, dir: str) -> None:
+        FunctionLexerSet.debugLog(f"Preparing to Make a directory (Path: {dir})")
+        try:
+            Path(dir).mkdir(exist_ok=True)
+        except Exception as e:
+            addLog(2, f"Error occurred when directory make: {repr(e)}", "FunctionLexerActivity")
+            return
+        if Path(dir).is_file():
+            addLog(2, f"Error occurred when directory make: directory is a file.", "FunctionLexerActivity")
+            return
+        FunctionLexerSet.debugLog(f"Make directory successfully!")
+
+    def errbox(self, errCode: str) -> None:
+        FunctionLexerSet.debugLog(f"Making a Error Popup Window (errCode={errCode})")
+        err(errCode)
 
     def usefunc(self, funcname: str) -> None:
         addLog(1, "UseFunc Command is not support this version (Wait for 1.0.3)", "FunctionLexerActivity")
@@ -976,6 +1067,14 @@ class FunctionLexerSet:
                 returnlist.append(partial(self._if[i[0]], i[1]))
             elif i[0] == 100:
                 returnlist.append(partial(self._if[i[0]], i[1], i[2]))
+            elif i[0] == 101:
+                returnlist.append(partial(self._if[i[0]], i[1]))
+            elif i[0] == 102:
+                returnlist.append(partial(self._if[i[0]], i[1]))
+            elif i[0] == 103:
+                returnlist.append(partial(self._if[i[0]], i[1]))
+            elif i[0] == 104:
+                returnlist.append(partial(self._if[i[0]], i[1], i[2], False if len(i) <= 3 else i[3] if isinstance(i[3], bool) else False))
         return returnlist
 
 

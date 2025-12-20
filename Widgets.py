@@ -103,6 +103,29 @@ class AutoLoadPlugin(QThread):
         self.processFinished.emit()
 
 
+def iterDir(directory: str = None) -> List[Union[QIcon.ThemeIcon, str, List[Any]]]:
+    """
+    Iter directory
+    :param directory: Directory Path
+    :return: like that
+    if structure:
+        proj|
+            | abc|
+                 abc
+            abc
+    returns:
+    [[QIcon.ThemeIcon.FolderNew, "proj/abc", [[QIcon.ThemeIcon.DocumentNew, "proj/abc/abc"]]], [QIcon.ThemeIcon.DocumentNew, "proj/abc"]]
+    :raises: Maybe raise out PermissionError or FileNotFoundError.
+    """
+    iters: List[QIcon.ThemeIcon, str, List[Any]] = []
+    for i in Path(directory).iterdir():
+        if i.is_dir():
+            iters.append([QIcon.ThemeIcon.FolderNew, str(i), iterDir(str(i))])
+            continue
+        iters.append([QIcon.ThemeIcon.DocumentNew, str(i)])
+    return iters
+
+
 class AutomaticSaveThingsThread(QThread):
     def __init__(self, parent: QWidget = None, saveSecs: int = 10):
         super().__init__(parent)

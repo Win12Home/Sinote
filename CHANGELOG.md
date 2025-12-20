@@ -4,12 +4,15 @@
 ***Now no any build because only Pre-release out!***
 ## Recently Pre-release
 ### 0.06.26001
-1. **Add feature**: Add Loading Screen when Sinote is loading plugin or loading font.
-2. **Fix issue**: Fix issue ``When trigger Save As, it will be pop out a Exception Window``
-3. **Add feature in CLI**: Realized ``check`` command for check plugin
+1. **Add feature**: Add Loading Screen when Sinote is loading plugins or fonts.
+2. **Fix issue**: Fix issue ``When trigger Save As, it will pop out an Exception Window``
+3. **Add feature in CLI**: Realized ``check`` command to check plugins
 4. **Add feature**: Add many shortcuts to Sinote.
 5. **Add feature**: Add Pop-up Dialog to confirm exit Sinote.
-6. **Fix issue**: Replace Python normal `dict` to `SafetyDict` for safe.
+6. **Fix issue**: Replace Python normal `dict` to `SafetyDict` for safety.
+7. **Add feature**: Session restore now includes cursor position and text selection state. Your cursor will be exactly where you left it!
+8. **Add feature**: *(Now planned)* Add **project** feature
+9. **Fix issue**: Fix issue that it will make a crash if you make a type=0 plugin and put it to `./resources/plugins/`
 ### 0.06.25542
 1. **Add feature**: Add **+** button to create new Tab. (I forgot add it in 0.06.25530)
 2. **Add feature**: It automatically restores last session every start. (It won't be restored your cursor position.)
