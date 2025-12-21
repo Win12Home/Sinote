@@ -11,7 +11,7 @@ AI help me to finish 15% of these code! (Not included plugins, before 25%, rewri
 """
 ### The Sinote Main Script
 from Widgets import MainWindow, addLog, saveLog, application, loadFonts, setGlobalUIFont, AutoLoadPlugin, args, \
-    beforeDatetime, datetime, SplashScreen, AutoLoadPlugin, autoRun, partial, owLog, addLogClassic
+    beforeDatetime, datetime, SplashScreen, AutoLoadPlugin, owLog, addLogClassic
 import sys
 
 def startMainProcess(splashScreen: SplashScreen):
@@ -26,6 +26,7 @@ def startMainProcess(splashScreen: SplashScreen):
     })
 
 def appStart(silent: bool = False):
+    global addLog
     if silent:
         addLog = owLog
     else:
@@ -53,4 +54,4 @@ def appStart(silent: bool = False):
     sys.exit(0)
 
 if __name__ == "__main__":
-    appStart()
+    appStart(silent=False)

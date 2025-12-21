@@ -746,10 +746,30 @@ class SplashScreen(QDialog):
         self.repaint()
 
 
+class TrailWindow(QDialog):
+    def __init__(self):
+        super().__init__()
+        self.setWindowTitle("Sinote")
+        self.setWindowIcon(QIcon("./resources/icon.png"))
+        self.setMinimumSize(QSize(600,300))
+        self.setMaximumSize(QSize(600,300))
+        self._setupUI()
+
+    def _setupUI(self) -> None:
+        self.hLayout = QHBoxLayout()
+        self.addProject: QPushButton = QPushButton(loadJson("TrailUI")["trail.button.newproj"])
+        self.addProject.setProperty("class", "chooseButton")
+        self.importProject: QPushButton = QPushButton(loadJson("TrailUI")["trail.button.importone"])
+        self.importProject.setProperty("class", "chooseButton")
+        self.hLayout.addWidget(self.addProject, 1)
+        self.hLayout.addStretch(2)
+        self.hLayout.addWidget(self.importProject, 1)
+        self.setLayout(self.hLayout)
+
 class MainWindow(QMainWindow):
     themeChanged: Signal = Signal()
 
-    def __init__(self):
+    def __init__(self, trailed: bool = False):
         super().__init__()
         self.shortcut = Shortcut()
         self.widget = QStackedWidget()
@@ -761,7 +781,8 @@ class MainWindow(QMainWindow):
         self._initBase()
         self._setupUI()
         self._setupTab()
-        self._automaticSetTheme()
+        if not trailed:
+            self._automaticSetTheme()
         self._autoApplyPluginInfo()
 
     def _setupTab(self):
@@ -1101,6 +1122,15 @@ class MainWindow(QMainWindow):
             
             I never use venv, of course.
             """
+            print(
+            """error: externally-managed-font-src
+
+            × This font directory is externally managed
+            ╰─> To use fixed font every time it's not recommend at that.
+
+            If you want to use Fixed Font every time or you doesn't know that problem, remove .1 suffix in DISABLE-FONT-CHECK-WARNING.1! 
+            """
+            )
             msgbox = QMessageBox(QMessageBox.Icon.Warning, "Warning", "(Only English) You are using the Fixed Font/Normal Font in Sinote, this font will be not support some characters like Chinese/Japanese characters!\n"
                                                                       "If you would like to disable it forever, rename DISABLE-FONT-CHECK-WARNING.1 to DISABLE-FONT-CHECK-WARNING!\n"
                                                                       "Probably, it might generate failed.", parent=self)

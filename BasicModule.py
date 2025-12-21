@@ -30,6 +30,7 @@ from multipledispatch import dispatch
 from shutil import *
 import sys, re, pickle, hashlib
 
+# Ignore getdefaultlocale warning
 filterwarnings("ignore", category=DeprecationWarning)
 
 # Generate QApplication
@@ -45,14 +46,22 @@ onlyWarning: bool = False
 
 colored: bool = True
 
+
 class SafetyList(list):
     """
     A Safety dictionary
     """
     class OutErrors(Enum):
-        NotFoundInIndex = 0
+        NotFoundInIndex = -1
 
     def index(self, __value: Any, __start: int = 0, __end: int = None) -> int | OutErrors:
+        """
+        Like dict.get, index the __value if __value in the list. If not, return SafetyList.OutErrors.NotFoundInIndex
+        :param __value: restored from __doc__
+        :param __start: restored from __doc__
+        :param __end: restored from __doc__
+        :return: restored from __doc___
+        """
         if __value not in self[__start:__end] if __end is not None else __value not in self[__start:]:
             return self.OutErrors.NotFoundInIndex
         return super().index(__value, __start, __end if __end is not None else len(self))
@@ -70,22 +79,7 @@ class SafetyDict(dict):
         ReturnNormalize = 1
 
     def __getitem__(self, item: Any) -> Any:
-        if item in self:
-            return super().__getitem__(item)
-        return item
-
-    @dispatch(object)
-    def get(self, _key: Any):
-        return super().get(_key)
-
-    @dispatch(object, object)
-    def get(self, _key: Any, _default: Any):
-        return super().get(_key, _default)
-
-    @dispatch(object, Properties, object)
-    def get(self, _key: Any, _prop: Properties, _default: Any = None):
-        default: Any = _default if _prop.value == 1 else _key
-        return super().get(_key, default)
+        return self.get(item, item)
 
 
 def addLogClassic(type: int = 0, bodyText: str = "N/A", activity: str | None = None, placeholder: bool = False):
@@ -134,7 +128,7 @@ def err(error_code:str,parent:QWidget=None,no_occurred:bool=False):
     0x00000003: System isn't support (Only MacOS, Windows and Linux), use --bypass-system-check to bypass system check!
     """
 
-err_exceptionhook_detected:bool = False
+errExceptionhookDetected:bool = False
 
 def criticalLogSaver(err_type, err_value, err_tb) -> None:
     """
@@ -173,9 +167,9 @@ def errExceptionHook(err_type, err_value, err_tb) -> None:
     :param err_tb:
     :return: NoneType
     """
-    global err_exceptionhook_detected
-    if not err_exceptionhook_detected:
-        err_exceptionhook_detected = True
+    global errExceptionhookDetected
+    if not errExceptionhookDetected:
+        errExceptionhookDetected = True
         name: str = ""
         if hasattr(err_type, '__class__'):
             name = err_type.__class__.__name__
@@ -188,7 +182,7 @@ def errExceptionHook(err_type, err_value, err_tb) -> None:
         addLog(0, bodyText="Attempting to save Critical Log",activity="FileConfigActivity")
         criticalLogSaver(err_type,err_value,err_tb)
         addLog(0,bodyText="It might be successfully to save, please feedback to developer! Program will continue running.",activity="ExceptionHookActivity")
-        err_exceptionhook_detected = False
+        errExceptionhookDetected = False
     else:
         sys.__excepthook__(err_type,err_value,err_tb)
 
@@ -380,7 +374,7 @@ def load(filePath: str):
     except:
         return {}
 
-def loadJson(jsonName: str):
+def loadJson(jsonName: str) -> SafetyDict:
     global alreadyLoaded
     
     if jsonName in alreadyLoaded.keys():
@@ -421,7 +415,16 @@ def outputDeveloperDebugInformation():
     addLog(3, "Note: If some error occurred, please send log to the developer 💥", "OutputDeveloperDebugInformationActivity")
 
 def applyStylesheet(application: QApplication, theme: str) -> None:
-    apply_stylesheet(application, theme, extra={"QMenu": {"height": 20, "padding": "5px 10px 7px 10px"}})
+    apply_stylesheet(application, theme, extra={"QMenu": {"height": 20, "padding": "5px 10px 7px 10px"}}, invert_secondary=True)
+    customizeCss: str = """
+    .chooseButton {
+        height: 128px;
+        width: 128px;
+        font-size: 15px;
+        font-weight: bold;
+    }
+    """
+    application.setStyleSheet(application.styleSheet() + customizeCss)
 
 
 class Setting:

@@ -1,6 +1,6 @@
 {
-  "trail.button.newproj": "New Project",
-  "trail.button.importproj": "Import Project",
-  "trail.text.welcome": "Welcome to Sinote!",
-  "trail.text.desc01": "Select a button to generate your idea!"
+  "trail.button.newproj": "新项目",
+  "trail.button.importone": "引入项目",
+  "trail.text.welcome": "欢迎来到Sinote！",
+  "trail.text.desc01": "选择一个按钮来创建你的想法"
 }
