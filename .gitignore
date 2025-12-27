@@ -26,6 +26,10 @@ log/
 .pylintrc
 .flake8
 
+# Oww don't make my __pycache__ out!
+**/__pycache__/
+**/*.pyc
+
 # Distribution / packaging
 .Python
 build/

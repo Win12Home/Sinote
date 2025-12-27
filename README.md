@@ -3,7 +3,7 @@
 ***English (United States)*** | [**中文（简体）**](README/README_CN.md)
 
 ## Introduction
-![Python 3.14](https://img.shields.io/badge/Python-3.14-green) ![PySide6 6.10](https://img.shields.io/badge/PySide6-6.10-blue) ![Style Material](https://img.shields.io/badge/Style-Material%20Style-purple) ![Last Release](https://img.shields.io/badge/Last%20Release-0.06.25530-green)
+![Python 3.14](https://img.shields.io/badge/Python-3.14-green) ![PySide6 6.10](https://img.shields.io/badge/PySide6-6.10-blue) ![Style Material](https://img.shields.io/badge/Style-Material%20Style-purple) ![Last Release](https://img.shields.io/badge/Last%20Release-0.06.25542-green)
 
 Sinote is an ***Open Source*** Project with **PySide6** and more.<br>
 This project *import* ***Customize Plugin System***! Please skip ``<project dir>/documentation/pluginEdit``.<br>
@@ -26,7 +26,7 @@ git clone https://github.com/Win12Home/Sinote.git
 cd Sinote/
 python -m pip -r requirements.txt
 
-python SinoteMain.py --bypass-system-check
+python main.py --bypass-system-check
 ```
 
 ## Author Information

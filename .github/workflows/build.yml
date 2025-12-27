@@ -50,14 +50,25 @@ jobs:
       shell: bash
       run: |
         echo Generating entry of Window...
+        cat > sets.py << EOF
+        from core.excepthook import setExceptionHook
+        from core.addons.asciiOutput import asciiOutput
+        from utils.verChecker import verChecker
+        def setEntry() -> None:
+            verChecker()
+            setExceptionHook()
+            asciiOutput()
         cat > EntryWindow.py << EOF
-        from SinoteMain import appStart
+        from utils.sinoteScript import appStart
+        from sets import setEntry
+        setEntry()
         appStart(silent=True)
         EOF
         echo Generated!
         echo Generating entry of Console...
         cat > EntryConsole.py << EOF
-        from SinoteMain import appStart
+        from utils.sinoteScript import appStart
+        from sets import setEntry
         # Note: This is not needed, but it's readability.
         appStart(silent=False)
         EOF

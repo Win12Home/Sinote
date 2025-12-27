@@ -14,6 +14,10 @@
 8. **Add feature**: *(Now planned)* Add **project** feature
 9. **Fix issue**: Fix issue that it will make a crash if you make a type=0 plugin and put it to `./resources/plugins/`
 10. **Documentation Edit**: Edit `function.md`, add Q&A chapter.
+11. **Readability**: ``setting.json5`` now automatically save with `indent=2`!
+12. **Add feature**: If `MiSans VF` font doesn't exist, automatically use system fixed font or recommend font.
+13. **Something not important**: If python version `< 3.12`, automatically raise out error.
+14. **Readability**: Fixed some issues in PEP8
 ### 0.06.25542
 1. **Add feature**: Add **+** button to create new Tab. (I forgot add it in 0.06.25530)
 2. **Add feature**: It automatically restores last session every start. (It won't be restored your cursor position.)

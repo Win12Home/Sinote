@@ -24,7 +24,7 @@ git clone https://github.com/Win12Home/Sinote.git
 cd Sinote/
 pip install -r requirements.txt -i https://mirrors.tuna.tsinghua.edu.cn/pypi
 
-python SinoteMain.py --bypass-system-check
+python main.py --bypass-system-check
 ```
 
 ## 作者信息

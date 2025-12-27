@@ -11,8 +11,9 @@
   "item.bool.isbetaversion": true,
   "item.list.language_files": [
     "EditorUI",
-    "TrailUI",
-    "MessageBox"
+    "MessageBox",
+    "FirstStartup",
+    "LoadingScreen"
   ],
   "item.dict.language_for": {
     "en_US": "English (United States)",
