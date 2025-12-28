@@ -9,6 +9,7 @@ Sorry, my english bad OvO.
 Because I'm a child TAT.
 AI help me to finish 15% of these code! (Not included plugins, before 25%, rewrite SpacingSupportEdit object!!!!!!!!!!!!!!! UwU I'm proud)
 """
+
 ### The Sinote Main Script
 
 from core.excepthook import setExceptionHook

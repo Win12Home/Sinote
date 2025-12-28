@@ -1,4 +1,4 @@
-from utils.logger import setOwLog, addLog, setNoColor
+from utils.logger import setOwLog, addLog, setNoColor, setFunny
 from utils.err import err
 from PySide6.QtWidgets import QMessageBox, QApplication
 from getpass import getuser
@@ -35,11 +35,11 @@ if "-h" in args or "--help" in args:  # HelpActivity
     QMessageBox.information(
         None,
         "Help",
-        "-h/--help: Arguments Help of Sinote\n-su/--use-root-user: Bypass check for SU User in posix env\n--bypass-system-check: Bypass System Check (Windows, Linux, Mac OS)\n-db/--debug-mode: Use Debug Mode (I/O Performance will low)\n-ow/--only-warning: Only Warning/Error in LOG\n--no-color/-nc: No color when log output\n--only-create-cache: Only create plugin caches\n--no-theme/-nt: Use default style (Windows)",
+        "-h/--help: Arguments Help of Sinote\n-su/--use-root-user: Bypass check for SU User in posix env\n--bypass-system-check: Bypass System Check (Windows, Linux, Mac OS)\n-db/--debug-mode: Use Debug Mode (I/O Performance will low)\n-ow/--only-warning: Only Warning/Error in LOG\n--no-color/-nc: No color when log output\n--only-create-cache: Only create plugin caches\n--no-theme/-nt: Use default style (Windows)\n--joking-bro: Try it!",
     )
     addLog(0, "Sinote Help closed, return to normal enviroment.", "HelpActivity")
     addLog(0, "Exiting...")
-    sys.exit(application.exec())
+    sys.exit(0)
 
 if (
     not system().lower() in ["darwin", "linux", "windows"]
@@ -57,6 +57,9 @@ if (
     err("0x00000003")
     application.exec()
     sys.exit(1)
+
+if "--joking-bro" in args:
+    setFunny()
 
 if system().lower() in ["darwin", "linux"]:
     if getuser() == "root":
