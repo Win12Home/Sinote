@@ -12,7 +12,7 @@ __all__ = [
     "normalLogOutput",
     "setNoColor",
     "saveLog",
-    "setFunny"
+    "setFunny",
 ]
 
 normalLogOutput: list[str] = []
@@ -31,7 +31,7 @@ funnyTypes: list[str] = [
     "WOW_PYPY_IS_NOT_SUPPORTED",
     "PYSIDE6_MY_LIFE",
     "FREE_TIME_I_LIKE",
-    "PEP8_IS_A_FAILURE"
+    "PEP8_IS_A_FAILURE",
 ]
 
 
@@ -101,6 +101,7 @@ def setNoColor() -> None:
 def setDebugMode() -> None:
     global debugMode
     debugMode = True
+
 
 def setFunny() -> None:
     global funnyMode

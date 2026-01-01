@@ -4,6 +4,7 @@ from json import loads as normalLoads
 from json5 import loads
 from utils.argumentParser import debugMode
 from utils.logger import addLog
+from base64 import urlsafe_b64encode as b64
 import hashlib
 import pickle
 
@@ -20,8 +21,9 @@ def getFileHash(filePath: str):
 
 def load(filePath: str):
     cachePath = (
-        Path("./cache") / f"{filePath.replace("/", "_").replace("\\", "_")}.cache"
-    )
+        Path("./cache")
+        / f"{b64(Path(filePath).as_posix().__str__().encode()).decode()}.cache"
+    )  # Safety than os.path.abspath, and it's same!
     fileHash = getFileHash(filePath)
 
     if cachePath.exists():
@@ -60,7 +62,7 @@ def load(filePath: str):
             with open(cachePath, "wb") as f:
                 if debugMode:
                     addLog(3, "Dumping and writing cache! 🤔", "JsonCacheLoadActivity")
-                pickle.dump(cacheData, f)
+                pickle.dump(cacheData, f, protocol=pickle.HIGHEST_PROTOCOL)
         except Exception as e:
             addLog(1, f"Cannot write cache: {repr(e)}", "JsonCacheLoadActivity")
 

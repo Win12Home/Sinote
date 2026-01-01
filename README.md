@@ -5,7 +5,7 @@
 ## Introduction
 ![Python 3.14](https://img.shields.io/badge/Python-3.14-green) ![PySide6 6.10](https://img.shields.io/badge/PySide6-6.10-blue) ![Style Material](https://img.shields.io/badge/Style-Material%20Style-purple) ![Last Release](https://img.shields.io/badge/Last%20Release-0.06.25542-green)
 
-Sinote is an ***Open Source*** Project with **PySide6** and more.<br>
+Sinote [ˈsaɪnoʊt] is an ***Open Source*** Project with **PySide6** and more.<br>
 This project *import* ***Customize Plugin System***! Please skip ``<project dir>/documentation/pluginEdit``.<br>
 Meaning of **Sinote**: **SI**mple **N**ative P**O**r**T**able **E**ditor. That is Simple Native Portable Editor.<br>
 We preferred you use these OS.
@@ -17,16 +17,24 @@ Or you also can use ```--bypass-system-check``` to bypass check.
 
 ## How to Install
 
-It's easy to install in Windows/Linux/macOS.
+Sinote is a **CROSS-PLATFORM** software
 <br>You only need open Release and download latest one, then you only need extract and run Sinote(.exe).
-<br><br>It's not easy to install in other OS.
-<br>You need to clone it and run file like this.
+<br>
+<br>You also can clone it and make like this.
 ```shell
 git clone https://github.com/Win12Home/Sinote.git
 cd Sinote/
-python -m pip -r requirements.txt
-
-python main.py --bypass-system-check
+make build_all # If you can run Pyinstaller
+rm -rf ./temporary # Remove Temporary, ~20MiB
+cd ./make-temporary # Binary file, ~150MiB
+./Sinote #--bypass-system-check
+```
+Especially, you can run it directly
+```shell
+git clone https://github.com/Win12Home/Sinote.git
+cd Sinote/
+make requirement # Install requirement
+python main.py #--bypass-system-check
 ```
 
 ## Author Information

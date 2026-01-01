@@ -2,12 +2,14 @@ from datetime import datetime
 from utils.timer import beforeDatetime
 from utils.logger import addLog, normalLogOutput
 from utils.const import apiVersion, sinoteVersion
-from utils.argumentParser import debugMode, colored
+from utils.argumentParser import debugMode, colored, onlyWarning
 from platform import system, libc_ver, win32_ver, python_version
 from rich import print
 
 
 def asciiOutput() -> None:
+    if onlyWarning:
+        return
     addLog(
         bodyText=f"Import Modules Finish! Used {(datetime.now() - beforeDatetime).total_seconds()}secs"
     )

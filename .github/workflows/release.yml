@@ -40,14 +40,19 @@ jobs:
         run: |
           echo Generating entry of Window...
           cat > EntryWindow.py << EOF
-          from SinoteMain import appStart
+          from main import appStart, verChecker, setExceptionHook
+          verChecker()
+          setExceptionHook()
           appStart(silent=True)
           EOF
           echo Generated!
           echo Generating entry of Console...
           cat > EntryConsole.py << EOF
-          from SinoteMain import appStart
+          from main import appStart, verChecker, asciiOutput, setExceptionHook
           # Note: This is not needed, but it's readability.
+          verChecker()
+          setExceptionHook()
+          asciiOutput()
           appStart(silent=False)
           EOF
           echo Generated!

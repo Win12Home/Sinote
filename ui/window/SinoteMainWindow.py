@@ -122,7 +122,7 @@ class MainWindow(QMainWindow):
         debugLog("Successfully to set up Text Edit Area!")
         debugLog("Setting up Layout...")
         self.horizontalLayout = QHBoxLayout()
-        self.horizontalLayout.addWidget(self.folder)
+        # self.horizontalLayout.addWidget(self.folder) Not finished
         self.horizontalLayout.addWidget(self.textEditArea)
         self.horizontalLayout.setStretch(0, 1)
         self.horizontalLayout.setStretch(1, 3)
@@ -404,7 +404,7 @@ class MainWindow(QMainWindow):
         self.setArea.edfont.useFallbackFont.checkBox.setText(
             loadJson("EditorUI")["editor.desc.setobj.usefbfontopen"]
         )
-        self.setArea.edfont.useFallbackFont.checkBox.checkStateChanged.connect(
+        self.setArea.edfont.useFallbackFont.checkBox.stateChanged.connect(
             lambda: {
                 settingObject.setValue(
                     "useFallback",
@@ -418,6 +418,9 @@ class MainWindow(QMainWindow):
         )
         self.setArea.edfont.useFallbackFont.checkBox.setChecked(
             settingObject.getValue("useFallback")
+        )
+        self.setArea.edfont.fallbackSelect.setDisabled(
+            not self.setArea.edfont.useFallbackFont.checkBox.isChecked()
         )
         self.setArea.edfont.vLayout.addWidget(self.setArea.edfont.titleEditorFont)
         self.setArea.edfont.vLayout.addWidget(self.setArea.edfont.seperator)
@@ -542,7 +545,7 @@ class MainWindow(QMainWindow):
         """
         if not ("--no-theme" in args or "-nt" in args):
             applyStylesheet(
-                application, "light_teal.xml" if not theme else "dark_teal.xml"
+                application, 0 if not theme else 1
             )
             settingObject.setValue("theme", theme)
             self.applySettings()
@@ -553,9 +556,9 @@ class MainWindow(QMainWindow):
             applyStylesheet(
                 application,
                 (
-                    "light_teal.xml"
+                    0
                     if not settingObject.getValue("theme")
-                    else "dark_teal.xml"
+                    else 1
                 ),
             )
 

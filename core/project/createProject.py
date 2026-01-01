@@ -4,6 +4,7 @@ Win12Home (C) 2025, MIT.
 Of course, this is the first file after decompose Widgets.py, BasicModule.py
 我真求你了，像人机似的，我还是人吗？
 """
+
 from core.project.projectConst import struct
 from datetime import datetime
 from pathlib import Path
@@ -12,7 +13,9 @@ from utils.argumentParser import debugMode
 from json import dumps
 from utils.logger import addLog
 
-debugLog: Callable = lambda content: addLog(3, content, "ProjectCreatorActivity") if debugMode else None
+debugLog: Callable = lambda content: (
+    addLog(3, content, "ProjectCreatorActivity") if debugMode else None
+)
 normalLog: Callable = lambda level, content: addLog(
     level if isinstance(level, int) else 4, content, "ProjectCreatorActivity"
 )
@@ -27,7 +30,8 @@ def createProject(
     beforeDatetime_: datetime = datetime.now()
     if not Path(directory).exists():
         normalLog(
-            1, f"Warning: {directory} is not exists! WTF about it, is it truly be output?"
+            1,
+            f"Warning: {directory} is not exists! WTF about it, is it truly be output?",
         )  # Holy crap! 哪个傻子会出现！idk yet.
         Path(directory).mkdir(parents=True, exist_ok=True)
     if not Path(directory).is_dir():
@@ -61,13 +65,21 @@ def createProject(
             try:
                 debugLog(f"Creating {where.name}...")
                 with open(f"{where}", "w", encoding="utf-8") as f:
-                    f.write(dumps(struct(nameOfProject)[where.name], ensure_ascii=False, indent=2))
+                    f.write(
+                        dumps(
+                            struct(nameOfProject)[where.name],
+                            ensure_ascii=False,
+                            indent=2,
+                        )
+                    )
             except Exception as e:
                 normalLog(2, f"Excepted error: {repr(e)} when creating {where.name}")
                 return False
             else:
                 debugLog(f"Create {where.name} successfully!")
     debugLog("Successfully to create .si directory!")
-    debugLog(f"Successfully to create Project! Used time: {(datetime.now() - beforeDatetime_).total_seconds() * 1000:.2f}ms")
+    debugLog(
+        f"Successfully to create Project! Used time: {(datetime.now() - beforeDatetime_).total_seconds() * 1000:.2f}ms"
+    )
     normalLog(0, "Successfully to create Project!")
     return True

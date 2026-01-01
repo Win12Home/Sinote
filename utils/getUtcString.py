@@ -6,7 +6,7 @@ from datetime import datetime, timedelta
 
 
 def getUtcString() -> str:
-    timezoneOffset: timedelta | None = datetime.now().utcoffset()
+    timezoneOffset: timedelta | None = timedelta(datetime.now().utcoffset())
     if timezoneOffset:
         hours, ignoredMinutes = divmod(
             timezoneOffset.total_seconds(), 60 * 60
