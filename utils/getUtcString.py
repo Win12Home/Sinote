@@ -2,15 +2,12 @@
 Easy, wow.
 """
 
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
+from math import ceil
 
 
 def getUtcString() -> str:
-    timezoneOffset: timedelta | None = timedelta(datetime.now().utcoffset())
-    if timezoneOffset:
-        hours, ignoredMinutes = divmod(
-            timezoneOffset.total_seconds(), 60 * 60
-        )  # Always equals 3600.
-        minutes, _ = divmod(ignoredMinutes, 60)  # Seconds? Ignore it!
-        return f"UTC{"+" if hours >= 0 else "-"}{int(abs(hours)):02}:{int(abs(minutes)):02}"
-    return f"UTC+0:00"
+    offset: timedelta = datetime.now() - datetime.utcnow()
+    if isinstance(offset, timedelta):
+        return f"UTC+{ceil(offset.seconds/3600)}:00"
+    return r"UTC+0:00"

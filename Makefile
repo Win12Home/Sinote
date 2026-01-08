@@ -10,11 +10,12 @@ NC := \033[0m
 
 # I won't tell you why not I use UPPER_CASE!!!
 
-.PHONY: clean check_py_env check_py_ver pip_install_packages copy_to_tmp pyinstaller_build build make_all all
+.PHONY: clean check_py_env check_py_ver pip_install_packages copy_to_tmp pyinstaller_build build make_all all clean_source make_with_cli
 
 # Make all!
-make_all: clean pip_install_packages pyinstaller_build
-	@echo -e "$(GREEN)=== Finished all build! ===$(NC)"
+make_all: clean pip_install_packages pyinstaller_build clean_source
+	@echo -e "$(GREEN)=== Finished all build! ===$(NC)" \
+	echo -e "Binary file is in $(YELLOW)./make-temporary/$(NC)";
 
 all: make_all;
 
@@ -56,6 +57,11 @@ check_py_ver: check_py_env
 		echo -e "$(GREEN)Passed$(NC) Python Version check!"; \
 	fi
 
+clean_source:
+	@echo -e "$(RED)Attempting$(NC) to clean sources..."; \
+	rm -rf ./temporary; \
+	echo -e "$(GREEN)Successfully$(NC) to clean sources!";
+
 pip_install_packages: check_py_ver
 	@echo -e "$(RED)Attempting$(NC) to install PIP packages..."; \
 	if ! $(pyPath) -m pip install -r requirements.txt; then \
@@ -94,7 +100,9 @@ help:
 	echo -e "  $(GREEN)clean$(NC): Clean before makes (./temporary & ./make-temporary)"; \
 	echo -e "  $(GREEN)build$(NC): Quick build (No pip install and check python suitable)"; \
 	echo -e "  $(GREEN)all$(NC): All build"; \
-	echo -e "  $(GREEN)requirements$(NC): Automatically check and install requirements"
+	echo -e "  $(GREEN)make_with_cli$(NC): All build with CLI"; \
+	echo -e "  $(GREEN)requirements$(NC): Automatically check and install requirements"; \
+	echo -e "  $(GREEN)version$(NC): Version of Makefile and tested in what version"
 
 sinote_help: help
 
@@ -102,5 +110,32 @@ sinote_help: help
 requirements: pip_install_packages
 
 # Quick build
-build: pyinstaller_build
-	@echo -e "$(GREEN)=== Build completed! ===$(NC)"
+build: pyinstaller_build clean_source	
+	@echo -e "$(GREEN)=== Build completed! ===$(NC)" \
+	echo -e "Binary file is in $(YELLOW)./make-temporary/$(NC)";
+
+# Make With CLI
+make_with_cli: pip_install_packages pyinstaller_build
+	@echo -e "$(GREEN)Starting$(NC) to make CLI..."; \
+	mkdir ./temporary/; \
+	cp ./SinoteCLI.py ./temporary/SinoteCLI.py; \
+	cd ./temporary/; \
+	rm -rf ./dist; \
+	pyinstaller -F -c -i ./../resources/images/plugins.png SinoteCLI.py; \
+	echo -e "$(GREEN)Made$(NC) CLI Successfully!"; \
+	echo -e "$(GREEN)Copying$(NC) dist..."; \
+	cd ..; \
+	cp ./temporary/dist/* ./make-temporary/; \
+	echo -e "$(GREEN)Finished copy$(NC) task!"; \
+	echo -e "$(GREEN)Cleaning$(NC) environment..."; \
+	rm -rf ./temporary; \
+	echo -e "$(GREEN)=== Build completed! ===$(NC)"; \
+	echo -e "Binary file is in $(YELLOW)./make-temporary/$(NC)";
+
+# Version Information of Makefile
+version:
+	@echo -e "$(GREEN)Sinote$(NC) Maker 1.0.0"; \
+	echo -e "$(GREEN)Test and passed$(NC) in Sinote version 0.06.26002"; \
+	echo ""; \
+	echo -e "By $(YELLOW)Win12Home$(NC), GitHub Site: $(GREEN)https://github.com/Win12Home/Sinote$(NC)"; \
+	echo "Open-Source in MIT License.";

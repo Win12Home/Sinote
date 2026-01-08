@@ -3,6 +3,8 @@
 ## Recently Build
 ***Now no any build because only Pre-release out!***
 ## Recently Pre-release
+### 0.06.26002
+1. **Add feature**: Add Animation when change to Setting or Editor
 ### 0.06.26001
 1. **Add feature**: Add Loading Screen when Sinote is loading plugins or fonts.
 2. **Fix issue**: Fix issue ``When trigger Save As, it will pop out an Exception Window``

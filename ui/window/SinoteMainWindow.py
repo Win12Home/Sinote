@@ -1,6 +1,5 @@
 from PySide6.QtWidgets import (
     QMainWindow,
-    QStackedWidget,
     QWidget,
     QTreeWidget,
     QTabWidget,
@@ -15,6 +14,7 @@ from PySide6.QtWidgets import (
     QListWidgetItem,
     QFileDialog,
     QListWidget,
+    QStackedWidget,
 )
 from core.addons.applyStylesheet import applyStylesheet
 from ui.edit.SinotePlainTextEdit import SinotePlainTextEdit
@@ -544,9 +544,7 @@ class MainWindow(QMainWindow):
         :return: NoneType
         """
         if not ("--no-theme" in args or "-nt" in args):
-            applyStylesheet(
-                application, 0 if not theme else 1
-            )
+            applyStylesheet(application, 0 if not theme else 1)
             settingObject.setValue("theme", theme)
             self.applySettings()
             self.themeChanged.emit()
@@ -555,11 +553,7 @@ class MainWindow(QMainWindow):
         if not ("--no-theme" in args or "-nt" in args):
             applyStylesheet(
                 application,
-                (
-                    0
-                    if not settingObject.getValue("theme")
-                    else 1
-                ),
+                (0 if not settingObject.getValue("theme") else 1),
             )
 
     def applyFont(
