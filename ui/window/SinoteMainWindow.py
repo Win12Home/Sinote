@@ -1,58 +1,70 @@
-from PySide6.QtWidgets import (
-    QMainWindow,
-    QWidget,
-    QTreeWidget,
-    QTabWidget,
-    QPushButton,
-    QMenu,
-    QMenuBar,
-    QHBoxLayout,
-    QVBoxLayout,
-    QScrollArea,
-    QLabel,
-    QMessageBox,
-    QListWidgetItem,
-    QFileDialog,
-    QListWidget,
-    QStackedWidget,
-)
-from core.addons.applyStylesheet import applyStylesheet
-from ui.edit.SinotePlainTextEdit import SinotePlainTextEdit
-from PySide6.QtCore import Qt, Signal, QObject, QEvent
-from core.addons.Shortcut import Shortcut
-from ui.edit.AutomaticSaveThingsThread import AutomaticSaveThingsThread
-from utils.argumentParser import fileargs, args
+from datetime import datetime
 from functools import partial
-from utils.logger import addLog
+from pathlib import Path
+from typing import Any, Dict, List, Optional
+
+from core.addons.applyStylesheet import applyStylesheet
+from core.addons.setGlobalUIFont import isRecommendFont
+from core.addons.Shortcut import Shortcut
+from core.AutoLoadPluginThread import autoRun, loadedPlugin
+from core.AutomaticIterDirectoryThread import AutomaticIterDirectoryThread
+from core.i18n import basicInfo, lang, getLangJson
+from core.project import ProjectSettings
+from ui.msgbox.CreateProjectDialog import CreateProjectDialog
+from PySide6.QtCore import QEvent, QObject, Qt, QTimer, Signal
 from PySide6.QtGui import (
-    QIcon,
     QAction,
+    QCloseEvent,
     QFont,
+    QIcon,
     QKeyEvent,
     QPixmap,
-    QCloseEvent,
     QTextCursor,
 )
-from ui.SettingObject import *
-from ui.widgets import PluginInfoLister, SeperatorWidget
-from utils.application import application
+from PySide6.QtWidgets import (
+    QFileDialog,
+    QHBoxLayout,
+    QLabel,
+    QListWidget,
+    QListWidgetItem,
+    QMenu,
+    QMenuBar,
+    QMessageBox,
+    QPushButton,
+    QScrollArea,
+    QSizePolicy,
+    QStackedWidget,
+    QTabWidget,
+    QTreeWidget,
+    QTreeWidgetItem,
+    QVBoxLayout,
+    QWidget,
+)
+from ui.edit.AutomaticSaveThingsThread import AutomaticSaveThingsThread
+from ui.edit.SinotePlainTextEdit import SinotePlainTextEdit
 from ui.selfLogger import debugLog
+from ui.SettingObject import (
+    CheckBoxSettingObject,
+    ComboBoxSettingObject,
+    LineEditSettingObject,
+)
+from ui.widgets import PluginInfoLister, SeperatorWidget
+from ui.window.FramelessWindow import FramelessWindow
+from utils.application import application
+from utils.argumentParser import args
 from utils.config import settingObject
-from pathlib import Path
-from core.i18n import loadJson, basicInfo, lang
-from core.AutoLoadPluginThread import loadedPlugin, autoRun
-from utils.timer import beforeDatetime
-from core.addons.setGlobalUIFont import isRecommendFont
-from utils.iterDir import iterDir
-from typing import Dict, Any, List, Optional
-from datetime import datetime
+from utils.logger import Logger
+from utils.timer import getTotalSeconds
 
 
-class MainWindow(QMainWindow):
+class MainWindow(FramelessWindow):
     themeChanged: Signal = Signal()
 
     def __init__(self, initialized: bool = False):
         super().__init__()
+        self._project: str | None = None
+        self._projectSettings: ProjectSettings | None = None
+
         self.shortcut = Shortcut()
         self.widget = QStackedWidget()
         self.mainFrame = QWidget()
@@ -60,25 +72,54 @@ class MainWindow(QMainWindow):
         self.editorThread = AutomaticSaveThingsThread(
             self, settingObject.getValue("secsave")
         )
+        self.dirThread = AutomaticIterDirectoryThread(self)
         self.setWindowIcon(QIcon("./resources/icon.png"))
-        self.setCentralWidget(self.widget)
-        self._initBase()
-        self._setupUI()
-        self._setupTab()
         if not initialized:
             self._automaticSetTheme()
+        self._initBase()
+        self._setupUI()
+        self._setupProject()
+        self._setupTab()
+        self.setCentralWidget(self.widget)
         self._autoApplyPluginInfo()
 
-    def _setupTab(self):
-        if not isinstance(settingObject.getValue("beforeread"), dict):
-            settingObject.setValue("beforeread", dict({}))
-        if len(settingObject.getValue("beforeread")) or len(fileargs) > 0:
+    def _setupProject(self) -> None:
+        debugLog("Automatically loading projects...")
+        debugLog("Saving changes... 🀄")
+        self.editorThread.saveThings()
+        debugLog("Save changes successfully! ✔")
+
+        proj: str = settingObject.getValue("recently_project_path")
+
+        if proj is None:
+            debugLog('"recently_project_path" is null, quitting...')
+            return
+
+        self._openProject(proj)
+
+    def newProject(self) -> None:
+        projectCreator = CreateProjectDialog(self)
+        projectCreator.setWindowIcon(self.windowIcon())
+        if projectCreator.exec():
+            self._openProject(projectCreator.path)
+
+    def _setupTab(self) -> None:
+        if not isinstance(self._projectSettings, ProjectSettings):
+            return
+
+        if not isinstance(self._projectSettings["recentlyWorks"], dict):
+            self._projectSettings["recentlyWorks"] = {}
+
+        if not isinstance(self._projectSettings["nowWorks"], str):  # None -> None, no any issue there
+            self._projectSettings["nowWorks"] = None
+
+        if len(self._projectSettings["recentlyWorks"]) > 0:  # NOQA
             result: Dict[str, int] = {}
-            for fileName, pos in settingObject.getValue("beforeread").items():
+            for fileName, pos in self._projectSettings["recentlyWorks"].items():
                 if not Path(fileName).exists():
                     self._createRecommendFile()
                     self.tabTextEdits[len(self.tabTextEdits) - 1].setPlainText(
-                        loadJson("EditorUI")["editor.any.cannotreadfile"].format(
+                        getLangJson("EditorUI")["editor.any.cannotreadfile"].format(
                             fileName
                         )
                     )
@@ -87,33 +128,93 @@ class MainWindow(QMainWindow):
                     if isinstance(pos, list) or isinstance(pos, int):
                         self.createTab(fileName, position=pos)
                     else:
-                        addLog(
-                            2,
+                        Logger.error(
                             "Position information has broken! Automatically remove position information.",
+                            "TabSetActivity"
                         )
                         self.createTab(fileName)
-            for temp in [str(Path(i)) for i in fileargs]:
-                if Path(temp).exists():
-                    self.createTab(temp)
-                else:
-                    self._createRecommendFile()
-                    self.tabTextEdits[len(self.tabTextEdits) - 1].setPlainText(
-                        loadJson("EditorUI")["editor.any.cannotreadfile2"].format(temp)
-                    )
-            settingObject.setValue("beforeread", result)
-        else:
-            self._createRecommendFile()
+            self._projectSettings["recentlyWorks"] = result
 
-    def _setupUI(self):
+        for oneFile in self.tabTextEdits:
+            if oneFile.nowFilename == self._projectSettings["nowWorks"]:
+                self.textEditArea.setCurrentWidget(oneFile)
+                break
+
+    def updateTree(self, directory: list[Any]) -> None:
+        debugLog(
+            "Project Tree Update Signal has received, trying to refresh project tree in UI..."
+        )
+        self.folder.clear()
+        self.updateFromFiles(directory)
+        debugLog("Successfully to update project tree!")
+
+    def updateFromFiles(
+        self, directory: list[Any], from_where: QTreeWidgetItem = None
+    ) -> None:
+        debugLog(f"Updating from folder: {directory}")
+
+        if from_where is None:
+            from_where = self.folder
+        for oneFile in directory:
+            debugLog(f"Analyzing file/folder {oneFile}... 🧐")
+            if oneFile[0] == QIcon.ThemeIcon.FolderNew:
+                item = QTreeWidgetItem(from_where, [oneFile[1]])
+                item.where = oneFile[2]
+                item.setIcon(0, QIcon.fromTheme(oneFile[0]))
+                debugLog("Recursing because of folder type")
+                self.updateFromFiles(oneFile[3], item)
+            else:
+                item = QTreeWidgetItem(from_where, [oneFile[1]])
+                item.where = oneFile[2]
+                item.setIcon(0, QIcon.fromTheme(oneFile[0]))
+
+            if isinstance(from_where, QTreeWidget):
+                from_where.addTopLevelItem(item)
+            else:
+                from_where.addChild(item)
+
+            debugLog("Well, successfully to analyze it!")
+
+    def analyzeOpenItem(self) -> None:
+        if not self.folder.currentItem():
+            return
+
+        if not hasattr(self.folder.currentItem(), "where"):
+            return
+
+        self.createTab(self.folder.currentItem().where)  # NOQA, checked attribute
+
+    def _setupUI(self) -> None:
         debugLog("Setting up User Interface...")
         debugLog("Setting up Text Edit Area...")
+        self.projectArea = QWidget()
+        self.projectArea.vLayout = QVBoxLayout()
+
+        self.commandBar: QWidget = QWidget()
+        self.commandBar.setSizePolicy(
+            QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Expanding
+        )
+        self.commandBar.hLayout = QHBoxLayout()
+        self.commandBar.hLayout.setAlignment(Qt.AlignmentFlag.AlignLeft)
+        self.commandBar.projectName = QLabel(getLangJson("EditorUI")["editor.proj.noproj"])
+        self.commandBar.addFile = QPushButton("+")
+        self.commandBar.addFile.setFlat(True)
+        self.commandBar.addFile.setSizePolicy(
+            QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed
+        )
+        self.commandBar.hLayout.addWidget(self.commandBar.projectName, stretch=0)
+        self.commandBar.hLayout.addWidget(self.commandBar.addFile, stretch=0)
+        self.commandBar.setLayout(self.commandBar.hLayout)
+
         self.folder: QTreeWidget = QTreeWidget()
+        self.folder.itemDoubleClicked.connect(self.analyzeOpenItem)
         self.folder.setHeaderHidden(True)
+        self.folder.setRootIsDecorated(False)
+        self.projectArea.vLayout.addWidget(self.commandBar, stretch=0)
+        self.projectArea.vLayout.addWidget(self.folder, stretch=1)
+        self.projectArea.setLayout(self.projectArea.vLayout)
+
         self.textEditArea = QTabWidget()
-        self.addTabButton = QPushButton("+")
-        self.addTabButton.setFlat(True)
-        self.addTabButton.clicked.connect(self._createRecommendFile)
-        self.textEditArea.setCornerWidget(self.addTabButton, Qt.Corner.TopRightCorner)
         self.tabTextEdits: list[SinotePlainTextEdit | None] = []
         self.textEditArea.tabBar().setMaximumHeight(60)
         self.textEditArea.setTabsClosable(True)
@@ -122,64 +223,63 @@ class MainWindow(QMainWindow):
         debugLog("Successfully to set up Text Edit Area!")
         debugLog("Setting up Layout...")
         self.horizontalLayout = QHBoxLayout()
-        # self.horizontalLayout.addWidget(self.folder) Not finished
+        self.horizontalLayout.addWidget(self.projectArea)
         self.horizontalLayout.addWidget(self.textEditArea)
         self.horizontalLayout.setStretch(0, 1)
         self.horizontalLayout.setStretch(1, 3)
         self.mainFrame.setLayout(self.horizontalLayout)
+        self.dirThread.iterChanged.connect(self.updateTree)
         debugLog("Successfully to set up Layout!")
         debugLog("Setting up Menu...")
-        self.fileEditMenu = QMenuBar()
-        self.fileEditMenu.fileEdit = QMenu(loadJson("EditorUI")["editor.menu.files"])
-        self.fileEditMenu.editMenu = QMenu(loadJson("EditorUI")["editor.menu.edit"])
+        self.fileEditMenu = QMenuBar(self)
+        self.fileEditMenu.fileEdit = QMenu(getLangJson("EditorUI")["editor.menu.files"])
+        self.fileEditMenu.editMenu = QMenu(getLangJson("EditorUI")["editor.menu.edit"])
         # Actions Define
-        createFile = QAction(
-            loadJson("EditorUI")["editor.menu.files.newfile"],
+        newProject = QAction(
+            getLangJson("EditorUI")["editor.menu.files.newproj"],
             self,
-            icon=QIcon.fromTheme(QIcon.ThemeIcon.DocumentNew),
+            icon=QIcon.fromTheme(QIcon.ThemeIcon.FolderNew)
         )
-        createFile.triggered.connect(
-            lambda: self.textEditArea.currentWidget().newFile()
-        )
-        openFile = QAction(
-            loadJson("EditorUI")["editor.menu.temps.openfile"],
+        newProject.triggered.connect(self.newProject)
+        openProject = QAction(
+            getLangJson("EditorUI")["editor.menu.files.openproj"],
             self,
             icon=QIcon.fromTheme(QIcon.ThemeIcon.DocumentOpen),
         )
-        openFile.triggered.connect(self.tempOpenFile)
+        openProject.triggered.connect(self.openProject)
         saveAs = QAction(
-            loadJson("EditorUI")["editor.menu.files.saveas"],
+            getLangJson("EditorUI")["editor.menu.files.saveas"],
             self,
             icon=QIcon.fromTheme(QIcon.ThemeIcon.DocumentSaveAs),
         )
         saveAs.triggered.connect(self.saveAs)
         setting = QAction(
-            loadJson("EditorUI")["editor.menu.files.settings"],
+            getLangJson("EditorUI")["editor.menu.files.settings"],
             self,
             icon=QIcon.fromTheme(QIcon.ThemeIcon.Computer),
         )
         setting.triggered.connect(partial(self.widget.setCurrentIndex, 1))
         exitProg = QAction(
-            loadJson("EditorUI")["editor.menu.files.exit"],
+            getLangJson("EditorUI")["editor.menu.files.exit"],
             self,
             icon=QIcon.fromTheme(QIcon.ThemeIcon.ApplicationExit),
         )
         exitProg.triggered.connect(self.close)
         self.fileEditMenu.fileEdit.addActions(
-            [createFile, openFile, saveAs, setting, exitProg]
+            [newProject, openProject, saveAs, setting, exitProg]
         )
         undo = QAction(
-            loadJson("EditorUI")["editor.menu.edit.undo"],
+            getLangJson("EditorUI")["editor.menu.edit.undo"],
             self,
             icon=QIcon.fromTheme(QIcon.ThemeIcon.EditRedo),
         )
-        undo.triggered.connect(lambda: self.textEditArea.currentWidget().undo())
+        undo.triggered.connect(lambda: self.textEditArea.currentWidget().undo())  # NOQA
         redo = QAction(
-            loadJson("EditorUI")["editor.menu.edit.redo"],
+            getLangJson("EditorUI")["editor.menu.edit.redo"],
             self,
             icon=QIcon.fromTheme(QIcon.ThemeIcon.EditUndo),
         )
-        redo.triggered.connect(lambda: self.textEditArea.currentWidget().redo())
+        redo.triggered.connect(lambda: self.textEditArea.currentWidget().redo())  # NOQA
         self.fileEditMenu.editMenu.addActions([undo, redo])
         self.fileEditMenu.addMenu(self.fileEditMenu.fileEdit)
         self.fileEditMenu.addMenu(self.fileEditMenu.editMenu)
@@ -199,7 +299,7 @@ class MainWindow(QMainWindow):
         self.setArea.appearance = QScrollArea()
         self.setArea.appearance.vLayout = QVBoxLayout()
         self.setArea.appearance.titleAppearance = QLabel(
-            loadJson("EditorUI")["editor.title.settings.appearance"]
+            getLangJson("EditorUI")["editor.title.settings.appearance"]
         )
         self.setArea.appearance.titleAppearance.setStyleSheet(
             "font-size: 38px; font-weight: bold; margin-bottom: 10px;"
@@ -207,11 +307,11 @@ class MainWindow(QMainWindow):
         self.setArea.appearance.seperator = SeperatorWidget()
         self.setArea.appearance.debugMode = CheckBoxSettingObject(
             None,
-            loadJson("EditorUI")["editor.title.setobj.debugmode"],
-            loadJson("EditorUI")["editor.desc.setobj.debugmode"],
+            getLangJson("EditorUI")["editor.title.setobj.debugmode"],
+            getLangJson("EditorUI")["editor.desc.setobj.debugmode"],
         )
         self.setArea.appearance.debugMode.checkBox.setText(
-            loadJson("EditorUI")["editor.desc.setobj.debugmodeopen"]
+            getLangJson("EditorUI")["editor.desc.setobj.debugmodeopen"]
         )
         self.setArea.appearance.debugMode.checkBox.setChecked(
             settingObject.getValue("debugmode")
@@ -223,8 +323,8 @@ class MainWindow(QMainWindow):
         )
         self.setArea.appearance.language = ComboBoxSettingObject(
             None,
-            loadJson("EditorUI")["editor.title.setobj.language"],
-            loadJson("EditorUI")["editor.desc.setobj.language"],
+            getLangJson("EditorUI")["editor.title.setobj.language"],
+            getLangJson("EditorUI")["editor.desc.setobj.language"],
         )
         self.setArea.appearance.language.comboBox.addItems(
             [i for _, i in basicInfo["item.dict.language_for"].items()]
@@ -245,8 +345,8 @@ class MainWindow(QMainWindow):
                 ),
                 QMessageBox(
                     QMessageBox.Icon.Information,
-                    loadJson("MessageBox")["msgbox.title.info"],
-                    loadJson("MessageBox")["msgbox.info.restartApplySet"],
+                    getLangJson("MessageBox")["msgbox.title.info"],
+                    getLangJson("MessageBox")["msgbox.info.restartApplySet"],
                     buttons=QMessageBox.StandardButton.Ok,
                     parent=self,
                 ).exec(),
@@ -254,12 +354,12 @@ class MainWindow(QMainWindow):
         )
         self.setArea.appearance.theme = ComboBoxSettingObject(
             None,
-            loadJson("EditorUI")["editor.title.setobj.theme"],
-            loadJson("EditorUI")["editor.desc.setobj.theme"],
+            getLangJson("EditorUI")["editor.title.setobj.theme"],
+            getLangJson("EditorUI")["editor.desc.setobj.theme"],
         )
         self.setArea.appearance.theme.comboBox.addItems(
             [
-                loadJson("EditorUI")[i]
+                getLangJson("EditorUI")[i]
                 for i in [f"editor.any.{k}" for k in ["light", "dark"]]
             ]
         )
@@ -282,13 +382,13 @@ class MainWindow(QMainWindow):
         self.setArea.appearance.setLayout(self.setArea.appearance.vLayout)
         self.setArea.addTab(
             self.setArea.appearance,
-            loadJson("EditorUI")["editor.tab.settings.appearance"],
+            getLangJson("EditorUI")["editor.tab.settings.appearance"],
         )
         # Plugin Setting
         self.setArea.plugins = QScrollArea()
         self.setArea.plugins.vLayout = QVBoxLayout()
         self.setArea.plugins.titlePlugins = QLabel(
-            loadJson("EditorUI")["editor.title.settings.plugin"]
+            getLangJson("EditorUI")["editor.title.settings.plugin"]
         )
         self.setArea.plugins.titlePlugins.setStyleSheet(
             "font-size: 38px; font-weight: bold; margin-bottom: 10px;"
@@ -332,13 +432,13 @@ class MainWindow(QMainWindow):
         self.setArea.plugins.vLayout.addWidget(self.setArea.plugins.set, 1)
         self.setArea.plugins.setLayout(self.setArea.plugins.vLayout)
         self.setArea.addTab(
-            self.setArea.plugins, loadJson("EditorUI")["editor.tab.settings.plugin"]
+            self.setArea.plugins, getLangJson("EditorUI")["editor.tab.settings.plugin"]
         )
         # Editor Font Setting
         self.setArea.edfont = QScrollArea()
         self.setArea.edfont.vLayout = QVBoxLayout()
         self.setArea.edfont.titleEditorFont = QLabel(
-            loadJson("EditorUI")["editor.tab.settings.editorfont"]
+            getLangJson("EditorUI")["editor.tab.settings.editorfont"]
         )
         self.setArea.edfont.titleEditorFont.setStyleSheet(
             "font-size: 38px; font-weight: bold; margin-bottom: 10px;"
@@ -346,8 +446,8 @@ class MainWindow(QMainWindow):
         self.setArea.edfont.seperator = SeperatorWidget()
         self.setArea.edfont.fontSelect = ComboBoxSettingObject(
             None,
-            loadJson("EditorUI")["editor.title.setobj.fontname"],
-            loadJson("EditorUI")["editor.desc.setobj.fontname"],
+            getLangJson("EditorUI")["editor.title.setobj.fontname"],
+            getLangJson("EditorUI")["editor.desc.setobj.fontname"],
         )
         self.setArea.edfont.fontSelect.useFontBox()
         self.setArea.edfont.fontSelect.comboBox.setCurrentFont(
@@ -360,8 +460,8 @@ class MainWindow(QMainWindow):
         )
         self.setArea.edfont.fontSize = LineEditSettingObject(
             None,
-            loadJson("EditorUI")["editor.title.setobj.fontsize"],
-            loadJson("EditorUI")["editor.desc.setobj.fontsize"],
+            getLangJson("EditorUI")["editor.title.setobj.fontsize"],
+            getLangJson("EditorUI")["editor.desc.setobj.fontsize"],
         )
         self.setArea.edfont.fontSize.useSpinBox()
         self.setArea.edfont.fontSize.lineEdit.setMinimum(1)
@@ -375,12 +475,12 @@ class MainWindow(QMainWindow):
             )
         )
         self.setArea.edfont.fontSize.lineEdit.setSuffix(
-            loadJson("EditorUI")["editor.suffix.settings.size"]
+            getLangJson("EditorUI")["editor.suffix.settings.size"]
         )
         self.setArea.edfont.fallbackSelect = ComboBoxSettingObject(
             None,
-            loadJson("EditorUI")["editor.title.setobj.fbfont"],
-            loadJson("EditorUI")["editor.desc.setobj.fbfont"],
+            getLangJson("EditorUI")["editor.title.setobj.fbfont"],
+            getLangJson("EditorUI")["editor.desc.setobj.fbfont"],
         )
         self.setArea.edfont.fallbackSelect.useFontBox()
         self.setArea.edfont.fallbackSelect.comboBox.currentFontChanged.connect(
@@ -398,11 +498,11 @@ class MainWindow(QMainWindow):
             )
         self.setArea.edfont.useFallbackFont = CheckBoxSettingObject(
             None,
-            loadJson("EditorUI")["editor.title.setobj.usefbfont"],
-            loadJson("EditorUI")["editor.desc.setobj.usefbfont"],
+            getLangJson("EditorUI")["editor.title.setobj.usefbfont"],
+            getLangJson("EditorUI")["editor.desc.setobj.usefbfont"],
         )
         self.setArea.edfont.useFallbackFont.checkBox.setText(
-            loadJson("EditorUI")["editor.desc.setobj.usefbfontopen"]
+            getLangJson("EditorUI")["editor.desc.setobj.usefbfontopen"]
         )
         self.setArea.edfont.useFallbackFont.checkBox.stateChanged.connect(
             lambda: {
@@ -431,7 +531,7 @@ class MainWindow(QMainWindow):
         self.setArea.edfont.vLayout.addStretch(1)
         self.setArea.edfont.setLayout(self.setArea.edfont.vLayout)
         self.setArea.addTab(
-            self.setArea.edfont, loadJson("EditorUI")["editor.tab.settings.editorfont"]
+            self.setArea.edfont, getLangJson("EditorUI")["editor.tab.settings.editorfont"]
         )
         self.setVerticalLayout = QVBoxLayout()
         self.setVerticalLayout.addWidget(self.backToMain)
@@ -443,10 +543,11 @@ class MainWindow(QMainWindow):
         self.widget.addWidget(self.settingFrame)
         self.widget.setCurrentIndex(0)
         self.editorThread.start()
+        self.dirThread.start()
         debugLog("Successfully to add frame!")
         debugLog("Adding shortcuts...")
         self.shortcut.addItem([Qt.Key.Key_Control, Qt.Key.Key_Alt, Qt.Key.Key_S], 1)
-        self.shortcut.addItem([Qt.Key.Key_Control, Qt.Key.Key_N], 2)
+        # self.shortcut.addItem([Qt.Key.Key_Control, Qt.Key.Key_N], 2)  # New File was unused!
         self.shortcut.addItem([Qt.Key.Key_Control, Qt.Key.Key_Shift, Qt.Key.Key_S], 3)
         self.shortcut.addItem([Qt.Key.Key_Control, Qt.Key.Key_Q], 4)
         self.shortcut.shortcutHandled.connect(self._analyzeShortcut)
@@ -459,8 +560,6 @@ class MainWindow(QMainWindow):
                 self.widget.setCurrentIndex(1)
                 return
             self.widget.setCurrentIndex(0)
-        elif itemNum == 2:
-            self.textEditArea.currentWidget().newFile()
         elif itemNum == 3:
             self.saveAs()
         elif itemNum == 4:
@@ -468,9 +567,9 @@ class MainWindow(QMainWindow):
 
     def eventFilter(self, obj: QObject, event: QEvent) -> bool:
         if event.type() == QEvent.Type.KeyPress:
-            self.shortcut.keyPressEvent(event)
+            self.shortcut.keyPressEvent(event)  # NOQA
         elif event.type() == QEvent.Type.KeyRelease:
-            self.shortcut.keyReleaseEvent(event)
+            self.shortcut.keyReleaseEvent(event)  # NOQA, shut up
         return False
 
     def keyPressEvent(self, event: QKeyEvent) -> None:
@@ -482,7 +581,7 @@ class MainWindow(QMainWindow):
         super().keyReleaseEvent(event)
 
     def setThisPluginAnotherType(self, item: QListWidgetItem) -> None:
-        objectName: str = item.objName
+        objectName: str = item.objName  # NOQA
         name: str = item.name
         if objectName in settingObject.getValue("disableplugin"):
             item.setText(name)
@@ -573,26 +672,29 @@ class MainWindow(QMainWindow):
     def show(self) -> None:
         debugLog("Showing Application...")
         super().show()
-        addLog(
-            0,
-            f"Used {(datetime.now() - beforeDatetime).total_seconds():.2f}s to load!",
+        Logger.info(
+            f"Used {getTotalSeconds():.2f}s to load!",
             "SinoteUserInterfaceActivity",
             True,
         )
         debugLog("Show Application Successfully!")
+        self.applySettings()
         debugLog("Preparing to run AutoRuns...")
-        [i() for i in autoRun if isinstance(i, partial)]
+        QTimer.singleShot(100, lambda: [i() for i in autoRun])
+        debugLog(
+            "Running AutoRuns by QTimer 👏"
+        )  # If you aren't using QTimer, Window will be stuck.
         """
         Easy but it will return a list that per value all is NoneType.
         You can replace it to:
         for i in autoRun:
             if isinstance(i, partial):
                 i()
+        and use QTimer to run it
         """
-        self.applySettings()
         if isRecommendFont() and not Path("./DISABLE-FONT-CHECK-WARNING").exists():
             """
-            I want to make user to experience the HURT of the EXTERNALLY_MANAGED! (Of course I use Windows)
+            I want to make user to experience the HURT of the EXTERNALLY_MANAGED! (Of course I use Windows, but now I use arch btw)
 
             error: externally-managed-environment
 
@@ -606,13 +708,13 @@ class MainWindow(QMainWindow):
             print(
                 """error: externally-managed-font-src
 
-                × This font directory is externally managed
-                ╰─> To use fixed font every time it's not recommend at that.
+× This font directory is externally managed
+╰─> To use fixed font every time it's not recommend at that.
 
-                If you want to use Fixed Font every time or you doesn't know that problem, remove .1 suffix in DISABLE-FONT-CHECK-WARNING.1!
+If you want to use Fixed Font every time or you doesn't know that problem, remove .1 suffix in DISABLE-FONT-CHECK-WARNING.1!
                 """
             )
-            msgbox = QMessageBox(
+            msgbox: QMessageBox = QMessageBox(
                 QMessageBox.Icon.Warning,
                 "Warning",
                 "(Only English) You are using the Fixed Font/Normal Font in Sinote, this font will be not support some characters like Chinese/Japanese characters!\n"
@@ -626,10 +728,12 @@ class MainWindow(QMainWindow):
                 with open("./DISABLE-FONT-CHECK-WARNING.1", "w", encoding="utf-8") as f:
                     f.write("")
             except Exception as e:
-                addLog(
-                    2,
-                    f"Failed to generate DISABLE-FONT-CHECK-WARNING.1! Caused: {repr(e)}",
+                Logger.error(
+                    f"Failed to generate DISABLE-FONT-CHECK-WARNING.1! Caused: {e!r}",
                 )
+
+        if self._project is None or self._projectSettings is None:
+            self.newProject()
 
     def closeEvent(self, event: QCloseEvent) -> None:
         debugLog("CloseEvent triggered 🤓")
@@ -639,18 +743,35 @@ class MainWindow(QMainWindow):
         event.ignore()
 
     def close(self) -> bool:
+        debugLog("Creating Message Box to request close...")
         msgbox: QMessageBox = QMessageBox(
             QMessageBox.Icon.Information,
-            loadJson("MessageBox")["msgbox.title.info"],
-            loadJson("MessageBox")["msgbox.info.sureToExit"],
+            getLangJson("MessageBox")["msgbox.title.info"],
+            getLangJson("MessageBox")["msgbox.info.sureToExit"],
             buttons=QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.Cancel,
         )
         msgbox.setWindowIcon(self.windowIcon())
+        debugLog("Executing Message Box and asking user done or cancel...")
         if msgbox.exec() == QMessageBox.StandardButton.Yes:
+
+            debugLog("Attmepting to save screen size... 😁")
+            settingObject.setValue("screen_size", [self.width(), self.height()])
+            debugLog("Saved screen size! 🐔")
+            debugLog("Attempting to close threads 🤓")
+            self.hide()
+            self.editorThread.quit()
+            self.editorThread.wait()
+            self.dirThread.quit()
+            self.dirThread.wait()
+            debugLog("Successfully to close threads ✅")
             debugLog("Saving session...")
             beforeRead: Dict[str, int | List[int]] = {}
             for i in self.tabTextEdits:
-                if hasattr(i, "nowFilename") and hasattr(i, "textCursor"):
+                if (
+                    hasattr(i, "nowFilename")
+                    and hasattr(i, "textCursor")
+                    and isinstance(i, SinotePlainTextEdit)
+                ):
                     if (
                         i.nowFilename is not None
                         and Path(i.nowFilename).exists()
@@ -668,29 +789,76 @@ class MainWindow(QMainWindow):
                         else:
                             result = cursor.position()
                         beforeRead[i.nowFilename] = result
-            settingObject.setValue("beforeread", beforeRead)
+            if self._projectSettings:
+                self._projectSettings["recentlyWorks"] = beforeRead
+                if hasattr(self.textEditArea.currentWidget(), "nowFilename"):
+                    self._projectSettings["nowWorks"] = self.textEditArea.currentWidget().nowFilename
+                else:
+                    self._projectSettings["nowWorks"] = None
+            settingObject.setValue("recently_project_path", self._project)
             debugLog("Saved session!")
-            debugLog("Attempting to close 🤓")
-            self.hide()
-            self.editorThread.quit()
-            self.editorThread.wait()
-            debugLog("Successfully to close ✅")
+            debugLog("Closing window... 🤔")
             self.destroy()
+            debugLog("Quitting QApplication... 😄")
             application.quit()
             return True
         return False
 
-    def openProject(self) -> None:
-        raise NotImplementedError('Function "openProject" isn\'t implemented.')
+    def openProject(
+        self,
+    ) -> (
+        None
+    ):  # NOQA, always against PEP 8, who can change my camelCase code to snake_case
+        get = QFileDialog.getExistingDirectory(
+            self, getLangJson("EditorUI")["editor.window.files.openproj"]
+        )
+        if get:
+            debugLog(f"Got directory: {get} ✔")
+            debugLog("Getting project settings...")
+            project_setting: dict[str, Any] = ProjectSettings(get).getProjectSettings()
+
+            if project_setting is None:
+                QMessageBox.critical(
+                    self,
+                    getLangJson("MessageBox")["msgbox.title.error"],
+                    getLangJson("MessageBox")["msgbox.error.openProjFailed"],
+                    buttons=QMessageBox.StandardButton.Ok,
+                )
+                return
+
+            debugLog("Successfully got!")
+
+            self._openProject(get)
+
+    def _openProject(self, directory: str) -> None:
+        debugLog("Saving changes... 🀄")
+        self.editorThread.saveThings()
+        debugLog("Save changes successfully! ✔")
+        debugLog("Clearing all the documents...")
+        self.textEditArea.clear()
+        for place, widget in enumerate(self.tabTextEdits):
+            if hasattr(widget, "deleteLater"):
+                try:
+                    widget.blockSignals(True)
+                    widget.setParent(None)
+                    widget.destroy()
+                    self.tabTextEdits[place] = None
+                except RuntimeError:
+                    self.tabTextEdits[place] = None
+        debugLog("Cleared all the documents! ✔")
+        self._project = directory
+        self._projectSettings = ProjectSettings(directory)
+        self.dirThread.setDirectory(directory)
+        self.commandBar.projectName.setText(self._projectSettings["name"])
 
     def tempOpenFile(self) -> None:
         """
-        This method will be replaced by openProject
+        Only a port, this function will be removed
         :return: None
         """
         get, _ = QFileDialog.getOpenFileName(
             self,
-            loadJson("EditorUI")["editor.window.temps.openfile"],
+            getLangJson("EditorUI")["editor.window.temps.openfile"],
             filter="All File (*)",
         )
         if get:
@@ -703,7 +871,7 @@ class MainWindow(QMainWindow):
     def saveAs(self) -> None:
         get, _ = QFileDialog.getSaveFileName(
             self,
-            loadJson("EditorUI")["editor.window.temps.saveas"],
+            getLangJson("EditorUI")["editor.window.temps.saveas"],
             filter="All File (*)",
         )
         if get:
@@ -713,16 +881,16 @@ class MainWindow(QMainWindow):
             debugLog("Successfully to save! ✅")
 
     def _requestClose(self, index: int):
-        if index >= 0 and index < len(self.tabTextEdits):
+        if 0 <= index < len(self.tabTextEdits):
             self.tabTextEdits[index] = None
             self.textEditArea.removeTab(index)
-            if self.textEditArea.tabBar().count() == 0:
-                self.close()
 
     def _createRecommendFile(self):
         self.createTab()
 
-    def createTab(self, filename: str | None = None, position: int = None):
+    def createTab(
+        self, filename: str | None = None, position: int = None
+    ) -> SinotePlainTextEdit:
         debugLog(
             f"Creating Tab... Will load file: {filename if filename else "Nothing"} 🤓"
         )
@@ -750,12 +918,12 @@ class MainWindow(QMainWindow):
         self.textEditArea.addTab(
             temp,
             (
-                loadJson("EditorUI")["editor.tab.new_file"]
+                getLangJson("EditorUI")["editor.tab.new_file"]
                 if not filename
-                else str(Path(filename))
+                else str(Path(filename).name)
             ),
         )
-        temp.setFilename = self.textEditArea.tabBar().setTabText
+        temp.setFilename = lambda index, path: self.textEditArea.tabBar().setTabText(index, Path(path).name)
         self.textEditArea.setCurrentIndex(len(self.tabTextEdits) - 1)
         debugLog(
             f"Successfully to create tab! Used: {(datetime.now() - oldDatetime).total_seconds():.2f}s ✅"
@@ -763,6 +931,7 @@ class MainWindow(QMainWindow):
         debugLog("Attempting to update setting... 😍")
         self.applySettings()
         debugLog("Successfully to update setting! ✅")
+        return temp
 
     def applySettings(self):
         fontSize: int = settingObject.getValue("fontSize")
@@ -791,5 +960,7 @@ class MainWindow(QMainWindow):
     def _initBase(self):
         debugLog("Initializing Base Window... 🔎")
         self.setWindowTitle("Sinote")
-        self.resize(1280, 760)
+        width, height = settingObject.getValue("screen_size")
+        debugLog(f"Saved size: width {width}, height {height}")
+        self.resize(width, height)
         debugLog("Successfully to initialize ✅")

@@ -1,6 +1,6 @@
-from PySide6.QtWidgets import QWidget, QPlainTextEdit
-from PySide6.QtCore import Qt, QRect
+from PySide6.QtCore import QRect, Qt
 from PySide6.QtGui import QColor, QPainter, QPen
+from PySide6.QtWidgets import QPlainTextEdit, QWidget
 
 
 class LineNumberWidget(QWidget):
@@ -14,7 +14,8 @@ class LineNumberWidget(QWidget):
 
     def paintEvent(self, event):
         painter = QPainter(self)
-        painter.setPen(QPen(self.borderColor, self.borderWidth))  # Draw Border at right
+        # Draw Border at right
+        painter.setPen(QPen(self.borderColor, self.borderWidth))
         painter.drawLine(self.width() - 1, 0, self.width() - 1, self.height())
         block = self.editor.firstVisibleBlock()  # Magic Line
         blockNumber = block.blockNumber()

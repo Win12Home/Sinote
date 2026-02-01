@@ -1,25 +1,24 @@
-from PySide6.QtWidgets import QWidget, QMessageBox
-from utils.logger import addLog, saveLog
+from PySide6.QtWidgets import QMessageBox, QWidget
+from utils.logger import Logger, saveLog
 
 
-def err(error_code: str, parent: QWidget = None, no_occurred: bool = False) -> None:
+def err(errorCode: str, parent: QWidget = None, no_occurred: bool = False) -> None:
     if not no_occurred:
-        addLog(
-            2,
-            bodyText="Error Occurred, Program Used Function err to aborted running! Error Code: {}".format(
-                error_code
+        Logger.error(
+            "Error Occurred, Program Used Function err to aborted running! Error Code: {}".format(
+                errorCode
             ),
-            activity="WindowsActivity",
+            "WindowsActivity",
         )
         w = QMessageBox.critical(
             None,
             "Error",
             "Sinote has found a error! \nError Code: {}\nPlease contact developer or re-install software!".format(
-                error_code
+                errorCode
             ),
         )
     if not no_occurred:
-        addLog(2, bodyText="Saving Error to local", activity="FileConfigActivity")
+        Logger.error("Saving Error to local", "FileConfigActivity")
         saveLog()
     """
     Error Codes

@@ -1,4 +1,4 @@
-from PySide6.QtWidgets import QWidget, QLineEdit, QSpinBox
+from PySide6.QtWidgets import QLineEdit, QSpinBox, QWidget
 from ui.SettingObject.SettingObject import SettingObject
 
 

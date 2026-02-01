@@ -1,10 +1,24 @@
 # Change log of Sinote Editor
 
-## Recently Build
+## Recently Builds
 ***Now no any build because only Pre-release out!***
 ## Recently Pre-release
-### 0.06.26002
-1. **Add feature**: Add Animation when change to Setting or Editor
+### 0.06.26014
+1. **Something not important**: Add log output when loading header!
+2. **Code change**: Change function `addLog` to object `Logger` for readability.
+3. **Add feature**: Add `make_with_cli` command in Makefile
+4. **Add feature**: Add `nuitka` and `nuitka_build` command in Makefile
+5. **Add feature**: Removed System Titlebar and created `FramelessWindow` object for better visual.
+6. **Something not important**: Add `asm` (Nasm) to plugin `sinote.official.codeHighlighter`
+7. **Fix issue**: Fixed issue that `msgbox` command cannot execute successfully.
+8. **Add feature**: Realized function `usefunc` and test it. It was running successfully and normally.
+9. **Something not important**: Update API `1.0.1` to API `1.0.2` because I realized `usefunc` and added `sleep` function.
+10. **Optimize or Fix**: Fixed that when AutoRun is running, the main thread will be stuck.
+11. **Fix issue**: Fixed that when remove (), one character after ) will be removed.
+12. **Restore feature**: Restored SIGINT analyze and added SIGTERM analyze
+13. **Something not important**: Add `screen_size` to save screen size to restore
+14. **Add feature**: Add Project System (Base Project System)
+15. **Fix small issue (NOT INCLUDE IN VERSION CHANGE)**: Removed `scjson.LICENSE`
 ### 0.06.26001
 1. **Add feature**: Add Loading Screen when Sinote is loading plugins or fonts.
 2. **Fix issue**: Fix issue ``When trigger Save As, it will pop out an Exception Window``

@@ -1,11 +1,12 @@
-from pathlib import Path
-from utils.logger import addLog, normalLogOutput
-from platform import processor, system
-from psutil import cpu_percent, virtual_memory
-from datetime import datetime
-from traceback import format_exception
-from utils.err import err
 import sys
+from datetime import datetime
+from pathlib import Path
+from platform import processor, system
+from traceback import format_exception
+
+from psutil import cpu_percent, virtual_memory
+from utils.err import err
+from utils.logger import Logger, normalLogOutput
 
 errExceptionhookDetected: bool = False
 
@@ -64,26 +65,21 @@ def errExceptionHook(err_type, err_value, err_tb) -> None:
             name = err_type.__class__.__name__
         else:
             name = type(err_type).__name__
-        addLog(
-            2,
-            bodyText="Error occurred by errExceptionHook, please give the error to the author!",
-            activity="ExceptionHookActivity",
+        Logger.error(
+            "Error occurred by errExceptionHook, please give the error to the author!",
+            "ExceptionHookActivity",
         )
-        addLog(0, bodyText=f"Output has printed:\n{str(err_type)[8:-2]}: {err_value}")
-        addLog(
-            1,
-            bodyText=f"Starting Window, if error occurred again, it won't write log when quit.",
-            activity="ExceptionHookActivity",
+        Logger.info(f"Output has printed:\n{str(err_type)[8:-2]}: {err_value}")
+        Logger.info(
+            f"Starting Window, if error occurred again, it won't write log when quit.",
+            "ExceptionHookActivity",
         )
         err("0xffffffff", None, True)
-        addLog(
-            0, bodyText="Attempting to save Critical Log", activity="FileConfigActivity"
-        )
+        Logger.info("Attempting to save Critical Log", activity="FileConfigActivity")
         criticalLogSaver(err_type, err_value, err_tb)
-        addLog(
-            0,
-            bodyText="It might be successfully to save, please feedback to developer! Program will continue running.",
-            activity="ExceptionHookActivity",
+        Logger.info(
+            "It might be successfully to save, please feedback to developer! Program will continue running.",
+            "ExceptionHookActivity",
         )
         errExceptionhookDetected = False
     else:

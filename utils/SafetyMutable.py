@@ -18,7 +18,7 @@ class SafetyList(list):
         :param __value: restored from __doc__
         :param __start: restored from __doc__
         :param __end: restored from __doc__
-        :return: restored from __doc___
+        :return: restored from __doc___  (doge, OutErrors or int)
         """
         if (
             __value not in self[__start:__end]
@@ -38,10 +38,6 @@ class SafetyDict(dict):
     Like {"abc":"def"}
     dict_Initialized["abd"] -> return "abd"
     """
-
-    class Properties(Enum):
-        ReturnNormalItem = 0
-        ReturnNormalize = 1
 
     def __getitem__(self, item: Any) -> Any:
         return self.get(item, item)

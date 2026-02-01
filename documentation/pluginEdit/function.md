@@ -41,18 +41,19 @@ When you run this function, it will log a message (Type: INFO) and word is "Hell
 
 For you create a function, you need to know the built-in functions in Sinote.
 ### ***Basic*** **Function** of **Sinote**:
-**Since API 1.0.1**
+**Since API 1.0.2**
  - ```print```: Print the string to the terminal. Struct: ```["print","\<string\>"]```
  - ```msgbox```: Out a Messagebox to the Main Application. Struct: ```["msgbox","\<title\>","\<content\>"]```
  - ```log```: Out customize content for log. Struct: ```["log", "\<type, 0: INFO, 1: WARN\>", "\<content\>"]```
  - ```var```: Set a temporary variable, use %var:\<varname\>% to use. Struct: ```["var","\<name\>","\<content\>"]``` (Content was not required.) 
  - ```vpr```: Only print content of variable. Struct: ```["vpr","\<variable name\>"]```
  - ```msgin```: Set a temporary variable with Message Box. Struct: ```["msgin","\<title\>","\<content\>","\<variable name\>]```
- - ```system```: Run a command in terminal. Struct: ```["system","\<command\>",{"out2term": false}]``` &#x26a0;&#xfe0f; A dangerous function
- - ```usefunc```: Use a Function. Struct: ```["usefunc","\<funcname\>"]```
+ - ```system```: Run a command in terminal. Struct: ```["system","\<command\>",{"out2term": false}]``` &#x26a0;&#xfe0f; A dangerous function (Not realized, 1.0.3 also maybe not)
+ - ```usefunc```: Use a Function. Struct: ```["usefunc","\<funcname\>"]``` (Sinote API 1.0.2 realized)
+ - `sleep`: Sleep given ms. Struct: `["sleep", "\<msec\>"]` (Sinote API 1.0.2 added)
 
 ### ***Advanced*** **Function** of **Sinote**:
-**Since API 1.0.1**
+**Since API 1.0.2**
  - ```set```: Set a **Sinote Setting** to customize content. Struct: ```["set","\<setting object\>","\<content\>"]```
  - ```mkdir```: Make a Directory (No error when file exists). Struct: ```["mkdir","\<directory\>"]```
  - ```cfile```: Create a file (No error when file exists). Struct: ```["cfile","\<file path\>"]```
@@ -68,8 +69,10 @@ For you create a function, you need to know the built-in functions in Sinote.
 **Q:** Why my plugin didn't work every start time?
 <br>**A:** Did you forget put your function to `runFunc` or enable `enableCustomizeCommandRun`? If you've been did it, please open `Debug Mode` and send log to me!
 <br>*Small tips about first one*: Use `-rl -db` arguments to enable `Debug Mode` and `Record Log Mode`, the log will be saved in `location/of/sinote/log`.
-<br>**Q:** Why `system` and `usefunc` didn't work?
+<br>**Q:** Why `system` didn't work?
 <br>**A:** I'm lazy. This is a plan!
+<br>**Q**: `usefunc` can call function with argument?
+<br>**A**: Not support yet, but you can use variable to bring function like *assembly*.
 
 ## 4 End
 

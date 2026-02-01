@@ -176,23 +176,27 @@ This page will **teach** you how to **adjust** a setting automatically.
     // Configuration
   },
   "functions": {
+    "print_hello_world": [ // Ignore the warning of it
+      ["print", "Hello, World!"] // Print message here
+    ],
     "set_sth": [
       ["set","fontSize",11], // Adjust font size
       ["log",0,"Adjusted fontSize to eleven!"], // Log a message there
       ["set", "fontName", "Source Code Pro"], // Adjust font name
-      ["set", "language", "zh_CN"] // 我~的中国心~ Adjust language to Simplified Chinese.
+      ["set", "language", "zh_CN"], // 我~的中国心~ Adjust language to Simplified Chinese.
+      ["usefunc", "print_hello_world"]  // Call customize function
     ]
   },
   "runFunc": [
     "set_sth"
   ],
   "coding": {
-    // additional in there
+    // additional in there, but it will be not working yet
   }
 }
 ```
 
-If you imported this header. It will adjust font size of editor to 11 and log a message (Type: INFO) and leave.<br>
+If you imported this header. It will adjust font size of editor to 11 and log a message (Type: INFO), then print `Hello World!` and leave.<br>
 ___
 ### 1.4 End of Basic
 

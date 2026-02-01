@@ -2,7 +2,11 @@
   "msgbox.title.error": "Error",
   "msgbox.title.warning": "Warning",
   "msgbox.title.info": "Information",
-  "msgbox.error.fileCannotRead": "File {} cannot read! We don't know what's happening!\nEncoding wasn't match? Or Permission Denied? Please check your document!",
+  "msgbox.error.fileCannotRead": "File \"{}\" cannot read! We don't know what's happening!\nEncoding wasn't match? Or Permission Denied? Please check your document!",
+  "msgbox.error.openProjFailed": "Failed to open Project! 😲",
+  "msgbox.error.pathNotValid": "Path \"{}\" does not exist or it isn't a directory.",
   "msgbox.info.restartApplySet": "This option need to restart to apply setting. If you'd like to apply, please restart it.",
-  "msgbox.info.sureToExit": "Are you sure to exit Sinote?"
+  "msgbox.info.sureToExit": "Are you sure to exit Sinote?",
+  "msgbox.button.ok": "Ok",
+  "msgbox.button.cancel": "Cancel"
 }

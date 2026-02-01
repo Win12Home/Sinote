@@ -1,2 +1,2 @@
-from ui.widgets.PluginInfoLister import PluginInfoLister
-from ui.widgets.SeperatorWidget import SeperatorWidget
+from .PluginInfoLister import PluginInfoLister
+from .SeperatorWidget import SeperatorWidget

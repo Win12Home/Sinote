@@ -1,6 +1,6 @@
-from ui.SettingObject.LineEditSettingObject import LineEditSettingObject
-from ui.SettingObject.ComboBoxSettingObject import ComboBoxSettingObject
-from ui.SettingObject.CheckBoxSettingObject import CheckBoxSettingObject
+from .CheckBoxSettingObject import CheckBoxSettingObject
+from .ComboBoxSettingObject import ComboBoxSettingObject
+from .LineEditSettingObject import LineEditSettingObject
 
 # from ui.SettingObject.SettingObject import SettingObject
-# Cancel # if you want to create a new SettingObject.
+# if you want to create a new SettingObject.

@@ -1,10 +1,11 @@
-from PySide6.QtGui import QFontDatabase, QFont
+from platform import system
+from typing import Callable
+
+from core.i18n import basicInfo
+from PySide6.QtGui import QFont, QFontDatabase
 from ui.selfLogger import debugLog  # UwU I'm lazy
 from utils.application import application
-from typing import Callable
-from utils.logger import addLog
-from core.i18n import basicInfo
-from platform import system
+from utils.logger import Logger
 
 recommendFont: bool = False
 
@@ -23,15 +24,15 @@ def setGlobalUIFont(font: str = None, recursion: bool = False) -> None:
         )
         fnt: str = QFontDatabase.systemFont(QFontDatabase.SystemFont.FixedFont).family()
         if recursion and fnt.lower() == font.lower():
-            addLog(
-                2,
+            Logger.warning(
                 "Cool! We think fixed font is the best option! What's your system? That's so suspend!",
                 "SinoteUserInterfaceActivity",
             )
             return
         if (
             recursion
-        ):  # Why? If it is not in font database (Recommend font in macOS/Windows), use FixedFont!
+            # Why? If it is not in font database (Recommend font in macOS/Windows), use FixedFont!
+        ):
             recommendFont = True
             debugLog(
                 "Oh my god! Recommend font is not in the database! We think use Fixed font instead!"
@@ -91,4 +92,4 @@ def setGlobalUIFont(font: str = None, recursion: bool = False) -> None:
     """
     )
 
-    addLog(0, f"Global UI font set to: {selectedFont} ✅", "LoadFontActivity")
+    Logger.info(f"Global UI font set to: {selectedFont} ✅", "LoadFontActivity")

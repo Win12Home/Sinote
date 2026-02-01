@@ -1,25 +1,23 @@
-from datetime import datetime
-from utils.timer import beforeDatetime
-from utils.logger import addLog, normalLogOutput
-from utils.const import apiVersion, sinoteVersion
-from utils.argumentParser import debugMode, colored, onlyWarning
-from platform import system, libc_ver, win32_ver, python_version
+from platform import libc_ver, python_version, system, win32_ver
+
 from rich import print
+from utils.argumentParser import colored, debugMode, onlyWarning
+from utils.const import apiVersion, sinoteVersion
+from utils.logger import Logger, normalLogOutput
+from utils.timer import getTotalSeconds
 
 
 def asciiOutput() -> None:
     if onlyWarning:
         return
-    addLog(
-        bodyText=f"Import Modules Finish! Used {(datetime.now() - beforeDatetime).total_seconds()}secs"
-    )
-    addLog(bodyText=r"   _____ _             __          ______    ___ __            ")
-    addLog(bodyText=r"  / ___/(_)___  ____  / /____     / ____/___/ (_) /_____  _____")
-    addLog(bodyText=r"  \__ \/ / __ \/ __ \/ __/ _ \   / __/ / __  / / __/ __ \/ ___/")
-    addLog(bodyText=r" ___/ / / / / / /_/ / /_/  __/  / /___/ /_/ / / /_/ /_/ / /    ")
-    addLog(bodyText=r"/____/_/_/ /_/\____/\__/\___/  /_____/\__,_/_/\__/\____/_/     ")
-    addLog(
-        bodyText=f"Sinote Editor {sinoteVersion}, API Version: {".".join([f"{i}" for i in apiVersion])}"
+    Logger.info(f"Import Modules Finish! Used {getTotalSeconds()}secs")
+    Logger.info(r"   _____ _             __          ______    ___ __            ")
+    Logger.info(r"  / ___/(_)___  ____  / /____     / ____/___/ (_) /_____  _____")
+    Logger.info(r"  \__ \/ / __ \/ __ \/ __/ _ \   / __/ / __  / / __/ __ \/ ___/")
+    Logger.info(r" ___/ / / / / / /_/ / /_/  __/  / /___/ /_/ / / /_/ /_/ / /    ")
+    Logger.info(r"/____/_/_/ /_/\____/\__/\___/  /_____/\__,_/_/\__/\____/_/     ")
+    Logger.info(
+        f"Sinote Editor {sinoteVersion}, API Version: {".".join([f"{i}" for i in apiVersion])}"
     )
     (
         print("[blue]============ SINOTE RUN LOG ============[/blue]")
@@ -28,18 +26,15 @@ def asciiOutput() -> None:
     )
     normalLogOutput.append("============ SINOTE RUN LOG ============")
     if debugMode:
-        addLog(
-            3,
+        Logger.debug(
             "For Developer Debug, Output your own PC's environment! 🤓",
             "OutputDeveloperDebugInformationActivity",
         )
-        addLog(
-            3,
+        Logger.debug(
             f"Platform: {system()} Python: {python_version()} Win32 Version*: {" ".join(win32_ver())} | Linux LIBC Ver*: {" ".join(libc_ver())}",
             "OutputDeveloperDebugInformationActivity",
         )
-        addLog(
-            3,
+        Logger.debug(
             "Note: If some error occurred, please send log to the developer 💥",
             "OutputDeveloperDebugInformationActivity",
         )

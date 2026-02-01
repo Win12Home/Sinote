@@ -1,7 +1,7 @@
 # Sinote Plugin Tutorial
 **Sinote Documentation,** by <span style="color:blue;">**Win12Home**</span> 2025, written in Markdown.
 
-![Sinote API Version Support](https://img.shields.io/badge/Sinote%20API%20Support-1.0.1-green) ![Python Supports](https://img.shields.io/badge/Python-3.14-blue?logo=python)
+![Sinote API Version Support](https://img.shields.io/badge/Sinote%20API%20Support-1.0.2-green) ![Python Supports](https://img.shields.io/badge/Python-3.14-blue?logo=python)
 
 ---
 

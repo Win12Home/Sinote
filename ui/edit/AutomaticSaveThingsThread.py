@@ -1,8 +1,9 @@
-from PySide6.QtWidgets import QWidget
+import time
+
 from PySide6.QtCore import QThread
+from PySide6.QtWidgets import QWidget
 from ui.selfLogger import debugLog
 from utils.config import settingObject
-import time
 
 
 class AutomaticSaveThingsThread(QThread):

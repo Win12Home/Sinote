@@ -1,25 +1,26 @@
-from utils.timer import beforeDatetime
-from core.addons.setGlobalUIFont import setGlobalUIFont
-from utils.argumentParser import args
-from ui.window.SplashScreen import SplashScreen
-from ui.window.SinoteMainWindow import MainWindow
-from utils.logger import setOwLog, addLog, saveLog
-from datetime import datetime
-from core.addons.loadFonts import loadFonts
-from core.AutoLoadPluginThread import AutoLoadPlugin
-from utils.application import application
-from core.i18n import resetBasicInfo, setLanguage
 import sys
+from datetime import datetime
+
+from core.addons.loadFonts import loadFonts
+from core.addons.setGlobalUIFont import setGlobalUIFont
+from core.AutoLoadPluginThread import AutoLoadPlugin
+from core.i18n import resetBasicInfo, setLanguage
+from ui.window.SinoteMainWindow import MainWindow
+from ui.window.SplashScreen import SplashScreen
+from utils.application import application
+from utils.argumentParser import args
+from utils.logger import Logger, saveLog, setOwLog
+from utils.timer import beforeDatetime
 
 
 def startMainProcess(splashScreen: SplashScreen) -> None:
     loadFonts()
     a = MainWindow()
     splashScreen.close()
-    a.show()
     setGlobalUIFont()
+    a.show()
     a.themeChanged.connect(
-        lambda: {setGlobalUIFont(), addLog(0, "Successfully to change theme!")}
+        lambda: {setGlobalUIFont(), Logger.info("Successfully to change theme!")}
     )
 
 
@@ -29,7 +30,7 @@ def appStart(silent: bool = False):
     if "--only-create-cache" in args:
         LoadPlugin = AutoLoadPlugin()
         LoadPlugin.run()  # Block main process
-        addLog(0, "Successfully to create caches!")
+        Logger.info("Successfully to create caches!")
         sys.exit(0)
     setLanguage()
     resetBasicInfo()
@@ -44,8 +45,7 @@ def appStart(silent: bool = False):
     )
     LoadPlugin.start()
     application.exec()
-    addLog(
-        0,
+    Logger.info(
         f"Successfully to exit Sinote! Used time: {(datetime.now() - beforeDatetime).total_seconds():.2f}s ✅",
     )
     if "--record-log" in args or "-rl" in args:

@@ -1,11 +1,12 @@
-from utils.argumentParser import debugMode
-from utils.logger import addLog, setDebugMode
-from typing import Any
-from json import loads
-from pathlib import Path
+from json import dumps, loads
 from locale import getdefaultlocale
-from json import dumps
+from pathlib import Path
+from typing import Any
 from warnings import filterwarnings
+
+from darkdetect import isLight
+from utils.argumentParser import debugMode
+from utils.logger import Logger, setDebugMode
 
 __all__ = ["Setting", "settingObject"]
 
@@ -21,9 +22,10 @@ normalSetting: dict = {
     "language": getdefaultlocale()[0],
     "debugmode": False,
     "secsave": 10,
-    "theme": 1,
-    "beforeread": {},
+    "theme": 0 if isLight() else 1,
     "disableplugin": [],
+    "screen_size": [1280, 760],
+    "recently_project_path": None,
 }
 
 setting: dict = {}
@@ -37,7 +39,9 @@ class Setting:
         # Automatic Lex setting file
         try:
             if debugMode:
-                addLog(3, "Attempting to load setting.json5...", "SettingLexerActivity")
+                Logger.debug(
+                    "Attempting to load setting.json5...", "SettingLexerActivity"
+                )
             with open("./setting.json5", "r", encoding="utf-8") as f:
                 lexed: dict = normalSetting | loads(f.read())
             if not lexed.keys() is normalSetting.keys():
@@ -55,11 +59,11 @@ class Setting:
             else:
                 setting = lexed
                 if debugMode:
-                    addLog(
-                        3, "Successfully to load setting.json5!", "SettingLexerActivity"
+                    Logger.debug(
+                        "Successfully to load setting.json5!", "SettingLexerActivity"
                     )
         except Exception:
-            addLog(2, "Cannot load setting.json5!", "SettingLexerActivity")
+            Logger.error("Cannot load setting.json5!", "SettingLexerActivity")
             self.noFileAutoGenerate(mustToGenerate=True)
 
     def setValue(self, key: str, value: Any) -> None:
@@ -67,7 +71,7 @@ class Setting:
         if key in normalSetting.keys():
             setting[key] = value
             if debugMode:
-                addLog(3, f"Successfully to change {key} to {value}")
+                Logger.debug(f"Successfully to change {key} to {value}")
             self.saveToConfig()
 
     def saveToConfig(self) -> None:
@@ -80,8 +84,7 @@ class Setting:
     def noFileAutoGenerate(self, mustToGenerate: bool = False) -> None:
         global setting
         if debugMode:
-            addLog(
-                3,
+            Logger.debug(
                 (
                     "Checking setting.json5 exists, if not exists, automatic generate instead."
                     if not mustToGenerate
@@ -94,7 +97,7 @@ class Setting:
                     dumps(normalSetting, ensure_ascii=False, sort_keys=True, indent=2)
                 )
             if debugMode:
-                addLog(3, "Successfully to generate a new setting!")
+                Logger.debug("Successfully to generate a new setting!")
         setting = normalSetting
 
 
@@ -102,6 +105,6 @@ settingObject: Setting = Setting()
 
 if settingObject.getValue("debugmode"):
     if debugMode:
-        addLog(0, "Don't open debug mode twice! (ADVICE)", "SettingLexerActivity")
+        Logger.info("Don't open debug mode twice! (ADVICE)", "SettingLexerActivity")
     setDebugMode()
-    addLog(3, "Debug mode opened from setting.json5!", "SettingLexerActivity")
+    Logger.debug("Debug mode opened from setting.json5!", "SettingLexerActivity")

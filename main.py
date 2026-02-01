@@ -1,25 +1,26 @@
 """
 Sinote: Code Smartly, User Interface Intuitive
-Sinote Version 0.06.26002
+Sinote Version 0.06.26014
 3rd Party License saved at ./3rd-party-license
 
-Win12Home (C) 2025, MIT.
+Win12Home (C) 2025, 2026. MIT License.
 
 Sorry, my english bad OvO.
 Because I'm a child TAT.
-AI help me to finish 15% of these code! (Not included plugins, before 25%, rewrite SpacingSupportEdit object!!!!!!!!!!!!!!! UwU I'm proud)
+AI help me to finish 15% of these code, WTF (BABABOY)
 """
 
-### The Sinote Main Script
+# The Sinote Main Script
 
-from core.excepthook import setExceptionHook
 from core.addons.asciiOutput import asciiOutput
-from utils.verChecker import verChecker
+from core.excepthook import setExceptionHook
+from utils.signal import analyzeAllSignal
 from utils.sinoteScript import appStart
-
+from utils.verCheck import verCheck
 
 if __name__ == "__main__":
-    verChecker()
+    verCheck()
     setExceptionHook()
     asciiOutput()
+    analyzeAllSignal()
     appStart(silent=False)

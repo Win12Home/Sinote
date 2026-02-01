@@ -2,19 +2,34 @@
 foundPyEnvironment := false
 pyPath := python
 
+ifneq ($(PYTHON_PATH),)
+	foundPyEnvironment := true
+	pyPath := $(PYTHON_PATH)
+endif
+
+
 # Color define
 RED := \033[31m
 GREEN := \033[32m
 YELLOW := \033[33m
 NC := \033[0m
 
+# Compile/Make Argument define
+ifeq ($(NUITKA_ARGS),)
+	NUITKA_ARGS = --mode=standalone --follow-imports --enable-plugins=pyside6 --lto=yes --assume-yes-for-download --include-qt-plugins=platforms,xcbglintegrations --show-progress
+endif
+
+ifeq ($(PYINSTALLER_ARGS),)
+	PYINSTALLER_ARGS = -i ./resources/icon.py --exclude PySide6-Addons --onedir -w
+endif
+
 # I won't tell you why not I use UPPER_CASE!!!
 
-.PHONY: clean check_py_env check_py_ver pip_install_packages copy_to_tmp pyinstaller_build build make_all all clean_source make_with_cli
+.PHONY: clean check_py_env check_py_ver pip_install_packages copy_to_tmp pyinstaller_build build make_all all clean_source make_with_cli nuitka nuitka_build nuitka_build_original
 
 # Make all!
 make_all: clean pip_install_packages pyinstaller_build clean_source
-	@echo -e "$(GREEN)=== Finished all build! ===$(NC)" \
+	@echo -e "$(GREEN)=== Finished all build! ===$(NC)"; \
 	echo -e "Binary file is in $(YELLOW)./make-temporary/$(NC)";
 
 all: make_all;
@@ -30,27 +45,32 @@ clean:
 
 # Check Python Environment, look ./shell/run.sh!
 check_py_env:
-	@echo -e "$(YELLOW)Checking Python environment...$(NC)"
-	@if command -v python >/dev/null 2>&1; then \
-		echo -e "$(GREEN)Successfully to find python! (in PATH)$(NC)"; \
-		foundPyEnvironment=true; \
-		pyPath=python; \
-	elif [ -f /bin/python ]; then \
-		echo -e "$(GREEN)Successfully to find python! (in /bin)$(NC)"; \
-		foundPyEnvironment=true; \
-		pyPath=/bin/python; \
+	@echo -e "$(YELLOW)Checking Python environment...$(NC)"; \
+	if [ "$(foundPyEnvironment)" = "false" ]; then \
+		if command -v python >/dev/null 2>&1; then \
+			echo -e "$(GREEN)Successfully to find python! (in PATH)$(NC)"; \
+			foundPyEnvironment=true; \
+			pyPath=python; \
+		elif [ -f /bin/python ]; then \
+			echo -e "$(GREEN)Successfully to find python! (in /bin)$(NC)"; \
+			foundPyEnvironment=true; \
+			pyPath=/bin/python; \
+		else \
+			foundPyEnvironment=false; \
+		fi; \
 	else \
-		foundPyEnvironment=false; \
-	fi; \
-	if [ "$$foundPyEnvironment" = "false" ]; then \
+		echo -e "$(GREEN)Note: $(NC) PYTHON_PATH has been defined, Makefile will use this value to run python."; \
+	fi
+	@if [ "$$foundPyEnvironment" = "false" ]; then \
 		echo -e "$(RED)Failed to find python environment!$(NC)"; \
 		exit 1; \
-	fi
+	fi; \
+	echo -e "$(GREEN)OK$(NC) Python is in $(pyPath)";
 
 # Check python version
 check_py_ver: check_py_env
 	@echo -e "$(GREEN)Checking python version...$(NC)"; \
-	if ! $(pyPath) -c "import sys; sys.exit(0 if sys.version_info >= (3,12) else 1)" 2>/dev/null; then \
+		if ! "$(pyPath)" -c "import sys; sys.exit(0 if sys.version_info >= (3,12) else 1)" 2>/dev/null; then \
 		echo -e "$(RED)Error$(NC) Python version needed 3.12 and above!"; \
 		exit 1; \
 	else \
@@ -64,7 +84,10 @@ clean_source:
 
 pip_install_packages: check_py_ver
 	@echo -e "$(RED)Attempting$(NC) to install PIP packages..."; \
-	if ! $(pyPath) -m pip install -r requirements.txt; then \
+	if ! $(pyPath) -m ensurepip; then \
+	    echo -e "$(RED)Error:$(NC) Unknown error when installing PIP!"; \
+	fi; \
+	if ! $(pyPath) -m pip install -r requirements.txt pyinstaller nuitka; then \
 		echo -e "$(RED)Error:$(NC) Unknown error when installing PIP packages!"; \
 		exit 1; \
 	else \
@@ -84,7 +107,7 @@ copy_to_tmp:
 pyinstaller_build: copy_to_tmp
 	@echo -e "$(RED)Attempting$(NC) to build..."; \
 	cd ./temporary/ && \
-	if ! pyinstaller main.py -i ./resources/icon.py --exclude PySide6-Addons --onedir -n Sinote -w; then \
+	if ! pyinstaller main.py -n Sinote $(PYINSTALLER_ARGS); then \
 		echo -e "$(RED)Failed to build!$(NC)"; \
 		exit 1; \
 	fi; \
@@ -102,7 +125,15 @@ help:
 	echo -e "  $(GREEN)all$(NC): All build"; \
 	echo -e "  $(GREEN)make_with_cli$(NC): All build with CLI"; \
 	echo -e "  $(GREEN)requirements$(NC): Automatically check and install requirements"; \
-	echo -e "  $(GREEN)version$(NC): Version of Makefile and tested in what version"
+	echo -e "  $(GREEN)version$(NC): Version of Makefile and tested in what version"; \
+	echo -e "  $(GREEN)nuitka_build$(NC): Quick build with nuitka"; \
+	echo -e "  $(GREEN)nuitka$(NC): All build with nuitka"; \
+	echo ""; \
+	echo -e "$(GREEN)Help$(NC) of $(YELLOW)Environment Variable$(NC) of $(YELLOW)Sinote Build$(NC)"; \
+	echo -e "  $(GREEN)PYTHON_PATH: $(NC)The Python Path that customizable (e.g. /bin/python3.12, /bin/python3.13)"; \
+	echo -e "  $(GREEN)NUITKA_ARGS: $(NC)The Nuitka Compiling Arguments (e.g. --debug)"; \
+	echo -e "  $(GREEN)PYINSTALLER_ARGS: $(NC)The Pyinstaller Making Arguments (e.g. --onefile)"; \
+	echo -e "$(RED)Note: $(NC)These environment variable is not nessasary."
 
 sinote_help: help
 
@@ -111,7 +142,7 @@ requirements: pip_install_packages
 
 # Quick build
 build: pyinstaller_build clean_source	
-	@echo -e "$(GREEN)=== Build completed! ===$(NC)" \
+	@echo -e "$(GREEN)=== Build completed! ===$(NC)"; \
 	echo -e "Binary file is in $(YELLOW)./make-temporary/$(NC)";
 
 # Make With CLI
@@ -134,8 +165,32 @@ make_with_cli: pip_install_packages pyinstaller_build
 
 # Version Information of Makefile
 version:
-	@echo -e "$(GREEN)Sinote$(NC) Maker 1.0.0"; \
-	echo -e "$(GREEN)Test and passed$(NC) in Sinote version 0.06.26002"; \
+	@echo -e "$(GREEN)Sinote$(NC) Maker 1.0.1"; \
+	echo -e "$(GREEN)Test and passed$(NC) in Sinote version 0.06.26014"; \
 	echo ""; \
 	echo -e "By $(YELLOW)Win12Home$(NC), GitHub Site: $(GREEN)https://github.com/Win12Home/Sinote$(NC)"; \
 	echo "Open-Source in MIT License.";
+
+# Nuitka Build (No Clean Source)
+nuitka_build_original: copy_to_tmp
+	@echo -e "$(RED)Attempting$(NC) to build..."; \
+	cd ./temporary/; \
+	if ! $(pyPath) -m nuitka $(NUITKA_ARGS) main.py; then \
+		echo -e "$(RED)Failed$(NC) to build! Use \"build\" option instead!"; \
+		exit 1; \
+	fi; \
+	echo -e "$(GREEN)Successfully$(NC) to build Sinote!"; \
+	echo -e "$(RED)Attempting$(NC) to add needed resources..."; \
+	mkdir -p ./../make-temporary/resources; \
+	cp -rf ./main.dist/* ./../make-temporary/; \
+	cp -rf ./resources/* ./../make-temporary/resources/; \
+	mv ./../make-temporary/main.bin ./../make-temporary/Sinote; \
+	echo -e "$(GREEN)Finished$(NC) build task!"
+
+nuitka_build: nuitka_build_original clean_source
+	@echo -e "$(GREEN)=== Build completed! ===$(NC)"; \
+	echo -e "Binary file is in $(YELLOW)./make-temporary/$(NC)";
+
+nuitka: clean pip_install_packages nuitka_build_original clean_source
+	@echo -e "$(GREEN)=== Finished all build! ===$(NC)"; \
+	echo -e "Binary file is in $(YELLOW)./make-temporary/$(NC)";

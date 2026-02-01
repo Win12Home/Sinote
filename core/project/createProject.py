@@ -5,16 +5,17 @@ Of course, this is the first file after decompose Widgets.py, BasicModule.py
 我真求你了，像人机似的，我还是人吗？
 """
 
-from core.project.projectConst import struct
 from datetime import datetime
+from json import dumps
 from pathlib import Path
 from typing import Callable
+
+from core.project.projectStruct import struct
 from utils.argumentParser import debugMode
-from json import dumps
-from utils.logger import addLog
+from utils.logger import Logger, addLog  # Add log is needed!
 
 debugLog: Callable = lambda content: (
-    addLog(3, content, "ProjectCreatorActivity") if debugMode else None
+    Logger.debug(content, "ProjectCreatorActivity") if debugMode else None
 )
 normalLog: Callable = lambda level, content: addLog(
     level if isinstance(level, int) else 4, content, "ProjectCreatorActivity"
@@ -31,7 +32,7 @@ def createProject(
     if not Path(directory).exists():
         normalLog(
             1,
-            f"Warning: {directory} is not exists! WTF about it, is it truly be output?",
+            f"{directory} is not exists! WTF about it, is it truly be output?",
         )  # Holy crap! 哪个傻子会出现！idk yet.
         Path(directory).mkdir(parents=True, exist_ok=True)
     if not Path(directory).is_dir():
@@ -44,13 +45,11 @@ def createProject(
         except PermissionError:
             normalLog(
                 2,
-                f'Error: {sinoteDir} cannot be created! Check "chmod"? Or other ways? So check it.',
+                f'{sinoteDir} cannot be created! Check "chmod"? Or other ways? So check it.',
             )
             return False
         except Exception as e:
-            normalLog(
-                2, f"Error: {sinoteDir} cannot be created! PyTraceback: {repr(e)}"
-            )
+            normalLog(2, f"{sinoteDir} cannot be created! PyTraceback: {e!r}")
             return False
         else:
             debugLog("Successfully to create .si directory 😘")
@@ -73,7 +72,7 @@ def createProject(
                         )
                     )
             except Exception as e:
-                normalLog(2, f"Excepted error: {repr(e)} when creating {where.name}")
+                normalLog(2, f"Excepted error: {e!r} when creating {where.name}")
                 return False
             else:
                 debugLog(f"Create {where.name} successfully!")

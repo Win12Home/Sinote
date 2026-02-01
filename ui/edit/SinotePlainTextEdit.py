@@ -1,14 +1,15 @@
-from ui.edit.SpacingSupportEdit import SpacingSupportEdit
-from PySide6.QtWidgets import QWidget, QMessageBox
-from PySide6.QtCore import QThread, Signal, Qt
-from PySide6.QtGui import QSyntaxHighlighter
-from core.plugin import LoadPluginBase
-from ui.selfLogger import debugLog
-from core.AutoLoadPluginThread import syntaxHighlighter
-from utils.logger import addLog
-from typing import Any
 from pathlib import Path
-from core.i18n import loadJson
+from typing import Any
+
+from core.AutoLoadPluginThread import syntaxHighlighter
+from core.i18n import getLangJson
+from core.plugin import LoadPluginBase
+from PySide6.QtCore import Qt, QThread, Signal
+from PySide6.QtGui import QSyntaxHighlighter
+from PySide6.QtWidgets import QMessageBox, QWidget
+from ui.edit.SpacingSupportEdit import SpacingSupportEdit
+from ui.selfLogger import debugLog
+from utils.logger import Logger
 
 
 class SinotePlainTextEdit(SpacingSupportEdit):
@@ -40,7 +41,7 @@ class SinotePlainTextEdit(SpacingSupportEdit):
         self.clear()
         if self.setFilename is not None and hasattr(self.parent(), "indexOf"):
             self.setFilename(
-                self.parent().indexOf(self), loadJson("EditorUI")["editor.tab.new_file"]
+                self.parent().indexOf(self), getLangJson("EditorUI")["editor.tab.new_file"]
             )
         self.nowFilename = None
 
@@ -123,17 +124,16 @@ class SinotePlainTextEdit(SpacingSupportEdit):
         self.plName = None
 
     def readFile(self, filename: str) -> None:
-        addLog(
-            0, f"Attempting to read file {filename}...", "SinoteUserInterfaceActivity"
+        Logger.info(
+            f"Attempting to read file {filename}...", "SinoteUserInterfaceActivity"
         )
         if not Path(filename).exists():
-            addLog(
-                1,
+            Logger.warning(
                 f"Cannot find file {filename}, current file will save.",
                 "SinoteUserInterfaceActivity",
             )
         if not Path(filename).is_file():
-            addLog(
+            Logger.warning(
                 1,
                 f"Are you sure you using a normal file? Cannot read {filename}!",
                 "SinoteUserInterfaceActivity",
@@ -161,27 +161,24 @@ class SinotePlainTextEdit(SpacingSupportEdit):
                         f"Successfully to read {filename} with {encoding} encoding! {len(content) / 8 / 1024:.2f}KiB {len(content.splitlines())} lines"
                     )
                 break
-            except UnicodeDecodeError or LookupError:
+            except UnicodeDecodeError, LookupError:
                 debugLog(f"Failed to read with encoding {encoding.upper()} 💀")
                 continue
             except PermissionError:
-                addLog(
-                    2,
+                Logger.error(
                     f"Cannot read file {filename}. Permission Denied!",
                     "SinoteUserInterfaceActivity",
                 )
                 break
             except IOError:
-                addLog(
-                    2,
+                Logger.error(
                     f"Cannot read file {filename}. IOError at Python!",
                     "SinoteUserInterfaceActivity",
                 )
                 break
             except Exception as e:
-                addLog(
-                    1,
-                    f"Failed to read {filename} with {encoding}: {repr(e)}",
+                Logger.warning(
+                    f"Failed to read {filename} with {encoding}: {e!r}",
                     "SinoteUserInterfaceActivity",
                 )
                 continue
@@ -191,26 +188,24 @@ class SinotePlainTextEdit(SpacingSupportEdit):
             if self.setFilename is not None:
                 self.setFilename(
                     self.parent().indexOf(self),
-                    loadJson("EditorUI")["editor.tab.tab_name"].format(
+                    getLangJson("EditorUI")["editor.tab.tab_name"].format(
                         Path(filename).name
                     ),
                 )
             self.nowFilename = str(Path(filename))
-            addLog(
-                0,
+            Logger.info(
                 f"Successfully to read file {filename} using {self.finalEncoding} encoding! ✅",
                 "SinoteUserInterfaceActivity",
             )
         else:
-            addLog(
-                2,
+            Logger.error(
                 f"Cannot read file {filename}. Tried all encodings but failed! Or other Exception out! ❌",
                 "SinoteUserInterfaceActivity",
             )
             w = QMessageBox(
                 QMessageBox.Icon.Critical,
-                loadJson("MessageBox")["msgbox.title.error"],
-                loadJson("MessageBox")["msgbox.error.fileCannotRead"],
+                getLangJson("MessageBox")["msgbox.title.error"],
+                getLangJson("MessageBox")["msgbox.error.fileCannotRead"],
                 buttons=QMessageBox.StandardButton.Ok,
             )
             w.exec()

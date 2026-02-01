@@ -1,14 +1,14 @@
-from PySide6.QtCore import QThread, Signal
-from utils.argumentParser import args
-from core.plugin import LoadPluginBase
-from ui.selfLogger import debugPluginLog
-from utils.logger import addLog
-from utils.config import settingObject
-from core.plugin import LoadPluginInfo
-from functools import partial
-from typing import List, Any
-from pathlib import Path, PurePath
 from datetime import datetime
+from functools import partial
+from pathlib import Path, PurePath
+from typing import Any, List
+
+from core.plugin import LoadPluginBase, LoadPluginInfo
+from PySide6.QtCore import QThread, Signal
+from ui.selfLogger import debugPluginLog
+from utils.argumentParser import args
+from utils.config import settingObject
+from utils.logger import Logger
 
 syntaxHighlighter: dict[
     str, list[LoadPluginBase.CustomizeSyntaxHighlighter | str | List[Any]]
@@ -35,22 +35,19 @@ class AutoLoadPlugin(QThread):
 
     def run(self) -> None:
         if "--dont-load-any-plugin" in args or "-displug" in args:
-            addLog(
-                0,
+            Logger.debug(
                 "--dont-load-any-plugin or -displug activated, no any plugins will be loaded!",
             )
             self.processFinished.emit()
             return
         if not Path("./resources/plugins/").exists():
-            addLog(
-                1,
+            Logger.warning(
                 "Failed to load all the Plugins, Reason: ./resources/plugins/ not exists ❌",
             )
             self.processFinished.emit()
             return
         if not Path("./resources/plugins/").is_dir():
-            addLog(
-                1,
+            Logger.error(
                 "Failed to load all the Plugins, Reason: ./resources/plugins/ not a folder ❌",
             )
             self.processFinished.emit()
@@ -62,17 +59,26 @@ class AutoLoadPlugin(QThread):
         for item in dirs:
             debugPluginLog(f"Loading {item.name}")
             if not item.is_dir():
-                addLog(0, f"Automatic skipped {item.name}, Reason: not a folder ❌")
+                Logger.info(f"Automatic skipped {item.name}, Reason: not a folder ❌")
                 continue
 
             infoJson: Path | PurePath = item / "info.json"
             if not (infoJson.exists()):
-                addLog(
-                    1, f"Automatic skipped {item.name}, Reason: info.json not exists ❌"
+                Logger.warning(
+                    f"Automatic skipped {item.name}, Reason: info.json not exists ❌"
                 )
                 continue
             self.loadNameChanged.emit(item.name)
             temp = LoadPluginInfo(item.name).getValue()
+            debugPluginLog(f"Get value: {temp}")
+            if temp == -1:
+                Logger.error(
+                    f"Failed to load plugin that its name is {item.name}. Error occurred."
+                )
+                continue
+            elif not isinstance(temp, list):
+                Logger.error(f"Returned value is not a list! Plugin name: {item.name}")
+                continue
             loadedPlugin[temp[0]["objectName"]] = temp[0]
             self.loadNameChanged.emit(temp[0]["name"])
             if temp[0]["objectName"] in settingObject.getValue("disableplugin"):

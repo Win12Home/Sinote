@@ -1,0 +1,52 @@
+{
+  "config": {
+    "type": 1,
+    "objectName": "cythonSyntax",
+    "api": [1, 1]
+  },
+  "coding": {
+    "codeName": "Cython",
+    "fileExtension": ["pyx", "pxd", "pxi"],
+    "keywords": [
+      "def", "class", "if", "else", "elif", "for", "while", "return",
+      "import", "from", "as", "with", "try", "except", "finally",
+      "True", "False", "None", "and", "or", "not", "in", "is",
+      "global", "nonlocal", "pass", "break", "continue", "yield", "lambda",
+      "assert", "del", "raise", "async", "await", "match", "case",
+      "dict", "list", "tuple", "int", "str", "type", "float", "object",
+      "bool", "set", "frozenset", "bytes", "bytearray", "range", "slice",
+      "super", "self", "cls", "property", "staticmethod", "classmethod",
+      "abs", "all", "any", "bin", "callable", "chr", "cmp", "compile",
+      "complex", "delattr", "dir", "divmod", "enumerate", "eval", "exec",
+      "filter", "format", "getattr", "globals", "hasattr", "hash", "help",
+      "hex", "id", "input", "isinstance", "issubclass", "iter", "len",
+      "locals", "map", "max", "min", "next", "oct", "open", "ord", "pow",
+      "print", "repr", "reversed", "round", "setattr", "sorted", "sum",
+      "vars", "zip",
+      "cdef", "cpdef", "ctypedef", "cimport", "include", "struct", "union",
+      "enum", "public", "private", "readonly", "extern", "inline", "nogil",
+      "gil", "with_gil", "except", "except*", "void", "char", "short", "int",
+      "long", "float", "double", "unsigned", "signed", "sizeof", "NULL",
+      "bint", "Py_ssize_t", "size_t", "PyObject", "PyTypeObject",
+      "cython", "cython.declare", "cython.locals", "cython.cclass",
+      "cython.cfunc", "cython.inline", "cython.nogil", "cython.with_gil",
+      "cython.final", "cython.no_gc_clear", "cython.freelist", "cython.nonecheck",
+      "cython.boundscheck", "cython.wraparound", "cython.cdivision",
+      "cython.overflowcheck", "cython.initializedcheck", "cython.embedsignature",
+      "cython.linetrace", "cython.profile", "cython.cdivision_warnings",
+      "cython.always_allow_keywords", "IF", "ELIF", "ELSE", "DEF"
+    ],
+    "symbols": [
+      "=", "==", "!=", "<", ">", "<=", ">=", "+", "-", "*", "/", "//", "%",
+      "(", ")", "[", "]", "{", "}", ":", ",", ".", "->", "#", ":=", "&", "|",
+      "^", "~", "<<", ">>", "++", "--", "*=", "/=", "%=", "+=", "-=", "<<=",
+      ">>=", "&=", "^=", "|=", "->*", ".*", "&&", "||", "!", "?:"
+    ],
+    "remKeywords": ["#", "@"],
+    "remKeywordsMultipleLine": ["\"\"\"", "\"\"\""],
+    "enableSelfColorOfRemKeywordsMultipleLine": false,
+    "textKeywords": ["\"", "'"],
+    "defineKeywords": [":", " "],
+    "pairKeywords": [["{","}"],["(",")"],["[","]"]]
+  }
+}

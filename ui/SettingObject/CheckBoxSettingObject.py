@@ -1,4 +1,4 @@
-from PySide6.QtWidgets import QWidget, QCheckBox
+from PySide6.QtWidgets import QCheckBox, QWidget
 from ui.SettingObject.SettingObject import SettingObject
 
 

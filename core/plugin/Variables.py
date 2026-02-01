@@ -1,5 +1,6 @@
-from core.plugin.LoadPluginBase import LoadPluginBase
 import re
+
+from core.plugin.LoadPluginBase import LoadPluginBase
 
 
 class Variables:

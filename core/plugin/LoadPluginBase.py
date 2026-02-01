@@ -1,14 +1,15 @@
+import re
+
 from PySide6.QtCore import QRegularExpression
 from PySide6.QtGui import (
-    QSyntaxHighlighter,
     QColor,
-    QTextDocument,
     QFont,
+    QSyntaxHighlighter,
     QTextCharFormat,
+    QTextDocument,
 )
-from utils.logger import addLog
 from utils.argumentParser import debugMode
-import re
+from utils.logger import Logger
 
 
 class LoadPluginBase:
@@ -22,6 +23,7 @@ class LoadPluginBase:
         "msgin": 5,
         "system": 6,
         "usefunc": 7,
+        "sleep": 8,
         # Advanced Functions
         "set": 100,
         "mkdir": 101,
@@ -46,6 +48,7 @@ class LoadPluginBase:
         5: [3, 3],
         6: [1, 2],
         7: [1, 1],
+        8: [1, 1],
         # Advanced Functions
         100: [2, 2],
         101: [1, 1],
@@ -95,8 +98,7 @@ class LoadPluginBase:
             self._setup_formats()
             self._setup_highlighting_rules()
 
-            addLog(
-                0,
+            Logger.info(
                 f"Syntax highlighter initialized with {len(self.keywords)} keywords, {len(self.symbols)} symbols 😍",
                 "LoadPluginBaseActivity",
             )
@@ -305,4 +307,4 @@ class LoadPluginBase:
         :return: None
         """
         if debugMode:
-            addLog(3, logText, "LoadPluginActivity")
+            Logger.debug(logText, "LoadPluginActivity")

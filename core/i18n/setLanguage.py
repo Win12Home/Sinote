@@ -1,6 +1,7 @@
+from pathlib import Path
+
 from core.i18n.loadJson import setLang
 from utils.config import settingObject
-from pathlib import Path
 
 
 def setLanguage() -> None:

@@ -1,22 +1,27 @@
-from core.plugin.Variables import Variables
-from core.plugin.LoadPluginBase import LoadPluginBase
-from utils.argumentParser import debugMode
-from utils.err import err
-from utils.logger import addLog
-from utils.config import settingObject
-from PySide6.QtWidgets import QMessageBox, QInputDialog
-from pathlib import Path
-from typing import Callable, Any
+from datetime import datetime
 from functools import partial
-from shutil import rmtree, copy2
+from pathlib import Path
+from shutil import copy2, rmtree
+from typing import Any, Callable
+
+from core.plugin.LoadPluginBase import LoadPluginBase
+from core.plugin.Variables import Variables
+from PySide6.QtWidgets import QInputDialog, QMessageBox
+from utils.application import BaseApplication
+from utils.argumentParser import debugMode
+from utils.config import settingObject
+from utils.err import err
+from utils.logger import Logger
 
 
 class FunctionLexerSet:
     def __init__(
-        self, listOfFunc: list[str | int | dict | dict], translateVariables: bool = True
+        self,
+        dictOfFunc: dict[str, tuple[list[Any] | bool]],
+        translateVariables: bool = True,
     ):
-        API_SUPPORT_VERSION = "1.0.1"  # Not used, just a note
-        self._listOfFunc = listOfFunc
+        API_SUPPORT_VERSION = "1.0.2"  # Not used, just a note
+        self._dictOfFunc = dictOfFunc
         self._varObj = Variables()
         self._needVar = translateVariables
         self._if = {
@@ -28,6 +33,7 @@ class FunctionLexerSet:
             5: self.messageInput,
             6: self.system,
             7: self.usefunc,
+            8: self.sleep,
             100: self.set,
             101: self.mkdir,
             102: self.cfile,
@@ -42,15 +48,28 @@ class FunctionLexerSet:
         # self._insideFunction = self._if
         # You can remove # head if you want to use self._insideFunction
 
+    def sleep(self, msecs: int) -> None:
+        if not BaseApplication.instance():
+            Logger.warning("QApplication has not create yet", "FunctionLexerActivity")
+            __import__("time").sleep(msecs / 1000)
+            return
+        time: datetime = datetime.now()
+        FunctionLexerSet.debugLog(f"Sleeping {msecs} msecs...")
+        while (datetime.now() - time).total_seconds() * 1000 < msecs:
+            __import__("time").sleep(0.01)  # Sleep 10ms
+            if BaseApplication.instance().quited:
+                return
+            BaseApplication.instance().processEvents()  # Update
+        FunctionLexerSet.debugLog(f"Sleep {msecs} successfully, exited.")
+
     def afile(self, filePath: str, content: str) -> None:
         FunctionLexerSet.debugLog(f"Preparing to append content to file {filePath}")
         try:
             with open(filePath, "a", encoding=self._getFileEncoding(filePath)) as f:
                 f.write(content)
         except Exception as e:
-            addLog(
-                2,
-                f"Failed to write file {filePath}: {repr(e)}",
+            Logger.error(
+                f"Failed to write file {filePath}: {e!r}",
                 "FunctionLexerActivity",
             )
         else:
@@ -62,9 +81,8 @@ class FunctionLexerSet:
             with open(filePath, "w", encoding=self._getFileEncoding(filePath)) as f:
                 f.write(content)
         except Exception as e:
-            addLog(
-                2,
-                f"Failed to write file {filePath}: {repr(e)}",
+            Logger.error(
+                f"Failed to write file {filePath}: {e!r}",
                 "FunctionLexerActivity",
             )
         else:
@@ -78,10 +96,8 @@ class FunctionLexerSet:
             with open(filePath, "r", encoding=self._getFileEncoding(filePath)) as f:
                 self._varObj.addVar(varName, f.read())
         except Exception as e:
-            addLog(
-                2, f"Cannot read file {filePath}: {repr(e)}", "FunctionLexerActivity"
-            )
-            self._varObj.addVar(varName, f"err {repr(e)}")
+            Logger.error(f"Cannot read file {filePath}: {e!r}", "FunctionLexerActivity")
+            self._varObj.addVar(varName, f"err {e!r}")
         else:
             FunctionLexerSet.debugLog(r"Read file successfully!")
 
@@ -97,7 +113,7 @@ class FunctionLexerSet:
                 else:
                     Path(filePath).unlink(True)
             except Exception as e:
-                addLog(2, f"Delete file {filePath} failed", "FunctionLexerActivity")
+                Logger.error(f"Delete file {filePath} failed", "FunctionLexerActivity")
             else:
                 success()
         else:
@@ -106,8 +122,7 @@ class FunctionLexerSet:
     def cfile(self, filePath: str) -> None:
         FunctionLexerSet.debugLog(f"Preparing to create a file (Path: {filePath})")
         if not Path(filePath).is_file() and Path(filePath).exists():
-            addLog(
-                2,
+            Logger.error(
                 f"{filePath} is not a file, automatically skipped!",
                 "FunctionLexerActivity",
             )
@@ -118,7 +133,7 @@ class FunctionLexerSet:
                 with open(filePath, "w", encoding="utf-8") as f:
                     f.write("")
             except Exception as e:
-                addLog(2, f"Failed to create file: {repr(e)}", "FunctionLexerActivity")
+                Logger.error(f"Failed to create file: {e!r}", "FunctionLexerActivity")
             else:
                 FunctionLexerSet.debugLog(f"Successfully to create file!")
 
@@ -134,29 +149,26 @@ class FunctionLexerSet:
                 with open(filePath, "w", encoding=self._getFileEncoding(filePath)) as f:
                     f.write("")
             except Exception as e:
-                addLog(2, f"Failed to erase file: {repr(e)}", "FunctionLexerActivity")
+                Logger.error(f"Failed to erase file: {e!r}", "FunctionLexerActivity")
             else:
                 FunctionLexerSet.debugLog(f"Successfully to erase file {filePath}")
 
     def pfile(self, originalFile: str, movePath: str, allowedExists: bool) -> None:
         FunctionLexerSet.debugLog(f"Preparing to copy {originalFile} to {movePath}")
         if not Path(originalFile).exists():
-            addLog(
-                2,
+            Logger.error(
                 f"Failed to copy file: Original file is not exists",
                 "FunctionLexerActivity",
             )
             return
         if not Path(originalFile).is_file():
-            addLog(
-                2,
+            Logger.error(
                 f"Failed to copy file: Original file is not a file",
                 "FunctionLexerActivity",
             )
             return
         if Path(movePath).exists() and not allowedExists:
-            addLog(
-                2,
+            Logger.error(
                 f"Failed to copy file: New file already exists",
                 "FunctionLexerActivity",
             )
@@ -164,7 +176,7 @@ class FunctionLexerSet:
         try:
             copy2(originalFile, movePath)
         except Exception as e:
-            addLog(2, f"Failed to copy file: {repr(e)}", "FunctionLexerActivity")
+            Logger.error(f"Failed to copy file: {e!r}", "FunctionLexerActivity")
         else:
             FunctionLexerSet.debugLog(
                 f"Successfully to copy {originalFile} to {movePath}"
@@ -199,15 +211,13 @@ class FunctionLexerSet:
         try:
             Path(dir).mkdir(exist_ok=True)
         except Exception as e:
-            addLog(
-                2,
-                f"Error occurred when directory make: {repr(e)}",
+            Logger.error(
+                f"Error occurred when directory make: {e!r}",
                 "FunctionLexerActivity",
             )
             return
         if Path(dir).is_file():
-            addLog(
-                2,
+            Logger.error(
                 f"Error occurred when directory make: directory is a file.",
                 "FunctionLexerActivity",
             )
@@ -218,16 +228,51 @@ class FunctionLexerSet:
         FunctionLexerSet.debugLog(f"Making a Error Popup Window (errCode={errCode})")
         err(errCode)
 
-    def usefunc(self, funcname: str) -> None:
-        addLog(
-            1,
-            "UseFunc Command is not support this version (Wait for 1.0.3)",
-            "FunctionLexerActivity",
-        )
+    def usefunc(self, funcName: str, lexed: dict[str, Any]) -> None:  # NOQA
+        # Logger.warning(
+        #    "UseFunc Command is not support this version (Wait for 1.0.3)",
+        #    "FunctionLexerActivity",
+        # )
+        #
+        # Now realized (API: 1.0.2)
+        if funcName not in lexed.copy():
+            Logger.error(
+                f"{funcName} is not defined here, try define earlier than this function?",
+                "FunctionLexerActivity",
+            )
+            return
+        for line, callableFunc in enumerate(lexed[funcName], 1):
+            if isinstance(callableFunc, Callable):
+                FunctionLexerSet.debugLog(
+                    f"Attempting to run command at line {line} in function {funcName}"
+                )
+                try:
+                    callableFunc()
+                except Exception as e:
+                    Logger.error(
+                        f"Failed to run command at line {line} in function {funcName}",
+                        "FunctionRunnerActivity",
+                    )
+                    Logger.error(
+                        f'Error reason: {e!r} "usefunc" will exit because error occurred!'
+                    )  # NOQA
+                    break
+                else:
+                    FunctionLexerSet.debugLog(
+                        f"Successfully to run command declared at line {line}!"
+                    )
+            else:
+                Logger.error(
+                    f"Failed to run command at line {line} in function {funcName}",
+                    "FunctionRunnerActivity",
+                )
+                Logger.error(
+                    f'Error reason: SinoteError declared there: Function is not callable in Python Runtime "usefunc" will exit because error occured!'
+                )  # NOQA, always
+                break  # OwO break break!
 
     def system(self, command: str) -> None:
-        addLog(
-            1,
+        Logger.warning(
             "System Command is not support this version (Wait for 1.0.3)",
             "FunctionLexerActivity",
         )
@@ -276,14 +321,23 @@ class FunctionLexerSet:
     @staticmethod
     def debugLog(outText: str) -> None:
         if debugMode:
-            addLog(3, outText, "FunctionLexerActivity")
+            Logger.debug(outText, "FunctionLexerActivity")
 
     def log(self, level: int, outText: str) -> None:
         FunctionLexerSet.debugLog("Preparing to log out...")
         if level not in (0, 1):
-            addLog(2, f"Illegal Log Level: {level}", "FunctionLexerActivity")
+            Logger.error(f"Illegal Log Level: {level}", "FunctionLexerActivity")
             return
-        addLog(level, self.lexVariable(outText), "FunctionRunnerActivity")
+        logFunc: Callable = lambda: None
+        if level == 1:
+            logFunc = Logger.warning
+        elif level == 2:
+            logFunc = Logger.error
+        elif level == 3:
+            logFunc = Logger.debug
+        else:
+            logFunc = Logger.info
+        logFunc(self.lexVariable(outText), "FunctionRunnerActivity")
         FunctionLexerSet.debugLog(f"Logged Out Customize Text, LEVEL: {level}.")
 
     def set(self, setName: str, setContent: Any) -> None:
@@ -294,51 +348,65 @@ class FunctionLexerSet:
         Get value
         :return: None
         """
-        returnlist: list[partial] = []
-        for i in self._listOfFunc:
-            if i[0] not in self._if.keys():
-                addLog(
-                    2,
-                    f"Not compatible with this command! Number: {i[0]}",
-                    "FunctionLexerActivity",
-                )
-                continue
-            LoadPluginBase.logIfDebug(f"Number: {i[0]}, Function: {self._if[i[0]]}")
-            if i[0] == 0:
-                returnlist.append(partial(self._if[i[0]], i[1]))
-            elif i[0] == 2:
-                returnlist.append(partial(self._if[i[0]], i[1], i[2]))
-            elif i[0] == 3:
-                returnlist.append(
-                    partial(self._if[i[0]], i[1], "NULL" if len(i) == 2 else i[2])
-                )
-            elif i[0] == 4:
-                returnlist.append(partial(self._if[i[0]], i[1]))
-            elif i[0] == 5:
-                returnlist.append(partial(self._if[i[0]], i[1], i[2], i[3]))
-            elif i[0] == 6:
-                returnlist.append(partial(self._if[i[0]], i[1]))
-            elif i[0] == 7:
-                returnlist.append(partial(self._if[i[0]], i[1]))
-            elif i[0] == 100:
-                returnlist.append(partial(self._if[i[0]], i[1], i[2]))
-            elif i[0] == 101:
-                returnlist.append(partial(self._if[i[0]], i[1]))
-            elif i[0] == 102:
-                returnlist.append(partial(self._if[i[0]], i[1]))
-            elif i[0] == 103:
-                returnlist.append(partial(self._if[i[0]], i[1]))
-            elif i[0] == 104:
-                returnlist.append(
-                    partial(
-                        self._if[i[0]],
-                        i[1],
-                        i[2],
-                        (
-                            False
-                            if len(i) <= 3
-                            else i[3] if isinstance(i[3], bool) else False
-                        ),
+        lexed: dict[str, list[partial]] = {}
+        inRunFunc: dict[str, bool] = {}
+        for funcName, funcContent in self._dictOfFunc.items():
+            thisLexed: list[partial] = []
+            for oneFunc in funcContent[0]:
+                if oneFunc[0] not in self._if.keys():
+                    Logger.error(
+                        f"Not compatible with this command! Number: {oneFunc[0]}",
+                        "FunctionLexerActivity",
                     )
+                    continue
+                LoadPluginBase.logIfDebug(
+                    f"Number: {oneFunc[0]}, Function: {self._if[oneFunc[0]]}"
                 )
-        return returnlist
+                if oneFunc[0] in [0, 4, 6, 8, 101, 102, 103]:
+                    thisLexed.append(partial(self._if[oneFunc[0]], oneFunc[1]))
+                elif oneFunc[0] in [1, 2, 100]:
+                    thisLexed.append(
+                        partial(self._if[oneFunc[0]], oneFunc[1], oneFunc[2])
+                    )
+                elif oneFunc[0] == 3:
+                    thisLexed.append(
+                        partial(
+                            self._if[oneFunc[0]],
+                            oneFunc[1],
+                            "NULL" if len(oneFunc) == 2 else oneFunc[2],
+                        )
+                    )
+                elif oneFunc[0] == 5:
+                    thisLexed.append(
+                        partial(
+                            self._if[oneFunc[0]], oneFunc[1], oneFunc[2], oneFunc[3]
+                        )
+                    )
+                elif oneFunc[0] == 7:
+                    thisLexed.append(partial(self._if[oneFunc[0]], oneFunc[1], lexed))
+                elif oneFunc[0] == 104:
+                    thisLexed.append(
+                        partial(
+                            self._if[oneFunc[0]],
+                            oneFunc[1],
+                            oneFunc[2],
+                            (
+                                False
+                                if len(oneFunc) <= 3
+                                else (
+                                    oneFunc[3]
+                                    if isinstance(oneFunc[3], bool)
+                                    else False
+                                )
+                            ),
+                        )
+                    )
+            lexed[funcName] = thisLexed
+            inRunFunc[funcName] = funcContent[1]
+        returnLexed: list[partial] = []
+        for funcName, funcContent in lexed.items():
+            if not inRunFunc.get(funcName, False):
+                continue  # Pass, because it is not in runFunc
+            for oneFunc in funcContent:
+                returnLexed.append(oneFunc)
+        return returnLexed

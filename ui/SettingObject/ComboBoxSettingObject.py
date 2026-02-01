@@ -1,4 +1,4 @@
-from PySide6.QtWidgets import QWidget, QComboBox, QFontComboBox
+from PySide6.QtWidgets import QComboBox, QFontComboBox, QWidget
 from ui.SettingObject.SettingObject import SettingObject
 
 

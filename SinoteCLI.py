@@ -3,11 +3,13 @@ Sinote Plugin CLI (spcli)
 Win12Home (C) MIT.
 """
 
+import sys
+
 # Huh, I even not notice I edit MIT to GPL v2.0. Now I have edited.
 from json import JSONDecodeError
-from rich import print
 from typing import *
-import sys
+
+from rich import print
 
 """
 Initialize
@@ -89,7 +91,8 @@ class CLIUsages:
         print(f"Help of [red]{command}[/red]")
         print(f"  Description: {docs[0]}")
         print(
-            f"  Required arguments: {", ".join([f"[{iter}] {means}" for iter, means in enumerate(docs[1], 1)]) if docs[1] else "No arguments needed"}"
+            f"  Required arguments: {", ".join([f"[{iter}] {means}" for iter, means in enumerate(
+                docs[1], 1)]) if docs[1] else "No arguments needed"}"
         )
         if docs[2]:
             print(f"  Not required arguments:")
@@ -98,8 +101,9 @@ class CLIUsages:
 
     @staticmethod
     def createTemplate(objectName: str, notRequiredArgs: dict[str, str]) -> None:
-        from tqdm import tqdm
         from pathlib import Path
+
+        from tqdm import tqdm
 
         tasks: tqdm = tqdm(total=3, desc="Processing")
         objName: str = Path(objectName).name
@@ -149,7 +153,7 @@ class CLIUsages:
                 info["versionIterate"] = int(iterate)
         except Exception as e:
             tasks.close()
-            fatalError(f"Error when making info.json: {repr(e)}")
+            fatalError(f"Error when making info.json: {e!r}")
             sys.exit(1)
         icon: str | None = getNotNone(
             notRequiredArgs.get("-ic", None), notRequiredArgs.get("--icon", None)
@@ -188,8 +192,9 @@ class CLIUsages:
 
             print = print_
         print("[red]Attempting[/red] to check normal structure")
-        from pathlib import Path
         from json import loads
+        from pathlib import Path
+
         from json5 import loads as json5loads
 
         if not Path(where).exists():
@@ -220,9 +225,7 @@ class CLIUsages:
                 with open(str(whereInfo), "r", encoding="utf-8") as f:
                     info = json5loads(f.read())
             except Exception as e:
-                print(
-                    f"[red]Reading Error:[/red] Reason (__repr__): {repr(e)} (info.json)"
-                )
+                print(f"[red]Reading Error:[/red] Reason (__repr__): {e!r} (info.json)")
                 errors += 1
             if len(info.keys()) != 0:
                 infoKeys: dict[Any, Any] = {
@@ -314,9 +317,7 @@ class CLIUsages:
                             with open(str(i), "r", encoding="utf-8") as f:
                                 finallyGet = json5loads(f.read())
                         except Exception as e:
-                            print(
-                                f"[red]Reading Error:[/red] Reason (__repr__): {repr(e)}"
-                            )
+                            print(f"[red]Reading Error:[/red] Reason (__repr__): {e!r}")
                             errors += 1
                             success = False
                             continue
@@ -362,7 +363,7 @@ class CLIUsages:
                         f"{i.name} is {"[green]a normal header file :)[/green]" if success else "[red]not valid.[/red]"}"
                     )
             except Exception as e:
-                print(f"[red]Reading Error:[/red] Reason (__repr__): {repr(e)}")
+                print(f"[red]Reading Error:[/red] Reason (__repr__): {e!r}")
                 errors += 1
         print("[green]Successfully[/green] to check plugin")
         return [errors, warns]
@@ -401,7 +402,7 @@ class ArgumentParser:
         return normal
 
 
-version: str = "0.1.0-compatible-with-api-1.0.1"
+version: str = "0.1.0-compatible-with-api-1.0.2"
 
 print(f"[blue]Sinote CLI[/blue] Version {version}")
 print(f"Win12Home (C) 2025, MIT. (in project Win12Home/Sinote)")
@@ -450,6 +451,7 @@ if command == "check":
     elif ((len(primaryArgs) > 2 and len(primaryArgs) <= 51) or args[2]) and not args[1]:
         totals: list[list[str | int]] = []
         from pathlib import Path
+
         from tqdm import tqdm
 
         for i in tqdm(primaryArgs[1:], desc="Checking plugins...", unit=" plugins"):

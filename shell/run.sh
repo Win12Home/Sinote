@@ -3,7 +3,7 @@ export way=0
 
 echo "=================================="
 echo "     Sinote Launcher 1.0.0"
-echo "      Win12Home \(C\) 2025"
+echo "       Win12Home (C) 2025"
 echo "=================================="
 echo
 echo "Finding Python..."
@@ -42,3 +42,4 @@ else
   echo "Use \"python3 main.py\" if you've got Python."
   exit 2
 fi
+

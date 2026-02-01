@@ -1,5 +1,7 @@
+asm.si_plug_h
 cpp.si_plug_h
 python.si_plug_h
+cython.si_plug_h
 cpl.si_plug_h
 rust.si_plug_h
 java.si_plug_h
@@ -16,23 +18,12 @@ swift.si_plug_h
 csharp.si_plug_h
 sql.si_plug_h
 shell.si_plug_h
-// Automatically load ALL THE LANGUAGES! C++ & Python & C & Rust & Java & Perl & Kotlin & JS & TS & HTML & CSS & PHP & Go & Ruby & Swift & C# & SQL & BASH Code Highlighter and save it to LazyCustomizeSyntaxHighlighter
 markdown.si_plug_h
-// Markdown support for documentation
 arkts.si_plug_h
-// ArkTS (HarmonyOS) support
-// Cold/Alternative Programming Languages Support
 pascal.si_plug_h
-// Pascal/Delphi support
 ada.si_plug_h
-// Ada support
 fortran.si_plug_h
-// Fortran support
 cobol.si_plug_h
-// COBOL support
 lisp.si_plug_h
-// Lisp/Common Lisp support
 prolog.si_plug_h
-// Prolog support
 erlang.si_plug_h
-// Erlang support

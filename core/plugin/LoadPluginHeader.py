@@ -1,10 +1,16 @@
-from core.plugin.LoadPluginBase import LoadPluginBase
-from utils.logger import addLog
-from utils.jsonLoader import load
-from utils.const import apiVersion
-from json5 import loads
-from typing import AnyStr
 from datetime import datetime
+from typing import AnyStr, Callable
+
+from core.plugin.LoadPluginBase import LoadPluginBase
+from json5 import loads
+from utils.argumentParser import debugMode
+from utils.const import apiVersion
+from utils.jsonLoader import load
+from utils.logger import Logger
+
+debugLog: Callable = lambda content: (
+    Logger.debug(content, "LoadPluginHeaderActivity") if debugMode else None
+)
 
 
 class LoadPluginHeader:
@@ -25,8 +31,11 @@ class LoadPluginHeader:
         self.filename = filename
 
     def err(self, error: str):
-        addLog(2, f'Error while loading file "{self.filename}": {error}')
-        addLog(2, f"Cannot continue load plugin!")
+        Logger.error(
+            f'Error while loading file "{self.filename}": {error}',
+            "LoadPluginHeaderActivity",
+        )
+        Logger.error(f"Cannot continue load plugin!", "LoadPluginHeaderActivity")
 
     def getValue(self) -> int | list | None:
         """
@@ -37,13 +46,16 @@ class LoadPluginHeader:
         items: list = []
         try:
             beforeDatetime = datetime.now()
-            addLog(0, f"Attempting to load {self.filename} 🔎")
+            Logger.info(
+                f"Attempting to load {self.filename} 🔎", "LoadPluginHeaderActivity"
+            )
             self.config = {
                 "type": 0,
                 "api": [1, apiVersion[0]],
                 "enableCustomizeCommandRun": False,
                 "useSinoteVariableInString": True,
             }
+            debugLog(f"Checking header that its path is {self.filename}")
             if not self.header.get("config", None):
                 self.err('Key "config" not found! ❌')
                 return 0
@@ -56,6 +68,8 @@ class LoadPluginHeader:
                     "This plugin not support API of this version! Please update to new version."
                 )
                 return 1
+            debugLog("No error, continue lex!")
+            debugLog("Putting objectName and type into lexed list...")
             # Add objectName to the list
             items.append(config["objectName"])
             items.append(
@@ -63,32 +77,33 @@ class LoadPluginHeader:
                 if isinstance(self.header["config"].get("type", 0), int)
                 else 0
             )
+            debugLog("Finished putting task!")
+            debugLog(f"Header type: Type {items[1]}")
             if items[1] == 0:
                 # Check functions and runFunc
                 functions: dict | None = self.header.get("functions", None)
                 runFunc: list | None = self.header.get("runFunc", None)
+                debugLog("Checking functions...")
                 if (
                     not functions
                     or not runFunc
                     or config["enableCustomizeCommandRun"] == False
                 ):
-                    addLog(
-                        1,
+                    Logger.warning(
                         f'File "{self.filename}" is a Placeholder File (\'Cause no function and runFunc, or "enableCustomizeCommandRun" not enabled)',
                     )
                     # Interrupt
                     return None
                 realFuncs: dict = {}
                 for funcName, funcProg in functions.items():
+                    debugLog(f"Checking function: {funcName}...")
                     if not isinstance(funcName, str):
-                        addLog(
-                            1,
+                        Logger.warning(
                             f"Ignored the {funcName} function 'caused not a String function name.",
                         )
                         continue
                     if not isinstance(funcProg, list):
-                        addLog(
-                            1,
+                        Logger.warning(
                             f"Ignored the {funcName} function 'caused not like this {r"\"String\":[]"}",
                         )
                         continue
@@ -96,52 +111,57 @@ class LoadPluginHeader:
                     if isinstance(funcProg, list):
                         temp: list = []
                         for line, k in enumerate(funcProg, 1):
+                            debugLog(f"Checking sentence: {line}")
                             if not isinstance(k, list):
-                                addLog(
-                                    1,
+                                Logger.warning(
                                     f"Ignored {line}th line in the {funcName} function 'caused isn't a List format.",
                                 )
                                 continue
                             if len(k) < 2:
-                                addLog(
-                                    1,
+                                Logger.warning(
                                     f"Ignored {line}th line in the {funcName} function 'caused isn't a List format.",
                                 )
                                 continue
                             if not isinstance(k[0], str):
-                                addLog(
-                                    1,
+                                Logger.warning(
                                     f"Ignored {line}th line in the {funcName} function 'caused cannot call the System Function. (Reason: Not String)",
                                 )
                                 continue
                             if LoadPluginBase.functions.get(k[0].lower(), None) is None:
-                                addLog(
-                                    1,
+                                Logger.warning(
                                     f"Ignored {line}th line in the {funcName} function 'caused {k[0]} isn't a real function there.",
                                 )
                                 continue
+                            debugLog(
+                                "Valid sentence! Putting it into passed (things) list!"
+                            )
                             k[0] = k[0].lower()
                             temp.append(k)
                         realFuncs[funcName] = temp
                 # look for runFunc
                 items.append({})
-                for whichFuncToRun in runFunc:
-                    if whichFuncToRun not in realFuncs:
-                        addLog(
-                            1,
-                            f'{whichFuncToRun} defined in runFunc but didn\'t define in "functions".',
+                for whichFuncToRun, func in realFuncs.items():
+                    if whichFuncToRun not in runFunc:
+                        Logger.warning(
+                            f'{whichFuncToRun} declared there, but it is not in "runFunc", if you add it to "usefunc", please ignore this.',
                         )
-                    items[2][whichFuncToRun] = realFuncs[whichFuncToRun]
+                    items[2][whichFuncToRun] = (
+                        func,
+                        whichFuncToRun in runFunc,
+                        # After 1.0.3, This will be add expression, like ("EXPRESSION", [FUNCLIST], bool IS_IN_AUTORUN)
+                    )
             elif items[1] == 1:
                 # Syntax Highlighter
-                coding: dict | None = self.header.get("coding", None)
-                if coding is None:
+                config: dict | None = self.header.get("coding", None)
+                debugLog("Checking Syntax Highlighter Header...")
+                if config is None:
                     self.err('Key "coding" not found 🤓')
                     return 0  # Missing Ingredients
-                if not isinstance(coding, dict):
+                if not isinstance(config, dict):
                     self.err('"coding" need a dict type ❌')
                     return 0  # Missing Ingredients
-                self.coding = {
+                debugLog("No problem! Start to lex...")
+                defaultConfig = {
                     "codeName": "Not defined",
                     "fileExtension": [],
                     "keywords": [],
@@ -153,30 +173,30 @@ class LoadPluginHeader:
                     "defineKeywords": ["{", "}"],
                     "pairKeywords": [],
                 }
-                coding: dict = self.coding | coding
-                items.append(coding["codeName"])
-                items.append(coding["fileExtension"])
+                config: dict = defaultConfig | config
+                items.append(config["codeName"])
+                items.append(config["fileExtension"])
                 items.append(
                     LoadPluginBase.LazyCustomizeSyntaxHighlighter(
                         [
-                            coding["keywords"],
-                            coding["symbols"],
-                            coding["remKeywords"],
-                            coding["remKeywordsMultipleLine"],
-                            coding["enableSelfColorOfRemKeywordsMultipleLine"],
-                            coding["textKeywords"],
+                            config["keywords"],
+                            config["symbols"],
+                            config["remKeywords"],
+                            config["remKeywordsMultipleLine"],
+                            config["enableSelfColorOfRemKeywordsMultipleLine"],
+                            config["textKeywords"],
                         ]
                     )
                 )
-                items.append(coding["defineKeywords"])
-                items.append(coding["pairKeywords"])
+                items.append(config["defineKeywords"])
+                items.append(config["pairKeywords"])
+                debugLog("OK! Successfully to put into lexed list!")
             else:
                 self.err(
                     "Type is not support in this version (type==2 also not included)!"
                 )
                 return 0
-            addLog(
-                0,
+            Logger.info(
                 f"Successfully to load {self.filename}! Used {(datetime.now() - beforeDatetime).total_seconds():02f}secs.",
             )
             return items
