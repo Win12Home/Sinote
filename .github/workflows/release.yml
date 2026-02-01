@@ -73,10 +73,10 @@ jobs:
           echo Made ./bin directory!
           echo Operating...
           if [ -d "dist/Sinote_Consoled" ]; then
-            mv dist/Sinote_Consoled/* ./bin -n
+            mv -nv dist/Sinote_Consoled/* ./bin
           fi
           if [ -d "dist/Sinote" ]; then
-            mv dist/Sinote/* ./bin -n
+            mv -nv dist/Sinote/* ./bin
           fi
           
           echo Operate Successfully!
