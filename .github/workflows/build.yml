@@ -90,10 +90,10 @@ jobs:
         echo Made ./bin directory!
         echo Operating...
         if [ -d "dist/Sinote_Consoled" ]; then
-          mv -nv dist/Sinote_Consoled/* ./bin
+          rsync -a --ignore-existing dist/Sinote_Consoled/* ./bin
         fi
         if [ -d "dist/Sinote" ]; then
-          mv -nv dist/Sinote/* ./bin 
+          rsync -a --ignore-existing dist/Sinote/* ./bin 
         fi
         
         echo Operate Successfully!
