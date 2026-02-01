@@ -86,20 +86,14 @@ jobs:
     - name: Create flat directory structure
       shell: bash
       run: |
-        if [ -d "dist/Sinote_Consoled/_internal" ]; then
-          echo Removing one of two _internal directories...
-          rm -r dist/Sinote_Consoled/_internal
-          echo Successfully to remove!
-        fi
-        
         mkdir -p bin
         echo Made ./bin directory!
         echo Operating...
         if [ -d "dist/Sinote_Consoled" ]; then
-          mv dist/Sinote_Consoled/* ./bin
+          mv dist/Sinote_Consoled/* ./bin -n
         fi
         if [ -d "dist/Sinote" ]; then
-          mv dist/Sinote/* ./bin
+          mv dist/Sinote/* ./bin -n
         fi
         
         echo Operate Successfully!
