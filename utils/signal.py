@@ -56,9 +56,10 @@ def executePipeKillSignal(*args: Any, isSIGHUP: bool) -> None:  # NOQA, args was
 
 
 def analyzePipeKillSignal() -> None:
-    signal.signal(signal.SIGHUP, lambda *args: executePipeKillSignal(args, True))
-    signal.signal(signal.SIGPIPE, lambda *args: executePipeKillSignal(args, False))
-
+    try:
+        signal.signal(signal.SIGHUP, lambda *args: executePipeKillSignal(args, True))
+        signal.signal(signal.SIGPIPE, lambda *args: executePipeKillSignal(args, False))
+    except: pass
 
 def analyzeAllSignal() -> None:
     analyzeInterruptSignal()

@@ -181,6 +181,9 @@ class MainWindow(FramelessWindow):
 
         if not hasattr(self.folder.currentItem(), "where"):
             return
+        
+        if not Path(self.folder.currentItem().where).is_file():  # NOQA, look down
+            return
 
         self.createTab(self.folder.currentItem().where)  # NOQA, checked attribute
 

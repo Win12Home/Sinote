@@ -132,12 +132,13 @@ class SinotePlainTextEdit(SpacingSupportEdit):
                 f"Cannot find file {filename}, current file will save.",
                 "SinoteUserInterfaceActivity",
             )
+            return
         if not Path(filename).is_file():
             Logger.warning(
-                1,
                 f"Are you sure you using a normal file? Cannot read {filename}!",
                 "SinoteUserInterfaceActivity",
             )
+            return
         # Try different encodings and support Chinese(GBK/GB2312)
         encodings = [
             "utf-8",
@@ -148,6 +149,9 @@ class SinotePlainTextEdit(SpacingSupportEdit):
             "windows-1252",
             "utf-32",
             "ascii",
+            "utf-8-sig",
+            "utf-16-le",
+            "utf-16-be",
         ]
         content: str | None = None
 
@@ -161,7 +165,7 @@ class SinotePlainTextEdit(SpacingSupportEdit):
                         f"Successfully to read {filename} with {encoding} encoding! {len(content) / 8 / 1024:.2f}KiB {len(content.splitlines())} lines"
                     )
                 break
-            except UnicodeDecodeError, LookupError:
+            except (UnicodeDecodeError, LookupError):
                 debugLog(f"Failed to read with encoding {encoding.upper()} 💀")
                 continue
             except PermissionError:

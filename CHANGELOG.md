@@ -18,7 +18,8 @@
 12. **Restore feature**: Restored SIGINT analyze and added SIGTERM analyze
 13. **Something not important**: Add `screen_size` to save screen size to restore
 14. **Add feature**: Add Project System (Base Project System)
-15. **Fix small issue (NOT INCLUDE IN VERSION CHANGE)**: Removed `scjson.LICENSE`
+15. **Fix small issue (NOT INCLUDE IN VERSION CHANGE)**: Fixed **SIGHUP** and **SIGPIPE** is not support in macOS and Windows.
+16. **Fix small issue (NOT INCLUDE IN VERSION CHANGE)**: Removed `scjson.LICENSE`
 ### 0.06.26001
 1. **Add feature**: Add Loading Screen when Sinote is loading plugins or fonts.
 2. **Fix issue**: Fix issue ``When trigger Save As, it will pop out an Exception Window``
