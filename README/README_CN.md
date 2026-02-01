@@ -1,7 +1,7 @@
 # Sinote Editor
 
 ## 介绍
-![支持的Python版本](https://img.shields.io/badge/支持Python-3.12%20to%203.14-green) ![PySide6 6.10](https://img.shields.io/badge/PySide6版本-6.10-blue) ![Material主题](https://img.shields.io/badge/界面主题-Material%20Style-purple) ![最新版本](https://img.shields.io/badge/最新版本-0.06.26001-green) ![开发进展](https://img.shields.io/badge/开发进展-预发布版本-blue)
+![支持的Python版本](https://img.shields.io/badge/支持Python-3.12%20to%203.14-green) ![PySide6 6.10](https://img.shields.io/badge/PySide6版本-6.10-blue) ![Material主题](https://img.shields.io/badge/界面主题-Material%20Style-purple) ![最新版本](https://img.shields.io/badge/最新版本-0.06.26014-green) ![开发进展](https://img.shields.io/badge/开发进展-预发布版本-blue)
 
 Sinote [ˈsaɪnoʊt] 是一个使用PySide6以及非常多的库的编辑器。<br>
 这个项目*引入了****学习简（难）易（懂）的插件系统***! 要学习请跳转到``/Documentation/pluginEdit``.<br>
