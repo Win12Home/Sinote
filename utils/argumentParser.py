@@ -10,9 +10,6 @@ debugMode: bool = False
 onlyWarning: bool = False
 colored: bool = True
 
-# basicInfo will be BaseInfo.json
-basicInfo: dict = {}
-
 
 # Look at the system
 args = [i.lower() for i in sys.argv[1:] if i.lower().startswith("-")]
@@ -80,3 +77,8 @@ if "-ow" in args or "--only-warning" in args:
     Logger.debug("Only Warning Started 🤓", "ArgumentParser")
     onlyWarning = True
     setOwLog()
+
+
+def setDebugMode() -> None:
+    global debugMode
+    debugMode = True

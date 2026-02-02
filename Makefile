@@ -133,7 +133,7 @@ help:
 	echo -e "  $(GREEN)PYTHON_PATH: $(NC)The Python Path that customizable (e.g. /bin/python3.12, /bin/python3.13)"; \
 	echo -e "  $(GREEN)NUITKA_ARGS: $(NC)The Nuitka Compiling Arguments (e.g. --debug)"; \
 	echo -e "  $(GREEN)PYINSTALLER_ARGS: $(NC)The Pyinstaller Making Arguments (e.g. --onefile)"; \
-	echo -e "$(RED)Note: $(NC)These environment variable is not nessasary."
+	echo -e "$(RED)Note: $(NC)These environment variable is not necessary."
 
 sinote_help: help
 
@@ -193,4 +193,21 @@ nuitka_build: nuitka_build_original clean_source
 
 nuitka: clean pip_install_packages nuitka_build_original clean_source
 	@echo -e "$(GREEN)=== Finished all build! ===$(NC)"; \
+	echo -e "Binary file is in $(YELLOW)./make-temporary/$(NC)";
+
+make_with_cli_nuitka: clean pip_install_packages nuitka_build_original clean_source
+	@echo -e "$(GREEN)Starting$(NC) to make CLI..."; \
+	mkdir ./temporary/; \
+	cp ./SinoteCLI.py ./temporary/SinoteCLI.py; \
+	cd ./temporary/; \
+	rm -rf ./dist; \
+	pyinstaller -F -c -i ./../resources/images/plugins.png SinoteCLI.py; \
+	echo -e "$(GREEN)Made$(NC) CLI Successfully!"; \
+	echo -e "$(GREEN)Copying$(NC) dist..."; \
+	cd ..; \
+	cp ./temporary/dist/* ./make-temporary/; \
+	echo -e "$(GREEN)Finished copy$(NC) task!"; \
+	echo -e "$(GREEN)Cleaning$(NC) environment..."; \
+	rm -rf ./temporary; \
+	echo -e "$(GREEN)=== Build completed! ===$(NC)"; \
 	echo -e "Binary file is in $(YELLOW)./make-temporary/$(NC)";

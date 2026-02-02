@@ -5,8 +5,11 @@
   "msgbox.error.fileCannotRead": "File \"{}\" cannot read! We don't know what's happening!\nEncoding wasn't match? Or Permission Denied? Please check your document!",
   "msgbox.error.openProjFailed": "Failed to open Project! 😲",
   "msgbox.error.pathNotValid": "Path \"{}\" does not exist or it isn't a directory.",
+  "msgbox.error.cannotCreate": "Cannot create file \"{}\", reason: {}",
+  "msgbox.error.cannotRemove": "Cannot remove file or directory, reason: {}",
   "msgbox.info.restartApplySet": "This option need to restart to apply setting. If you'd like to apply, please restart it.",
   "msgbox.info.sureToExit": "Are you sure to exit Sinote?",
+  "msgbox.request.inputFileName": "Please enter file name",
   "msgbox.button.ok": "Ok",
   "msgbox.button.cancel": "Cancel"
 }

@@ -4,7 +4,7 @@ from datetime import datetime
 from core.addons.loadFonts import loadFonts
 from core.addons.setGlobalUIFont import setGlobalUIFont
 from core.AutoLoadPluginThread import AutoLoadPlugin
-from core.i18n import resetBasicInfo, setLanguage
+from core.i18n import setLanguage, baseInfo
 from ui.window.SinoteMainWindow import MainWindow
 from ui.window.SplashScreen import SplashScreen
 from utils.application import application
@@ -33,7 +33,6 @@ def appStart(silent: bool = False):
         Logger.info("Successfully to create caches!")
         sys.exit(0)
     setLanguage()
-    resetBasicInfo()
     splash = SplashScreen()
     splash.show()
     LoadPlugin = AutoLoadPlugin()

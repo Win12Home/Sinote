@@ -5,8 +5,10 @@
   "msgbox.error.fileCannotRead": "无法阅读{}！我们也不知道这是咋了\n编码不可用？还是权限错误？检查一下吧！！",
   "msgbox.error.openProjFailed": "无法打开当前项目！",
   "msgbox.error.pathNotValid": "路径\"{}\"不是一个有效的目录。",
+  "msgbox.error.cannotCreate": "无法创建文件\"{}\"，原因：{}。",
   "msgbox.info.restartApplySet": "这个选项需要重启Sinote才能应用更改。如需应用这个选项，直接重启好吧。",
   "msgbox.info.sureToExit": "你确定退出Sinote吗？",
+  "msgbox.request.inputFileName": "请输入文件名称",
   "msgbox.button.ok": "OK",
   "msgbox.button.cancel": "取消"
 }

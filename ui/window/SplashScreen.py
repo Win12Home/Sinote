@@ -8,7 +8,9 @@ class SplashScreen(QDialog):
     def __init__(self):
         super().__init__()
         self.setWindowFlags(
-            Qt.WindowType.SplashScreen | Qt.WindowType.FramelessWindowHint | Qt.WindowType.Dialog
+            Qt.WindowType.SplashScreen
+            | Qt.WindowType.FramelessWindowHint
+            | Qt.WindowType.Dialog
         )
         self.setMinimumWidth(500)
         self.setWindowTitle("Sinote")

@@ -1,8 +1,12 @@
-from PySide6.QtWidgets import QMessageBox, QWidget
+import sys
+
+from PySide6.QtWidgets import QMessageBox, QWidget, QApplication
 from utils.logger import Logger, saveLog
 
 
 def err(errorCode: str, parent: QWidget = None, no_occurred: bool = False) -> None:
+    if QApplication.instance() is None:
+        app = QApplication([])
     if not no_occurred:
         Logger.error(
             "Error Occurred, Program Used Function err to aborted running! Error Code: {}".format(

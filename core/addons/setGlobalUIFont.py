@@ -1,7 +1,7 @@
 from platform import system
 from typing import Callable
 
-from core.i18n import basicInfo
+from core.i18n import baseInfo
 from PySide6.QtGui import QFont, QFontDatabase
 from ui.selfLogger import debugLog  # UwU I'm lazy
 from utils.application import application
@@ -42,13 +42,13 @@ def setGlobalUIFont(font: str = None, recursion: bool = False) -> None:
         if system().lower() == "windows":
             fnt = (
                 "Segoe UI"
-                if not basicInfo.get("item.option.neededmorechar", False)
+                if not baseInfo().get("item.option.neededmorechar", False)
                 else "Microsoft YaHei UI"
             )
         elif system().lower() == "darwin":
             fnt = (
                 "San Francisco"
-                if not basicInfo.get("item.option.neededmorechar", False)
+                if not baseInfo().get("item.option.neededmorechar", False)
                 else "Heiti SC"
             )
         setGlobalUIFont(fnt, recursion=True)

@@ -41,7 +41,8 @@ class SinotePlainTextEdit(SpacingSupportEdit):
         self.clear()
         if self.setFilename is not None and hasattr(self.parent(), "indexOf"):
             self.setFilename(
-                self.parent().indexOf(self), getLangJson("EditorUI")["editor.tab.new_file"]
+                self.parent().indexOf(self),
+                getLangJson("EditorUI")["editor.tab.new_file"],
             )
         self.nowFilename = None
 

@@ -120,11 +120,6 @@ def setNoColor() -> None:
     colored = False
 
 
-def setDebugMode() -> None:
-    global debugMode
-    debugMode = True
-
-
 def setFunny() -> None:
     global funnyMode
     funnyMode = True

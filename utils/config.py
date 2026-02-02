@@ -5,8 +5,8 @@ from typing import Any
 from warnings import filterwarnings
 
 from darkdetect import isLight
-from utils.argumentParser import debugMode
-from utils.logger import Logger, setDebugMode
+from utils.argumentParser import debugMode, setDebugMode
+from utils.logger import Logger
 
 __all__ = ["Setting", "settingObject"]
 

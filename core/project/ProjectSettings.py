@@ -61,11 +61,16 @@ class ProjectSettings:
         if not Path(directory).is_dir():
             normalLog(2, f"{directory} is not a directory!")
             return None
-        debugLog(f'Tried to use "createProject" function to check project...')
-        if not createProject(directory, Path(directory).name):
-            debugLog(f"{directory} is not a valid project! Return false instead.")
-            normalLog(2, f"{directory} is not a valid project!")
-            return None
+
+        if not (
+            (Path(directory) / ".si").is_dir()
+            and (Path(directory) / ".si" / "settings.siproj").is_file()
+        ):
+            debugLog(f'Tried to use "createProject" to create a project')
+            if not createProject(directory, Path(directory).name):
+                debugLog(f"{directory} is not a valid project! Return false instead.")
+                normalLog(2, f"{directory} is not a valid project!")
+                return None
         debugLog("Attempting to read settings...")
         gotJson: str = ""
         try:
