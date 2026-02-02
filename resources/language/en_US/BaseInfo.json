@@ -5,9 +5,9 @@
   "item.list.version": [
     "0",
     "06",
-    "26015"
+    "26016"
   ],
-  "item.list.realversion": "0.06.26015-python3.14-pyside6",
+  "item.list.realversion": "0.06.26016-python3.14-pyside6",
   "item.bool.isbetaversion": true,
   "item.list.language_files": [
     "EditorUI",

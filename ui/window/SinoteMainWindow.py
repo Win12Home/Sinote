@@ -140,6 +140,9 @@ class MainWindow(FramelessWindow):
             self._projectSettings["recentlyWorks"] = result
 
         for oneFile in self.tabTextEdits:
+            if oneFile is None:
+                continue
+
             if oneFile.nowFilename == self._projectSettings["nowWorks"]:
                 self.textEditArea.setCurrentWidget(oneFile)
                 break
@@ -205,10 +208,43 @@ class MainWindow(FramelessWindow):
                         str(path / window.textValue()), repr(e)
                     ),
                     buttons=QMessageBox.StandardButton.Ok,
+                    parent=self,
                 )
                 msgbox.exec()
+            else:
+                self.dirThread.emitIterDir()
 
-    def removeTreeFile(self):
+    def addTreeFolder(self, path: Path | str | None) -> None:
+        if path is None:
+            return
+
+        if not isinstance(path, Path):
+            path = Path(path)
+
+        window = QInputDialog(parent=self)
+        window.setInputMode(QInputDialog.InputMode.TextInput)
+        window.setWindowTitle("")
+        window.setWindowIcon(self.windowIcon())
+        window.setLabelText(getLangJson("MessageBox")["msgbox.request.inputFolderName"])
+        window.setOkButtonText(getLangJson("MessageBox")["msgbox.button.ok"])
+        window.setCancelButtonText(getLangJson("MessageBox")["msgbox.button.cancel"])
+        if window.exec():
+            try:
+                (path / window.textValue()).mkdir(exist_ok=True)
+            except Exception as e:
+                msgbox = QMessageBox(
+                    QMessageBox.Icon.Critical,
+                    getLangJson("MessageBox")["msgbox.title.error"],
+                    getLangJson("MessageBox")["msgbox.error.cannotCreateFolder"].format(
+                        str(path / window.textValue()), repr(e)
+                    ),
+                    buttons=QMessageBox.StandardButton.Ok,
+                    parent=self,
+                )
+                msgbox.exec()
+            else:
+                self.dirThread.emitIterDir()
+    def removeTreeFile(self) -> None:
         if not self.folder.currentItem():
             return
 
@@ -219,17 +255,83 @@ class MainWindow(FramelessWindow):
 
         try:
             if Path(location).is_file():
+                for oneTab in self.tabTextEdits:
+                    if oneTab is None:
+                        return
+
+                    if Path(oneTab.nowFilename) == Path(location):
+                        self.tabTextEdits.remove(oneTab)
+                        self.textEditArea.removeTab(self.textEditArea.indexOf(oneTab))
+                        break
+
                 Path(location).unlink()
             elif Path(location).is_dir():
+                for oneTab in self.tabTextEdits:
+                    if oneTab is None:
+                        return
+
+                    if Path(oneTab.nowFilename).resolve().is_relative_to(Path(location).resolve()):
+                        self.tabTextEdits.remove(oneTab)
+                        self.textEditArea.removeTab(self.textEditArea.indexOf(oneTab))
+
                 from shutil import rmtree
                 rmtree(location)
-            raise IOError(f"{location} is not a file or a directory")
+            else:
+                raise IOError(f"{location} is not a file or a directory")
         except Exception as e:
             msgbox = QMessageBox(
                 QMessageBox.Icon.Critical,
                 getLangJson("MessageBox")["msgbox.title.error"],
-                getLangJson("MessageBox")["msgbox.error.cannotRemove"].format(repr(e))
+                getLangJson("MessageBox")["msgbox.error.cannotRemove"].format(repr(e)),
+                buttons=QMessageBox.StandardButton.Ok,
+                parent=self,
             )
+            msgbox.exec()
+        else:
+            self.dirThread.emitIterDir()
+
+    def renameTreeFile(self) -> None:
+        if not self.folder.currentItem():
+            return
+
+        try:
+            location = self.folder.currentItem().where
+        except AttributeError:
+            return
+
+        window = QInputDialog(parent=self)
+        window.setInputMode(QInputDialog.InputMode.TextInput)
+        window.setWindowTitle("")
+        window.setWindowIcon(self.windowIcon())
+        window.setLabelText(getLangJson("MessageBox")["msgbox.request.inputFileName"])
+        window.setOkButtonText(getLangJson("MessageBox")["msgbox.button.ok"])
+        window.setCancelButtonText(getLangJson("MessageBox")["msgbox.button.cancel"])
+        window.setTextValue(Path(location).name)
+        if window.exec():
+            try:
+                Path(location).rename(Path(location).parent / window.textValue())
+            except Exception as e:
+                msgbox = QMessageBox(
+                    QMessageBox.Icon.Critical,
+                    getLangJson("MessageBox")["msgbox.title.error"],
+                    getLangJson("MessageBox")["msgbox.error.cannotRename"].format(
+                        window.textValue(), repr(e)
+                    ),
+                    buttons=QMessageBox.StandardButton.Ok,
+                    parent=self,
+                )
+                msgbox.exec()
+            else:
+                for oneTab in self.tabTextEdits:
+                    if oneTab is None:
+                        continue
+
+                    if Path(oneTab.nowFilename) == Path(location):
+                        self.tabTextEdits.remove(oneTab)
+                        self.textEditArea.removeTab(self.textEditArea.indexOf(oneTab))
+                        break
+                self.createTab(str(Path(location).parent / window.textValue()))
+                self.dirThread.emitIterDir()
 
     def analyzeTreeMenu(self) -> None:
         try:
@@ -249,21 +351,32 @@ class MainWindow(FramelessWindow):
                 currentPath if currentPath.is_dir() else currentPath.parent,
             )
         )
+        addFolder = QAction(
+            getLangJson("EditorUI")["editor.menu.folder.addfolder"],
+            icon=QIcon.fromTheme(QIcon.ThemeIcon.FolderNew),
+        )
+        addFolder.triggered.connect(
+            partial(
+                self.addTreeFile,
+                currentPath if currentPath.is_dir() else currentPath.parent
+            )
+        )
         rename = QAction(
             getLangJson("EditorUI")["editor.menu.folder.rename"],
             icon=QIcon.fromTheme(QIcon.ThemeIcon.InsertText),
+        )
+        rename.triggered.connect(
+            self.renameTreeFile
         )
         remove = QAction(
             getLangJson("EditorUI")["editor.menu.folder.remove"],
             icon=QIcon.fromTheme(QIcon.ThemeIcon.EditDelete),
         )
         remove.triggered.connect(
-            partial(
-                self.removeTreeFile
-            )
+            self.removeTreeFile
         )
 
-        menu.addActions([addFile, rename, remove])
+        menu.addActions([addFile, addFolder, rename, remove])
         menu.exec(QCursor.pos())
 
     def analyzeOpenItem(self) -> None:
@@ -275,6 +388,14 @@ class MainWindow(FramelessWindow):
 
         if not Path(self.folder.currentItem().where).is_file():  # NOQA, look down
             return
+
+        for oneTab in self.tabTextEdits:
+            if oneTab is None:
+                continue
+
+            if Path(oneTab.nowFilename) == Path(self.folder.currentItem().where):  # NOQA
+                self.textEditArea.setCurrentWidget(oneTab)
+                return
 
         self.createTab(self.folder.currentItem().where)  # NOQA, checked attribute
 
@@ -299,8 +420,16 @@ class MainWindow(FramelessWindow):
             QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed
         )
         self.commandBar.addFile.clicked.connect(lambda: self.addTreeFile(self._project))
+        self.commandBar.addFolder = QPushButton()
+        self.commandBar.addFolder.setIcon(QIcon.fromTheme(QIcon.ThemeIcon.FolderNew))
+        self.commandBar.addFolder.setFlat(True)
+        self.commandBar.addFolder.setSizePolicy(
+            QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed
+        )
+        self.commandBar.addFolder.clicked.connect(lambda: self.addTreeFolder(self._project))
         self.commandBar.hLayout.addWidget(self.commandBar.projectName, stretch=0)
         self.commandBar.hLayout.addWidget(self.commandBar.addFile, stretch=0)
+        self.commandBar.hLayout.addWidget(self.commandBar.addFolder, stretch=0)
         self.commandBar.setLayout(self.commandBar.hLayout)
 
         self.folder: QTreeWidget = QTreeWidget()
@@ -313,7 +442,7 @@ class MainWindow(FramelessWindow):
         self.projectArea.setLayout(self.projectArea.vLayout)
 
         self.textEditArea = QTabWidget()
-        self.tabTextEdits: list[SinotePlainTextEdit | None] = []
+        self.tabTextEdits: list[SinotePlainTextEdit | QWidget | None] = []
         self.textEditArea.tabBar().setMaximumHeight(60)
         self.textEditArea.setTabsClosable(True)
         self.textEditArea.setMovable(True)
@@ -989,7 +1118,7 @@ If you want to use Fixed Font every time or you doesn't know that problem, remov
 
     def _requestClose(self, index: int):
         if 0 <= index < len(self.tabTextEdits):
-            self.tabTextEdits[index] = None
+            self.tabTextEdits.remove(self.textEditArea.widget(index))
             self.textEditArea.removeTab(index)
 
     def _createRecommendFile(self):
@@ -1033,13 +1162,13 @@ If you want to use Fixed Font every time or you doesn't know that problem, remov
         temp.setFilename = lambda index, path: self.textEditArea.tabBar().setTabText(
             index, Path(path).name
         )
-        self.textEditArea.setCurrentIndex(len(self.tabTextEdits) - 1)
         debugLog(
             f"Successfully to create tab! Used: {(datetime.now() - oldDatetime).total_seconds():.2f}s ✅"
         )
         debugLog("Attempting to update setting... 😍")
         self.applySettings()
         debugLog("Successfully to update setting! ✅")
+        self.textEditArea.setCurrentIndex(self.textEditArea.indexOf(temp))
         return temp
 
     def applySettings(self):

@@ -29,7 +29,7 @@ class ProjectSettings:
             f"Initialized Project Settings object with argument directory={directory}"
         )
 
-    def __setitem__(self, key: str, value: Any) -> Any:
+    def __setitem__(self, key: str, value: Any) -> None:
         self._settings[key] = value
         self.__sync()
 

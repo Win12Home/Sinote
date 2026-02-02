@@ -27,6 +27,10 @@ class AutomaticIterDirectoryThread(QThread):
                 if not self._running:
                     return
 
+    def emitIterDir(self) -> None:
+        self._oldIter = iterDir(self._directory)
+        self.iterChanged.emit(self._oldIter)
+
     def setDirectory(self, directory: str | None) -> None:
         self._oldIter = []
         self._directory = directory

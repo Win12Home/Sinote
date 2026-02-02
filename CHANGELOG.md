@@ -3,8 +3,9 @@
 ## Recently Builds
 ***Now no any build because only Pre-release out!***
 ## Recently Pre-release
-### 0.06.26015
+### 0.06.26016
 1. **Fix issue**: Fixed that Language Setting Widget it won't follow the setting of setting.json5, and baseInfo always be English.
+2. **Add feature**: Added `Add File, Add Folder, Rename, Remove` to the right clicking menu of the tree view of the project.
 ### 0.06.26014
 1. **Something not important**: Add log output when loading header!
 2. **Code change**: Change function `addLog` to object `Logger` for readability.
