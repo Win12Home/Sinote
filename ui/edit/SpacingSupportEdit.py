@@ -11,7 +11,7 @@ class SpacingSupportEdit(LineShowTextEdit):
         self.defineKeywords: list[str] = []
         self.charSymbols: list[str] = []
         self.usingCodeControl: bool = False
-        self.spacing: int = 4
+        self.indent: int = 4
 
     def getPosInLine(self) -> int:
         cursor = self.textCursor()
@@ -51,9 +51,9 @@ class SpacingSupportEdit(LineShowTextEdit):
         if not self._getBeforeText(originalPos).strip() and self.getPosInLine() >= 1:
             inlinePos: int = self.getPosInLine()
             returnPos: int = (
-                self.spacing
-                if inlinePos % self.spacing == 0
-                else self.spacing - (inlinePos % self.spacing)
+                self.indent
+                if inlinePos % self.indent == 0
+                else self.indent - (inlinePos % self.indent)
             )
             cursor.movePosition(
                 QTextCursor.MoveOperation.Left,
@@ -73,13 +73,13 @@ class SpacingSupportEdit(LineShowTextEdit):
             space: int = len(temp) - len(temp.lstrip())
             if back:
                 oneSpace: int = (
-                    space % self.spacing if space % self.spacing else self.spacing
+                    space % self.indent if space % self.indent else self.indent
                 )
                 backSpacing: int = space - oneSpace
                 after.append(f"{backSpacing * " "}{temp[space:]}")
             else:
                 spacing: int = (
-                    self.spacing if space % self.spacing == 0 else space % self.spacing
+                    self.indent if space % self.indent == 0 else space % self.indent
                 )
                 after.append(f"{spacing * " "}{temp}")
         answer: str = "\n".join(after)
@@ -151,9 +151,9 @@ class SpacingSupportEdit(LineShowTextEdit):
             else:
                 posInLine: int = self.getPosInLine()
                 spacing: int = (
-                    self.spacing
-                    if posInLine % self.spacing == 0
-                    else self.spacing - (posInLine % self.spacing)
+                    self.indent
+                    if posInLine % self.indent == 0
+                    else self.indent - (posInLine % self.indent)
                 )  # 3-->3 4-->4(not zero) 5-->4
                 cursor.insertText(" " * spacing)
                 cursor.setPosition(originalPos + spacing)
@@ -190,14 +190,14 @@ class SpacingSupportEdit(LineShowTextEdit):
                 content: str = self._thisLineContent(cursor.position())
                 lineSpace: int = len(content) - len(content.lstrip())
                 cursor.insertText(
-                    f"\n{" " * (lineSpace + self.spacing)}{f"\n{' ' * lineSpace}{afterText}" if not (defineKeywords[index][1].strip() == "") else afterText}"
+                    f"\n{" " * (lineSpace + self.indent)}{f"\n{' ' * lineSpace}{afterText}" if not (defineKeywords[index][1].strip() == "") else afterText}"
                 )
                 cursor.clearSelection()
                 cursor.setPosition(
                     originalPos
                     + lineSpace
                     + (len(afterText) if defineKeywords[index][1].strip() == "" else 0)
-                    + self.spacing
+                    + self.indent
                     + 1
                 )
                 self.setTextCursor(cursor)
@@ -258,7 +258,7 @@ class SpacingSupportEdit(LineShowTextEdit):
                 cursor.removeSelectedText()
                 return
             if cursor.position() > 0:
-                if self.getPosInLine() >= self.spacing:
+                if self.getPosInLine() >= self.indent:
                     self.backIndent()
                     if self.textCursor().position() != originalPos:
                         return
@@ -284,7 +284,7 @@ class SpacingSupportEdit(LineShowTextEdit):
                         cursor.movePosition(
                             QTextCursor.MoveOperation.Right,
                             QTextCursor.MoveMode.KeepAnchor,
-                            2,
+                            1,
                         )
                         cursor.removeSelectedText()
                         cursor.setPosition(originalPos - 1)
