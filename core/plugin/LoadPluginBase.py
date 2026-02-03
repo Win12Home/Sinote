@@ -91,6 +91,7 @@ class LoadPluginBase:
             self.remKeywordsMultipleLine = syntaxList[3] if len(syntaxList) > 3 else []
             self.enableSelfColor = syntaxList[4] if len(syntaxList) > 4 else True
             self.textKeywords = syntaxList[5] if len(syntaxList) > 5 else []
+            self.notTrue = len(syntaxList) < 6
 
             self.highlight_rules = []
             self.multi_line_patterns = []
@@ -117,22 +118,39 @@ class LoadPluginBase:
 
             self.multi_comment_format = QTextCharFormat()
             self.multi_comment_format.setForeground(QColor("#009400"))
-            self.multi_comment_format.setFontItalic(True)
 
             self.string_format = QTextCharFormat()
             self.string_format.setForeground(QColor("#2EFF00"))
 
+            self.number_format = QTextCharFormat()
+            self.number_format.setForeground(QColor("#87CEFA"))
+
         def _setup_highlighting_rules(self):
+            if not self.notTrue:
+                self._add_number_rules()
             self._add_keyword_rules()
             self._add_symbol_rules()
             self._add_single_comment_rules()
             self._add_string_rules()
             self._add_multi_comment_rules()
 
+
         def _add_keyword_rules(self):
             for keyword in self.keywords:
                 pattern = QRegularExpression(r"\b" + re.escape(keyword) + r"\b")
                 self.highlight_rules.append((pattern, self.keyword_format))
+
+        def _add_number_rules(self):
+            patterns = [
+                r"(^|[^\w])([-+]?\b\d+\.\d+)(?=[^\w]|$)",
+                r"(^|[^\w])([-+]?\b0b[01]+)(?=[^\w]|$)",
+                r"(^|[^\w])([-+]?\b0x[0-9A-Fa-f]+)(?=[^\w]|$)",
+                r"(^|[^\w])([-+]?\b\d+)(?=[^\w]|$)",
+                r"(^|[^\w])([-+]?\b\d+\.?\d*[eE][+-]?\d+)(?=[^\w]|$)",
+            ]
+            for pattern_string in patterns:
+                pattern = QRegularExpression(pattern_string)
+                self.highlight_rules.append((pattern, self.number_format))
 
         def _add_symbol_rules(self):
             for symbol in self.symbols:

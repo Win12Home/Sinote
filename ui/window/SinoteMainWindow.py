@@ -21,6 +21,8 @@ from PySide6.QtGui import (
     QPixmap,
     QTextCursor,
     QCursor,
+    QColor,
+    QBrush,
 )
 from PySide6.QtWidgets import (
     QFileDialog,
@@ -168,6 +170,7 @@ class MainWindow(FramelessWindow):
                 item = QTreeWidgetItem(from_where, [oneFile[1]])
                 item.where = oneFile[2]
                 item.setIcon(0, QIcon.fromTheme(oneFile[0]))
+                item.setForeground(0, QBrush(QColor(Qt.GlobalColor.blue)))
                 debugLog("Recursing because of folder type")
                 self.updateFromFiles(oneFile[3], item)
             else:
@@ -357,7 +360,7 @@ class MainWindow(FramelessWindow):
         )
         addFolder.triggered.connect(
             partial(
-                self.addTreeFile,
+                self.addTreeFolder,
                 currentPath if currentPath.is_dir() else currentPath.parent
             )
         )
@@ -420,8 +423,7 @@ class MainWindow(FramelessWindow):
             QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed
         )
         self.commandBar.addFile.clicked.connect(lambda: self.addTreeFile(self._project))
-        self.commandBar.addFolder = QPushButton()
-        self.commandBar.addFolder.setIcon(QIcon.fromTheme(QIcon.ThemeIcon.FolderNew))
+        self.commandBar.addFolder = QPushButton("+DIR")
         self.commandBar.addFolder.setFlat(True)
         self.commandBar.addFolder.setSizePolicy(
             QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed

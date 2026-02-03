@@ -14,6 +14,7 @@
   "editor.menu.run.run": "运行",
   "editor.menu.run.editconf": "编辑配置",
   "editor.menu.folder.addfile": "创建文件",
+  "editor.menu.folder.addfolder": "创建文件夹",
   "editor.menu.folder.rename": "重命名",
   "editor.menu.folder.remove": "删除",
   "editor.tab.new_file": "新的文件",

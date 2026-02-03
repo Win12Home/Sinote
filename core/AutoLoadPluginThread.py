@@ -11,7 +11,7 @@ from utils.config import settingObject
 from utils.logger import Logger
 
 syntaxHighlighter: dict[
-    str, list[LoadPluginBase.CustomizeSyntaxHighlighter | str | List[Any]]
+    str, list[LoadPluginBase.LazyCustomizeSyntaxHighlighter | str | List[Any]]
 ] = {}
 loadedPlugin: dict[str, dict[str, str | int | None]] = {}
 autoRun: list[partial] = []

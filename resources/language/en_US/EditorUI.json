@@ -14,6 +14,7 @@
   "editor.menu.run.run": "Run",
   "editor.menu.run.editconf": "Edit Configuration",
   "editor.menu.folder.addfile": "Add file",
+  "editor.menu.folder.addfolder": "Add folder",
   "editor.menu.folder.rename": "Rename",
   "editor.menu.folder.remove": "Remove",
   "editor.tab.new_file": "New File",

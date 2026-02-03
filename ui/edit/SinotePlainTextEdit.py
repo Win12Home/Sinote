@@ -58,7 +58,7 @@ class SinotePlainTextEdit(SpacingSupportEdit):
 
         def run(self) -> None:
             debugLog(f"Finding Highlighter (*.{self.appendix})... (THREAD) 🔎")
-            temp: LoadPluginBase.CustomizeSyntaxHighlighter | None = None
+            temp: LoadPluginBase.LazyCustomizeSyntaxHighlighter | None = None
             temp2, temp3 = None, None
             # name: str | None = None
             for k, i in syntaxHighlighter.items():
@@ -90,7 +90,7 @@ class SinotePlainTextEdit(SpacingSupportEdit):
         self.highlighter = (
             highlighter.getObject()
             if highlighter is not None
-            else LoadPluginBase.CustomizeSyntaxHighlighter([[] for _ in range(7)])
+            else LoadPluginBase.CustomizeSyntaxHighlighter([])  # For disable number highlighting
         )
         self.highlighter.setDocument(self.document())
 
