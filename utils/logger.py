@@ -19,8 +19,8 @@ __all__ = [
 normalLogOutput: list[str] = []
 funnyLogOutput: list[str] = []
 colored: bool = True
-debugMode: bool = False
 funnyMode: bool = False
+debugMode: bool = False
 funnyTypes: list[str] = [
     "BELIEVE",
     "TRUST",
@@ -162,6 +162,14 @@ class Logger:  # Readability, of course
         content: str, activity: str | None = None, mustToPrint: bool = False
     ) -> None:
         addLog(3, content, activity, mustToPrint)
+
+    @staticmethod
+    def debugLog(
+        content: str, activity: str | None = None, mustToPrint: bool = False
+    ) -> None:
+        from utils.argumentParser import debugMode
+        if debugMode:
+            Logger.debug(content, activity, mustToPrint)
 
     # @staticmethod
     # def others(content: str, activity: str | None = None, mustToPrint: bool = False) -> None:

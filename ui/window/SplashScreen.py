@@ -1,7 +1,7 @@
 from core.i18n import getLangJson
 from PySide6.QtCore import QSize, Qt
 from PySide6.QtGui import QPixmap
-from PySide6.QtWidgets import QDialog, QLabel, QVBoxLayout
+from PySide6.QtWidgets import QDialog, QLabel, QVBoxLayout, QApplication
 
 
 class SplashScreen(QDialog):
@@ -40,7 +40,7 @@ class SplashScreen(QDialog):
                 self.nowLoading, "0", total
             )
         )
-        self.repaint()
+        QApplication.instance().processEvents()
 
     def setPluginName(self, name: str):
         self.nowLoading = name
@@ -49,7 +49,7 @@ class SplashScreen(QDialog):
                 self.nowLoading, self.loadedPlugin, self.totals
             )
         )
-        self.repaint()
+        QApplication.instance().processEvents()
 
     def addOne(self):
         self.loadedPlugin += 1
@@ -58,8 +58,8 @@ class SplashScreen(QDialog):
                 self.nowLoading, self.loadedPlugin, self.totals
             )
         )
-        self.repaint()
+        QApplication.instance().processEvents()
 
     def finishedPluginLoad(self):
         self.label.setText(getLangJson("LoadingScreen")["loading.text.loadfont"])
-        self.repaint()
+        QApplication.instance().processEvents()

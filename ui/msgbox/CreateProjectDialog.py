@@ -100,6 +100,9 @@ class CreateProjectDialog(FramelessWindow):
         self.widget.setLayout(self.vLayout)
         self.setCentralWidget(self.widget)
 
+    def showMaximized(self) -> None: # Fix
+        return
+
     def exec(self) -> bool:  # Fake exec
         self.show()
         self._looper.exec()

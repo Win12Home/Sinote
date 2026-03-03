@@ -134,7 +134,6 @@ class LoadPluginBase:
             self._add_string_rules()
             self._add_multi_comment_rules()
 
-
         def _add_keyword_rules(self):
             for keyword in self.keywords:
                 pattern = QRegularExpression(r"\b" + re.escape(keyword) + r"\b")

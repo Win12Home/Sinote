@@ -56,8 +56,7 @@ def setGlobalUIFont(font: str = None, recursion: bool = False) -> None:
     globalFont = QFont(selectedFont)
     globalFont.setPointSize(10)
     application.setFont(globalFont)
-    application.setStyleSheet(
-        f"""
+    application.setStyleSheet(f"""
         {application.styleSheet()}
         * {{
             font-family: "{selectedFont}";
@@ -89,7 +88,6 @@ def setGlobalUIFont(font: str = None, recursion: bool = False) -> None:
         QTabWidget {{
             font-family: "{selectedFont}";
         }}
-    """
-    )
+    """)
 
     Logger.info(f"Global UI font set to: {selectedFont} ✅", "LoadFontActivity")

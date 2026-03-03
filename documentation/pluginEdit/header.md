@@ -130,10 +130,10 @@ It's difficult to create a Runner or Compiler Define for a pre-learner. (However
   },
   "functions": { // Learn in function.md
     "compileFunc": [
-      ["system","%giveCompiler% %argumentOfCompiler% %originalFile% -o %pathOfFile%/%fileNameWithoutAppendix%.%binAppendix%",{"out2term": true}], // look at func.md to see function
+      ["system","%var:giveCompiler% %var:argumentOfCompiler% %var:originalFile% -o %var:pathOfFile%/%var:fileNameWithoutAppendix%.%var:binAppendix%",{"out2term": true}], // look at func.md to see function
     ],
     "runFunc": [
-      ["system","cd %pathOfFile% && %fileNameWithoutAppendix%.%binAppendix% %argumentOfRunner%",{"out2term": true}]
+      ["system","cd %var:pathOfFile% && %var:fileNameWithoutAppendix%.%var:binAppendix% %var:argumentOfRunner%",{"out2term": true}]
     ]
   },
   "coding": {

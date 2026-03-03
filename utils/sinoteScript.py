@@ -45,7 +45,7 @@ def appStart(silent: bool = False):
     LoadPlugin.start()
     application.exec()
     Logger.info(
-        f"Successfully to exit Sinote! Used time: {(datetime.now() - beforeDatetime).total_seconds():.2f}s ✅",
+        f"Successfully to exit Sinote! Uptime: {(datetime.now() - beforeDatetime).total_seconds():.2f}s ✅",
     )
     if "--record-log" in args or "-rl" in args:
         saveLog()

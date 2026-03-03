@@ -247,6 +247,7 @@ class MainWindow(FramelessWindow):
                 msgbox.exec()
             else:
                 self.dirThread.emitIterDir()
+
     def removeTreeFile(self) -> None:
         if not self.folder.currentItem():
             return
@@ -273,11 +274,16 @@ class MainWindow(FramelessWindow):
                     if oneTab is None:
                         return
 
-                    if Path(oneTab.nowFilename).resolve().is_relative_to(Path(location).resolve()):
+                    if (
+                        Path(oneTab.nowFilename)
+                        .resolve()
+                        .is_relative_to(Path(location).resolve())
+                    ):
                         self.tabTextEdits.remove(oneTab)
                         self.textEditArea.removeTab(self.textEditArea.indexOf(oneTab))
 
                 from shutil import rmtree
+
                 rmtree(location)
             else:
                 raise IOError(f"{location} is not a file or a directory")
@@ -361,23 +367,19 @@ class MainWindow(FramelessWindow):
         addFolder.triggered.connect(
             partial(
                 self.addTreeFolder,
-                currentPath if currentPath.is_dir() else currentPath.parent
+                currentPath if currentPath.is_dir() else currentPath.parent,
             )
         )
         rename = QAction(
             getLangJson("EditorUI")["editor.menu.folder.rename"],
             icon=QIcon.fromTheme(QIcon.ThemeIcon.InsertText),
         )
-        rename.triggered.connect(
-            self.renameTreeFile
-        )
+        rename.triggered.connect(self.renameTreeFile)
         remove = QAction(
             getLangJson("EditorUI")["editor.menu.folder.remove"],
             icon=QIcon.fromTheme(QIcon.ThemeIcon.EditDelete),
         )
-        remove.triggered.connect(
-            self.removeTreeFile
-        )
+        remove.triggered.connect(self.removeTreeFile)
 
         menu.addActions([addFile, addFolder, rename, remove])
         menu.exec(QCursor.pos())
@@ -396,7 +398,9 @@ class MainWindow(FramelessWindow):
             if oneTab is None:
                 continue
 
-            if Path(oneTab.nowFilename) == Path(self.folder.currentItem().where):  # NOQA
+            if Path(oneTab.nowFilename) == Path(
+                self.folder.currentItem().where
+            ):  # NOQA
                 self.textEditArea.setCurrentWidget(oneTab)
                 return
 
@@ -428,7 +432,9 @@ class MainWindow(FramelessWindow):
         self.commandBar.addFolder.setSizePolicy(
             QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed
         )
-        self.commandBar.addFolder.clicked.connect(lambda: self.addTreeFolder(self._project))
+        self.commandBar.addFolder.clicked.connect(
+            lambda: self.addTreeFolder(self._project)
+        )
         self.commandBar.hLayout.addWidget(self.commandBar.projectName, stretch=0)
         self.commandBar.hLayout.addWidget(self.commandBar.addFile, stretch=0)
         self.commandBar.hLayout.addWidget(self.commandBar.addFolder, stretch=0)
@@ -941,15 +947,13 @@ class MainWindow(FramelessWindow):
 
             I never use venv, of course.
             """
-            print(
-                """error: externally-managed-font-src
+            print("""error: externally-managed-font-src
 
 × This font directory is externally managed
 ╰─> To use fixed font every time it's not recommend at that.
 
 If you want to use Fixed Font every time or you doesn't know that problem, remove .1 suffix in DISABLE-FONT-CHECK-WARNING.1!
-                """
-            )
+                """)
             msgbox: QMessageBox = QMessageBox(
                 QMessageBox.Icon.Warning,
                 "Warning",
@@ -991,7 +995,7 @@ If you want to use Fixed Font every time or you doesn't know that problem, remov
         if msgbox.exec() == QMessageBox.StandardButton.Yes:
 
             debugLog("Attmepting to save screen size... 😁")
-            settingObject.setValue("screen_size", [self.width(), self.height()])
+            settingObject.setValue("screen_size", [self.width(), self.height()] if not self.isMaximized() else "maximized")
             debugLog("Saved screen size! 🐔")
             debugLog("Attempting to close threads 🤓")
             self.hide()
@@ -1139,7 +1143,7 @@ If you want to use Fixed Font every time or you doesn't know that problem, remov
             filename = None
         if filename:
             temp.readFile(filename)
-        if position and isinstance(position, int):
+        if position and isinstance(position, int):  # Restore cursor position from last session
             cursor: QTextCursor = temp.textCursor()
             cursor.setPosition(position)
             temp.setTextCursor(cursor)
@@ -1200,7 +1204,15 @@ If you want to use Fixed Font every time or you doesn't know that problem, remov
     def _initBase(self):
         debugLog("Initializing Base Window... 🔎")
         self.setWindowTitle("Sinote")
-        width, height = settingObject.getValue("screen_size")
-        debugLog(f"Saved size: width {width}, height {height}")
-        self.resize(width, height)
+        if settingObject.getValue("screen_size") == "maximized":
+            debugLog(f"Saved size: Maximized Window 😲")
+            self.showMaximized()
+        elif isinstance(settingObject.getValue("screen_size"), list) and len(settingObject.getValue("screen_size")) == 2:
+            width, height = settingObject.getValue("screen_size")
+            if not (isinstance(width, int) and isinstance(height, int)):
+                settingObject.setValue("screen_size", [800, 600])
+            debugLog(f"Saved size: width {width}, height {height} 💀")
+            self.resize(width, height)
+        else:
+            Logger.error("Invalid screen_size 🤔", "SinoteUserInterfaceActivity")
         debugLog("Successfully to initialize ✅")

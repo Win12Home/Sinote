@@ -1,4 +1,4 @@
-import hashlib
+import xxhash
 import pickle
 from base64 import urlsafe_b64encode as b64
 from json import JSONDecodeError
@@ -15,7 +15,7 @@ Path("./cache").mkdir(exist_ok=True)
 def getFileHash(filePath: str):
     try:
         with open(filePath, "rb") as f:
-            return hashlib.md5(f.read()).hexdigest()
+            return xxhash.xxh64(f.read()).hexdigest()
     except Exception:
         return ""
 

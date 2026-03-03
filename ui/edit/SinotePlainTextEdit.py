@@ -90,7 +90,9 @@ class SinotePlainTextEdit(SpacingSupportEdit):
         self.highlighter = (
             highlighter.getObject()
             if highlighter is not None
-            else LoadPluginBase.CustomizeSyntaxHighlighter([])  # For disable number highlighting
+            else LoadPluginBase.CustomizeSyntaxHighlighter(
+                []
+            )  # For disable number highlighting
         )
         self.highlighter.setDocument(self.document())
 

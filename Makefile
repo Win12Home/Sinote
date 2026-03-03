@@ -47,21 +47,15 @@ clean:
 check_py_env:
 	@echo -e "$(YELLOW)Checking Python environment...$(NC)"; \
 	if [ "$(foundPyEnvironment)" = "false" ]; then \
-		if command -v python >/dev/null 2>&1; then \
-			echo -e "$(GREEN)Successfully to find python! (in PATH)$(NC)"; \
-			foundPyEnvironment=true; \
-			pyPath=python; \
-		elif [ -f /bin/python ]; then \
-			echo -e "$(GREEN)Successfully to find python! (in /bin)$(NC)"; \
-			foundPyEnvironment=true; \
-			pyPath=/bin/python; \
-		else \
-			foundPyEnvironment=false; \
+		echo -e "$(YELLOW)Warning: $(NC) PYTHON_PATH hasn't been defined at all. Makefile will use \"python\" for running all the commands"; \
+		if ! $(pyPath) -c "import sys; sys.exit(0)" 2>/dev/null; then \
+		    echo "$(RED)Error: $(NC) \"python\" has not really defined, do you forget to install $(YELLOW)\"python\"$(NC)?"; \
+		    exit 1; \
 		fi; \
 	else \
 		echo -e "$(GREEN)Note: $(NC) PYTHON_PATH has been defined, Makefile will use this value to run python."; \
-	fi
-	@if [ "$$foundPyEnvironment" = "false" ]; then \
+	fi; \
+	if [ "$$foundPyEnvironment" = "false" ]; then \
 		echo -e "$(RED)Failed to find python environment!$(NC)"; \
 		exit 1; \
 	fi; \

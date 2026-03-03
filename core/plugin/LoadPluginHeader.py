@@ -191,9 +191,35 @@ class LoadPluginHeader:
                 items.append(config["defineKeywords"])
                 items.append(config["pairKeywords"])
                 debugLog("OK! Successfully to put into lexed list!")
+            elif items[1] == 2:
+                # Runner Define
+                config: dict | None = self.header.get("coding", None)
+                debugLog("Checking Runner/Compiling Define...")
+                if config is None:
+                    self.err('Key "coding" not found 🤓')
+                    return 0  # Missing Ingredients
+                if not isinstance(config, dict):
+                    self.err('"coding" need a dict type ❌')
+                    return 0  # Missing Ingredients
+                debugLog("No problem! Start to lex...")
+                defaultConfig = {
+                    "codeName": "Not defined",
+                    "fileExtension": [],
+                    "compilerSupport": None,
+                    "runnerSupport": None,
+                    "compiler": None,
+                    "runner": None,
+                    "compilerDefaultArg": None,
+                    "runnerDefaultArg": None,
+                }
+                config: dict = defaultConfig | config
+                if config["compiler"] is None or config["runner"] is None:
+                    self.err("Key \"compiler\" and \"runner\" must be defined in configuration, not found there.")
+                    return 0  # Missing Ingredients
+                functions: dict | None = self.header.get("functions", None)
             else:
                 self.err(
-                    "Type is not support in this version (type==2 also not included)!"
+                    f"Type {items[1]} is not support in this version"
                 )
                 return 0
             Logger.info(

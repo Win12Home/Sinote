@@ -12,13 +12,11 @@ class PluginInfoLister(QTextEdit):
 
     def setInformation(self, info: list[Any]) -> None:
         self.clear()
-        self.setHtml(
-            f"""
+        self.setHtml(f"""
 <img src="{info[0]}">
 <br><h1>{info[1]}</h1>
 <h3>{info[2]}</h3>
 <p>{getLangJson("EditorUI")["editor.any.version"]}: {info[3]}</p>
 <p>{getLangJson("EditorUI")["editor.any.author"]}: {info[4]}</p>
 <p>{getLangJson("EditorUI")["editor.any.description"]}: <br>{info[5].replace("\\n", "<br>")}</p>
-"""
-        )
+""")

@@ -15,17 +15,15 @@ class AutomaticIterDirectoryThread(QThread):
         self._running: bool = True
 
     def run(self) -> None:
-        while True:
+        while self._running:
             if self._directory is None:
                 continue
             newIter: list = iterDir(self._directory)
             if newIter != self._oldIter:
                 self._oldIter = newIter
                 self.iterChanged.emit(newIter)
-            for i in range(1000):  # Check every 1s
-                sleep(0.001)
-                if not self._running:
-                    return
+
+            self.msleep(1000)
 
     def emitIterDir(self) -> None:
         self._oldIter = iterDir(self._directory)
