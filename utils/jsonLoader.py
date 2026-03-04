@@ -1,11 +1,12 @@
-import xxhash
 import pickle
 from base64 import urlsafe_b64encode as b64
 from json import JSONDecodeError
 from json import loads as normalLoads
 from pathlib import Path
 
+import xxhash
 from json5 import loads
+
 from utils.argumentParser import debugMode
 from utils.logger import Logger
 

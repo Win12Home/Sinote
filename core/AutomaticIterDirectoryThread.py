@@ -2,6 +2,7 @@ from time import sleep
 
 from PySide6.QtCore import QThread, Signal
 from PySide6.QtWidgets import QWidget
+
 from utils.iterDir import iterDir
 
 

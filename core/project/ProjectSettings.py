@@ -6,8 +6,9 @@ from json import JSONDecodeError, dumps, loads
 from pathlib import Path
 from typing import Any, Callable
 
-from core.project.createProject import createProject
 from json5 import loads as json5Loads
+
+from core.project.createProject import createProject
 from utils.argumentParser import debugMode
 from utils.logger import Logger, addLog  # Also needed
 

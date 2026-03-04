@@ -168,6 +168,7 @@ class Logger:  # Readability, of course
         content: str, activity: str | None = None, mustToPrint: bool = False
     ) -> None:
         from utils.argumentParser import debugMode
+
         if debugMode:
             Logger.debug(content, activity, mustToPrint)
 

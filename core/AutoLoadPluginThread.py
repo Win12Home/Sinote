@@ -3,8 +3,9 @@ from functools import partial
 from pathlib import Path, PurePath
 from typing import Any, List
 
-from core.plugin import LoadPluginBase, LoadPluginInfo
 from PySide6.QtCore import QThread, Signal
+
+from core.plugin import LoadPluginBase, LoadPluginInfo
 from ui.selfLogger import debugPluginLog
 from utils.argumentParser import args
 from utils.config import settingObject

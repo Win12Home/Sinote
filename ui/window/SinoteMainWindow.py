@@ -3,30 +3,23 @@ from functools import partial
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
-from core.addons.applyStylesheet import applyStylesheet
-from core.addons.setGlobalUIFont import isRecommendFont
-from core.addons.Shortcut import Shortcut
-from core.AutoLoadPluginThread import autoRun, loadedPlugin
-from core.AutomaticIterDirectoryThread import AutomaticIterDirectoryThread
-from core.i18n import baseInfo, getLangJson
-from core.project import ProjectSettings
-from ui.msgbox.CreateProjectDialog import CreateProjectDialog
 from PySide6.QtCore import QEvent, QObject, Qt, QTimer, Signal
 from PySide6.QtGui import (
     QAction,
+    QBrush,
     QCloseEvent,
+    QColor,
+    QCursor,
     QFont,
     QIcon,
     QKeyEvent,
     QPixmap,
     QTextCursor,
-    QCursor,
-    QColor,
-    QBrush,
 )
 from PySide6.QtWidgets import (
     QFileDialog,
     QHBoxLayout,
+    QInputDialog,
     QLabel,
     QListWidget,
     QListWidgetItem,
@@ -42,10 +35,18 @@ from PySide6.QtWidgets import (
     QTreeWidgetItem,
     QVBoxLayout,
     QWidget,
-    QInputDialog,
 )
+
+from core.addons.applyStylesheet import applyStylesheet
+from core.addons.setGlobalUIFont import isRecommendFont
+from core.addons.Shortcut import Shortcut
+from core.AutoLoadPluginThread import autoRun, loadedPlugin
+from core.AutomaticIterDirectoryThread import AutomaticIterDirectoryThread
+from core.i18n import baseInfo, getLangJson
+from core.project import ProjectSettings
 from ui.edit.AutomaticSaveThingsThread import AutomaticSaveThingsThread
 from ui.edit.SinotePlainTextEdit import SinotePlainTextEdit
+from ui.msgbox.CreateProjectDialog import CreateProjectDialog
 from ui.selfLogger import debugLog
 from ui.SettingObject import (
     CheckBoxSettingObject,
@@ -804,15 +805,18 @@ class MainWindow(FramelessWindow):
             self.close()
 
     def eventFilter(self, obj: QObject, event: QEvent) -> bool:
-        if obj == self.folder and event.type() == QEvent.Type.ContextMenu:
-            if self.folder.currentIndex().isValid():
-                self.analyzeTreeMenu()
+        try:
+            if obj == self.folder and event.type() == QEvent.Type.ContextMenu:
+                if self.folder.currentIndex().isValid():
+                    self.analyzeTreeMenu()
+        except AttributeError:
+            pass
 
         if event.type() == QEvent.Type.KeyPress:
             self.shortcut.keyPressEvent(event)  # NOQA
         elif event.type() == QEvent.Type.KeyRelease:
             self.shortcut.keyReleaseEvent(event)  # NOQA, shut up
-        return False
+        return super().eventFilter(obj, event)
 
     def keyPressEvent(self, event: QKeyEvent) -> None:
         self.shortcut.keyPressEvent(event)
@@ -994,11 +998,18 @@ If you want to use Fixed Font every time or you doesn't know that problem, remov
         debugLog("Executing Message Box and asking user done or cancel...")
         if msgbox.exec() == QMessageBox.StandardButton.Yes:
 
+            self.hide()
             debugLog("Attmepting to save screen size... 😁")
-            settingObject.setValue("screen_size", [self.width(), self.height()] if not self.isMaximized() else "maximized")
+            settingObject.setValue(
+                "screen_size",
+                (
+                    [self.width(), self.height()]
+                    if not self.isMaximized()
+                    else "maximized"
+                ),
+            )
             debugLog("Saved screen size! 🐔")
             debugLog("Attempting to close threads 🤓")
-            self.hide()
             self.editorThread.quit()
             self.editorThread.wait()
             self.dirThread.quit()
@@ -1143,7 +1154,9 @@ If you want to use Fixed Font every time or you doesn't know that problem, remov
             filename = None
         if filename:
             temp.readFile(filename)
-        if position and isinstance(position, int):  # Restore cursor position from last session
+        if position and isinstance(
+            position, int
+        ):  # Restore cursor position from last session
             cursor: QTextCursor = temp.textCursor()
             cursor.setPosition(position)
             temp.setTextCursor(cursor)
@@ -1207,7 +1220,10 @@ If you want to use Fixed Font every time or you doesn't know that problem, remov
         if settingObject.getValue("screen_size") == "maximized":
             debugLog(f"Saved size: Maximized Window 😲")
             self.showMaximized()
-        elif isinstance(settingObject.getValue("screen_size"), list) and len(settingObject.getValue("screen_size")) == 2:
+        elif (
+            isinstance(settingObject.getValue("screen_size"), list)
+            and len(settingObject.getValue("screen_size")) == 2
+        ):
             width, height = settingObject.getValue("screen_size")
             if not (isinstance(width, int) and isinstance(height, int)):
                 settingObject.setValue("screen_size", [800, 600])

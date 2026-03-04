@@ -1,6 +1,7 @@
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QKeyEvent, QTextCursor
 from PySide6.QtWidgets import QWidget
+
 from ui.edit.LineShowTextEdit import LineShowTextEdit
 from utils.SafetyMutable import SafetyList
 

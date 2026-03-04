@@ -4,7 +4,7 @@ from datetime import datetime
 from core.addons.loadFonts import loadFonts
 from core.addons.setGlobalUIFont import setGlobalUIFont
 from core.AutoLoadPluginThread import AutoLoadPlugin
-from core.i18n import setLanguage, baseInfo
+from core.i18n import baseInfo, setLanguage
 from ui.window.SinoteMainWindow import MainWindow
 from ui.window.SplashScreen import SplashScreen
 from utils.application import application
@@ -22,6 +22,7 @@ def startMainProcess(splashScreen: SplashScreen) -> None:
     a.themeChanged.connect(
         lambda: {setGlobalUIFont(), Logger.info("Successfully to change theme!")}
     )
+    raise SystemError("Error test")
 
 
 def appStart(silent: bool = False):

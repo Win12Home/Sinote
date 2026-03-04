@@ -1,18 +1,51 @@
-from PySide6.QtCore import QPoint, Qt, QRect, Signal, QMargins
-from PySide6.QtGui import QPaintEvent, QPainter, QPen, QColor, QPalette, QResizeEvent, QMouseEvent
-from PySide6.QtWidgets import QMainWindow, QMenuBar, QVBoxLayout, QWidget
+from enum import Enum
+from platform import system
+
+from PySide6.QtCore import QPoint, QRect, Qt, QTimer, Signal, QObject, QEvent, QSize
+from PySide6.QtGui import (
+    QColor,
+    QMouseEvent,
+    QPainter,
+    QPaintEvent,
+    QPalette,
+    QPen,
+    QResizeEvent,
+)
+from PySide6.QtWidgets import QMainWindow, QMenuBar, QVBoxLayout, QWidget, QApplication
+
 from ui.widgets.TitleBar import TitleBar
+from utils.logger import Logger
+
+
+class Edge(Enum):
+    TopLeft = 0
+    TopRight = 1
+    BottomRight = 2
+    BottomLeft = 3
+    Top = 4
+    Bottom = 5
+    Left = 6
+    Right = 7
 
 
 class BorderCentralWidget(QWidget):
-    resizeRequest = Signal(QMargins)
+    resizeRequest = Signal(Edge)
 
     def __init__(self, parent: QWidget = None) -> None:
         super().__init__(parent)
         self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground, False)
         self.setContentsMargins(1, 1, 1, 1)
         self.notMaximized = True
-        self.startResizing = False  # Wow, yeah, just a recording variable
+        self.dragMaximumSize = 4  # px
+        self.cursorShapeChangeDisabled = False
+        self.scalingDisabled = False
+        self.lastCursorPos = None
+        self.nowCursorPos = None
+        self.shapeChecker = QTimer(self)
+        self.shapeChecker.timeout.connect(
+            lambda: self.analyzeMouseCursorAndEdge(self.cursor().pos().toTuple())
+        )
+        self.shapeChecker.start(100)
 
     def paintEvent(self, event: QPaintEvent) -> None:
         if not self.notMaximized:
@@ -24,20 +57,95 @@ class BorderCentralWidget(QWidget):
             painter = QPainter(self)
             painter.setPen(QPen(QColor(Qt.GlobalColor.lightGray), 3))
             painter.setBrush(self.palette().color(QPalette.ColorRole.Window))
-            painter.drawRoundedRect(QRect(1, 1, self.width() - 2, self.height() - 2), 12.5, 12.5)
+            painter.drawRoundedRect(
+                QRect(1, 1, self.width() - 2, self.height() - 2), 12.5, 12.5
+            )
 
-    def mousePressEvent(self, event, /) -> None:
-        position = event.position()
-        return super().mousePressEvent(event)  # TODO: Resizeable Window
+    def analyzeMouseCursorAndEdge(self, pointTuple: tuple[float, float]) -> Edge | None:
+        if self.cursorShapeChangeDisabled or self.scalingDisabled:
+            return None
+
+        x, y = pointTuple
+        inLeft: bool = x <= self.dragMaximumSize
+        inRight: bool = (
+            self.width() - self.dragMaximumSize
+            <= x
+            <= self.width() + self.dragMaximumSize
+        )
+        inTop: bool = y <= self.dragMaximumSize
+        inBottom: bool = (
+            self.height() - self.dragMaximumSize
+            <= y
+            <= self.height() + self.dragMaximumSize
+        )
+
+        # NOTE: I really hasn't known any methods to improve my if-elif-else code QwQ
+
+        cursorShapes: list[Qt.CursorShape] = [
+            Qt.CursorShape.SizeFDiagCursor,
+            Qt.CursorShape.SizeBDiagCursor,
+            Qt.CursorShape.SizeHorCursor,
+            Qt.CursorShape.SizeVerCursor,
+        ]
+
+        edge: Edge | None = None
+
+        if inLeft and inTop or inRight and inBottom:  # There wasn't any readable, em...
+            self.setCursor(cursorShapes[0])
+            edge = Edge.TopLeft if inLeft else Edge.BottomRight
+        elif inLeft and inBottom or inRight and inTop:
+            self.setCursor(cursorShapes[1])
+            edge = Edge.BottomLeft if inBottom else Edge.TopRight
+        elif inLeft or inRight:
+            self.setCursor(cursorShapes[2])
+            edge = Edge.Left if inLeft else Edge.Right
+        elif inTop or inBottom:
+            self.setCursor(cursorShapes[3])
+            edge = Edge.Top if inTop else Edge.Bottom
+        elif self.cursor().shape() in cursorShapes:
+            self.setCursor(Qt.CursorShape.ArrowCursor)
+
+        return edge
+
+    def mousePressEvent(self, event: QMouseEvent, /) -> None:
+        if event.button() != Qt.MouseButton.LeftButton or self.scalingDisabled:
+            return super().mousePressEvent(event)
+
+        shape = self.analyzeMouseCursorAndEdge(event.pos().toTuple())
+        self.cursorShapeChangeDisabled = True
+
+        self.resizeRequest.emit(shape)
+
+        return super().mousePressEvent(event)
+
+    def mouseReleaseEvent(self, event: QMouseEvent, /) -> None:
+        if self.scalingDisabled:
+            return super().mouseReleaseEvent(event)
+
+        self.cursorShapeChangeDisabled = False
+
+        if event.button() == Qt.MouseButton.LeftButton and self.cursor().shape() in [
+            Qt.CursorShape.SizeFDiagCursor,
+            Qt.CursorShape.SizeBDiagCursor,
+            Qt.CursorShape.SizeHorCursor,
+            Qt.CursorShape.SizeVerCursor,
+        ]:
+            self.cursor().setShape(Qt.CursorShape.ArrowCursor)
+
+        return super().mouseReleaseEvent(event)
 
 
 class FramelessWindow(QMainWindow):
     def __init__(self, parent: QWidget = None):
         super().__init__(parent)
+        self._lastCursorPosition: QPoint | None = None
+        self._nowCursorPosition: QPoint | None = None
+
         self.setWindowFlags(Qt.WindowType.FramelessWindowHint)
         self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground)
         self._layout = QVBoxLayout()
         self.__widget: BorderCentralWidget = BorderCentralWidget()
+        self.__widget.resizeRequest.connect(self.analyzeWindowResizing)
         self.__menuBar: QMenuBar | QWidget = QWidget()
         self.__painter: QPainter | None = None
         self.titleBar = TitleBar()
@@ -53,15 +161,69 @@ class FramelessWindow(QMainWindow):
         self.__widget.setLayout(self._layout)
         self.__widget.repaint()
         self.__widget.setMouseTracking(True)
+
+        QApplication.instance().installEventFilter(self)
+
         super().setCentralWidget(self.__widget)
+
+    def eventFilter(self, obj: QObject, event: QEvent) -> bool:
+        if event.type() in [QEvent.Type.MouseButtonPress, QEvent.Type.MouseButtonRelease, QEvent.Type.MouseMove]:
+            if self.cursor().pos() != self._nowCursorPosition:
+                self._lastCursorPosition = self._nowCursorPosition
+                self._nowCursorPosition = self.cursor().pos()
+        return super().eventFilter(obj, event)
+
+    def setScalingDisabled(self, value: bool) -> None:
+        self.__widget.scalingDisabled = value
 
     def analyzeWindowMoving(self, moveOffset: QPoint) -> None:
         if not self.isMaximized():
-            if hasattr(self.windowHandle(), "startSystemMove"):  # Fix issues that cannot move in Wayland and supported system dragging
+            if hasattr(self.windowHandle(), "startSystemMove") and system().lower() in [
+                "windows",
+                "linux",
+            ]:  # Fix issues that cannot move in Wayland and supported system dragging
                 self.windowHandle().startSystemMove()
             else:
                 self.move(self.pos() + moveOffset)
             self.repaint()
+
+    def analyzeWindowResizing(self, resizeEdge: Edge) -> None:
+        if hasattr(self.windowHandle(), "startSystemResize") and system().lower() in [
+            "windows",
+            "linux",
+        ]:
+            edgeInQt: Qt.Edge | None = None
+            if resizeEdge == Edge.Left:
+                edgeInQt = Qt.Edge.LeftEdge
+            elif resizeEdge == Edge.Right:
+                edgeInQt = Qt.Edge.RightEdge
+            elif resizeEdge == Edge.Bottom:
+                edgeInQt = Qt.Edge.BottomEdge
+            elif resizeEdge == Edge.Top:
+                edgeInQt = Qt.Edge.TopEdge
+            elif resizeEdge == Edge.TopLeft:
+                edgeInQt = Qt.Edge.TopEdge | Qt.Edge.LeftEdge  # NOQA
+            elif resizeEdge == Edge.TopRight:
+                edgeInQt = Qt.Edge.TopEdge | Qt.Edge.RightEdge  # NOQA
+            elif resizeEdge == Edge.BottomLeft:
+                edgeInQt = Qt.Edge.BottomEdge | Qt.Edge.LeftEdge  # NOQA
+            elif resizeEdge == Edge.BottomRight:
+                edgeInQt = Qt.Edge.BottomEdge | Qt.Edge.RightEdge  # NOQA
+
+            if edgeInQt:
+                self.windowHandle().startSystemResize(edgeInQt)
+        elif system().lower() not in ["windows", "linux"]:
+            if not (self._nowCursorPosition and self._lastCursorPosition):
+                return
+
+            difference: QPoint = self._nowCursorPosition - self._lastCursorPosition
+            self.resize(self.size() + QSize(difference.x(), difference.y()))
+            self.move(self.pos() + difference)
+        else:
+            Logger.error(
+                '"startSystemResize" function is not in "QWindow" object, make sure you are using Qt 5.15+.',
+                "MainWindowActivity",
+            )
 
     def setWindowTitle(self, title: str) -> None:
         self.titleBar.setWindowTitle(title)

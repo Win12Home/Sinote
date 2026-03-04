@@ -1,8 +1,9 @@
 from datetime import datetime
 from typing import AnyStr, Callable
 
-from core.plugin.LoadPluginBase import LoadPluginBase
 from json5 import loads
+
+from core.plugin.LoadPluginBase import LoadPluginBase
 from utils.argumentParser import debugMode
 from utils.const import apiVersion
 from utils.jsonLoader import load
@@ -214,13 +215,13 @@ class LoadPluginHeader:
                 }
                 config: dict = defaultConfig | config
                 if config["compiler"] is None or config["runner"] is None:
-                    self.err("Key \"compiler\" and \"runner\" must be defined in configuration, not found there.")
+                    self.err(
+                        'Key "compiler" and "runner" must be defined in configuration, not found there.'
+                    )
                     return 0  # Missing Ingredients
                 functions: dict | None = self.header.get("functions", None)
             else:
-                self.err(
-                    f"Type {items[1]} is not support in this version"
-                )
+                self.err(f"Type {items[1]} is not support in this version")
                 return 0
             Logger.info(
                 f"Successfully to load {self.filename}! Used {(datetime.now() - beforeDatetime).total_seconds():02f}secs.",

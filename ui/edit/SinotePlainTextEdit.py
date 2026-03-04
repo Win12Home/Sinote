@@ -1,12 +1,13 @@
 from pathlib import Path
 from typing import Any
 
-from core.AutoLoadPluginThread import syntaxHighlighter
-from core.i18n import getLangJson
-from core.plugin import LoadPluginBase
 from PySide6.QtCore import Qt, QThread, Signal
 from PySide6.QtGui import QSyntaxHighlighter
 from PySide6.QtWidgets import QMessageBox, QWidget
+
+from core.AutoLoadPluginThread import syntaxHighlighter
+from core.i18n import getLangJson
+from core.plugin import LoadPluginBase
 from ui.edit.SpacingSupportEdit import SpacingSupportEdit
 from ui.selfLogger import debugLog
 from utils.logger import Logger

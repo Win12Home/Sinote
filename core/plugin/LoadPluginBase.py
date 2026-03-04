@@ -8,6 +8,7 @@ from PySide6.QtGui import (
     QTextCharFormat,
     QTextDocument,
 )
+
 from utils.argumentParser import debugMode
 from utils.logger import Logger
 

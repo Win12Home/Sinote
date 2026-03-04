@@ -3,7 +3,7 @@
 ## Recently Builds
 ***Now no any build because only Pre-release out!***
 ## Recently Pre-release
-### 0.06.26024
+### 0.07.26027
 1. **Fix issue**: Fixed that Language Setting Widget it won't follow the setting of setting.json5, and baseInfo always be English.
 2. **Add feature**: Added `Add File, Add Folder, Rename, Remove` to the right-clicking menu of the tree view of the project.
 3. **Add feature**: Added Number Highlighting
@@ -14,6 +14,9 @@
 8. **Optimize**: Replaced MD5 to XXHASH for speed yeah.
 9. **Fix issue**: Fixed issue that new project window can be maximized with double-clicking.
 10. **Fix issue**: Fixed issue that maximized window won't be restored to maximized at next starting.
+11. **Add feature**: Added Window Scaling.
+12. **Fix issue**: Fix issue that close window won't be hided directly.
+13. **Fix issue**: Fix issue that error message box will not be showed when error occurred.
 ### 0.06.26014
 1. **Something not important**: Add log output when loading header!
 2. **Code change**: Change function `addLog` to object `Logger` for readability.

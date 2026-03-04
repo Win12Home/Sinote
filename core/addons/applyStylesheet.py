@@ -1,4 +1,5 @@
 from PySide6.QtWidgets import QApplication
+
 from utils.argumentParser import debugMode
 from utils.logger import Logger
 

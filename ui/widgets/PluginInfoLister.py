@@ -1,7 +1,8 @@
 from typing import Any
 
-from core.i18n import getLangJson
 from PySide6.QtWidgets import QTextEdit, QWidget
+
+from core.i18n import getLangJson
 
 
 class PluginInfoLister(QTextEdit):

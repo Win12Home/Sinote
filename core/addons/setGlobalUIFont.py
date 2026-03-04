@@ -1,8 +1,9 @@
 from platform import system
 from typing import Callable
 
-from core.i18n import baseInfo
 from PySide6.QtGui import QFont, QFontDatabase
+
+from core.i18n import baseInfo
 from ui.selfLogger import debugLog  # UwU I'm lazy
 from utils.application import application
 from utils.logger import Logger

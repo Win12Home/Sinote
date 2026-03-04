@@ -1,6 +1,7 @@
 from PySide6.QtCore import QPoint, Qt, Signal
 from PySide6.QtGui import QMouseEvent
 from PySide6.QtWidgets import QHBoxLayout, QLabel, QPushButton, QVBoxLayout, QWidget
+
 from ui.widgets.SeperatorWidget import SeperatorWidget
 
 

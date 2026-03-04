@@ -1,24 +1,27 @@
+from pathlib import Path
+
+from PySide6.QtCore import QEventLoop, Qt
 from PySide6.QtWidgets import (
-    QPushButton,
+    QFileDialog,
     QHBoxLayout,
-    QVBoxLayout,
     QLabel,
     QLineEdit,
-    QSizePolicy,
-    QWidget,
-    QFileDialog,
     QMessageBox,
+    QPushButton,
+    QSizePolicy,
+    QVBoxLayout,
+    QWidget,
 )
-from PySide6.QtCore import Qt, QEventLoop
-from ui.window.FramelessWindow import FramelessWindow
+
 from core.i18n import getLangJson
-from pathlib import Path
 from core.project import createProject
+from ui.window.FramelessWindow import FramelessWindow
 
 
 class CreateProjectDialog(FramelessWindow):
     def __init__(self, parent: QWidget = None):
         super().__init__(parent)
+        self.__widget.cannotBeMove = True
         self.titleBar.setOnlyCloseButton()
         self.setWindowFlag(Qt.WindowType.Dialog, True)
         self.raise_()
@@ -100,7 +103,9 @@ class CreateProjectDialog(FramelessWindow):
         self.widget.setLayout(self.vLayout)
         self.setCentralWidget(self.widget)
 
-    def showMaximized(self) -> None: # Fix
+        self.setScalingDisabled(True)
+
+    def showMaximized(self) -> None:  # Fix
         return
 
     def exec(self) -> bool:  # Fake exec

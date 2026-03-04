@@ -1,6 +1,7 @@
 from platform import libc_ver, python_version, system, win32_ver
 
 from rich import print
+
 from utils.argumentParser import colored, debugMode, onlyWarning
 from utils.const import apiVersion, sinoteVersion
 from utils.logger import Logger, normalLogOutput

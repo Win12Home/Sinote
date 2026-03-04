@@ -5,6 +5,7 @@ from platform import processor, system
 from traceback import format_exception
 
 from psutil import cpu_percent, virtual_memory
+
 from utils.err import err
 from utils.logger import Logger, normalLogOutput
 

@@ -1,7 +1,8 @@
-from core.i18n import getLangJson
 from PySide6.QtCore import QSize, Qt
 from PySide6.QtGui import QPixmap
-from PySide6.QtWidgets import QDialog, QLabel, QVBoxLayout, QApplication
+from PySide6.QtWidgets import QApplication, QDialog, QLabel, QVBoxLayout
+
+from core.i18n import getLangJson
 
 
 class SplashScreen(QDialog):

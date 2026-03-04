@@ -3,6 +3,7 @@ from getpass import getuser
 from platform import system
 
 from PySide6.QtWidgets import QApplication, QMessageBox
+
 from utils.err import err
 from utils.logger import Logger, setFunny, setNoColor, setOwLog
 

@@ -8,6 +8,7 @@ from datetime import datetime
 from typing import Any
 
 from PySide6.QtWidgets import QApplication
+
 from utils.logger import Logger
 
 __all__ = ["analyzeAllSignal"]
@@ -57,8 +58,12 @@ def executePipeKillSignal(isSIGHUP: bool) -> None:  # NOQA, args was unused
 
 def analyzePipeKillSignal() -> None:
     try:
-        sig.signal(sig.SIGHUP, lambda *args: executePipeKillSignal(isSIGHUP=True))  # NOQA
-        sig.signal(sig.SIGPIPE, lambda *args: executePipeKillSignal(isSIGHUP=False))  # NOQA
+        sig.signal(
+            sig.SIGHUP, lambda *args: executePipeKillSignal(isSIGHUP=True)
+        )  # NOQA
+        sig.signal(
+            sig.SIGPIPE, lambda *args: executePipeKillSignal(isSIGHUP=False)
+        )  # NOQA
     except (AttributeError, TypeError):
         pass
 

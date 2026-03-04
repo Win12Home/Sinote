@@ -5,10 +5,10 @@ from shutil import copy2, rmtree
 from typing import Any, Callable
 
 from PySide6.QtCore import QEventLoop, QTimer
+from PySide6.QtWidgets import QInputDialog, QMessageBox
 
 from core.plugin.LoadPluginBase import LoadPluginBase
 from core.plugin.Variables import Variables
-from PySide6.QtWidgets import QInputDialog, QMessageBox
 from utils.application import BaseApplication
 from utils.argumentParser import debugMode
 from utils.config import settingObject
