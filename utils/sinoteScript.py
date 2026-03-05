@@ -22,7 +22,6 @@ def startMainProcess(splashScreen: SplashScreen) -> None:
     a.themeChanged.connect(
         lambda: {setGlobalUIFont(), Logger.info("Successfully to change theme!")}
     )
-    raise SystemError("Error test")
 
 
 def appStart(silent: bool = False):
