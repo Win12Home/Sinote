@@ -53,11 +53,12 @@ jobs:
         cat > sets.py << EOF
         from core.excepthook import setExceptionHook
         from core.addons.asciiOutput import asciiOutput
-        from utils.verChecker import verChecker
+        from utils.verCheck import verCheck
         def setEntry() -> None:
-            verChecker()
+            verCheck()
             setExceptionHook()
             asciiOutput()
+        EOF
         cat > EntryWindow.py << EOF
         from utils.sinoteScript import appStart
         from sets import setEntry

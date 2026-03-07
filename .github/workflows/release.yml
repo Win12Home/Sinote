@@ -40,17 +40,17 @@ jobs:
         run: |
           echo Generating entry of Window...
           cat > EntryWindow.py << EOF
-          from main import appStart, verChecker, setExceptionHook
-          verChecker()
+          from main import appStart, verCheck, setExceptionHook
+          verCheck()
           setExceptionHook()
           appStart(silent=True)
           EOF
           echo Generated!
           echo Generating entry of Console...
           cat > EntryConsole.py << EOF
-          from main import appStart, verChecker, asciiOutput, setExceptionHook
+          from main import appStart, verCheck, asciiOutput, setExceptionHook
           # Note: This is not needed, but it's readability.
-          verChecker()
+          verCheck()
           setExceptionHook()
           asciiOutput()
           appStart(silent=False)
