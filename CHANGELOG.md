@@ -3,6 +3,11 @@
 ## Recently Builds
 ***Now no any build because only Pre-release out!***
 ## Recently Pre-release
+### 0.07.26031
+1. **Fix issue**: Fixed that Sinote will be pop up error window when starting Create Project.
+2. **Fix issue**: Window will be stuck when first startup or didn't open any projects.
+3. **Fix issue**: Fix issue that Windows, XCB(X11) and other system will not change shape when cursor is at the border of the window.
+4. **Fix issue**: Set ThreadPool max parallel threads to 4.
 ### 0.07.26027
 1. **Fix issue**: Fixed that Language Setting Widget it won't follow the setting of setting.json5, and baseInfo always be English.
 2. **Add feature**: Added `Add File, Add Folder, Rename, Remove` to the right-clicking menu of the tree view of the project.
@@ -16,7 +21,7 @@
 10. **Fix issue**: Fixed issue that maximized window won't be restored to maximized at next starting.
 11. **Add feature**: Added Window Scaling.
 12. **Fix issue**: Fix issue that close window won't be hided directly.
-13. **Fix issue**: Fix issue that error message box will not be showed when error occurred.
+13. **Fix issue**: Fix issue that error message box will not be shown when error occurred.
 ### 0.06.26014
 1. **Something not important**: Add log output when loading header!
 2. **Code change**: Change function `addLog` to object `Logger` for readability.

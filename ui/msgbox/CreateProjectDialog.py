@@ -21,7 +21,7 @@ from ui.window.FramelessWindow import FramelessWindow
 class CreateProjectDialog(FramelessWindow):
     def __init__(self, parent: QWidget = None):
         super().__init__(parent)
-        self.__widget.cannotBeMove = True
+        self._widget.cannotBeMove = True
         self.titleBar.setOnlyCloseButton()
         self.setWindowFlag(Qt.WindowType.Dialog, True)
         self.raise_()
@@ -121,7 +121,6 @@ class CreateProjectDialog(FramelessWindow):
         return self._accepted
 
     def accept(self) -> None:
-        self._accepted = True
         if (
             not Path(self.pathLineEdit.text()).is_dir()
             or self.pathLineEdit.text().strip() == ""
@@ -135,6 +134,7 @@ class CreateProjectDialog(FramelessWindow):
                 buttons=QMessageBox.StandardButton.Ok,
             )
             return
+        self._accepted = True
         self.close()
 
     def reject(self) -> None:

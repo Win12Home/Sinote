@@ -154,6 +154,7 @@ class MainWindow(FramelessWindow):
         debugLog(
             "Project Tree Update Signal has received, trying to refresh project tree in UI..."
         )
+        Logger.info("Refreshing Project Tree...", "SinoteUserInterfaceActivity")
         self.folder.clear()
         QTimer.singleShot(10, lambda: self.updateFromFiles(directory))
         debugLog("Released a QTimer to run it")
@@ -161,7 +162,7 @@ class MainWindow(FramelessWindow):
     def updateFromFiles(
         self, directory: list[Any], from_where: QTreeWidgetItem = None
     ) -> None:
-        debugLog(f"Updating from folder: {directory}")
+        debugLog(f"Updating from folder: {directory}, item count: {len(directory)} 📂")
 
         if from_where is None:
             from_where = self.folder
@@ -172,7 +173,7 @@ class MainWindow(FramelessWindow):
                 item.where = oneFile[2]
                 item.setIcon(0, QIcon.fromTheme(oneFile[0]))
                 item.setForeground(0, QBrush(QColor(Qt.GlobalColor.blue)))
-                debugLog("Recursing because of folder type")
+                debugLog("Recursing because of folder type 📂📂📂")
                 self.updateFromFiles(oneFile[3], item)
             else:
                 item = QTreeWidgetItem(from_where, [oneFile[1]])
@@ -184,7 +185,7 @@ class MainWindow(FramelessWindow):
             else:
                 from_where.addChild(item)
 
-            debugLog("Well, successfully to analyze it!")
+            debugLog("Well, successfully to analyze it! 😲")
 
     def addTreeFile(self, path: Path | str | None) -> None:
         if path is None:
@@ -977,7 +978,8 @@ If you want to use Fixed Font every time or you doesn't know that problem, remov
                 )
 
         if self._project is None or self._projectSettings is None:
-            self.newProject()
+            self.repaint()
+            QTimer.singleShot(0, self.newProject)
 
     def closeEvent(self, event: QCloseEvent) -> None:
         debugLog("CloseEvent triggered 🤓")
