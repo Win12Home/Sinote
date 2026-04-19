@@ -6,8 +6,9 @@ from json import JSONDecodeError, dumps, loads
 from pathlib import Path
 from typing import Any, Callable
 
-from core.project.createProject import createProject
 from json5 import loads as json5Loads
+
+from core.project.createProject import createProject
 from utils.argumentParser import debugMode
 from utils.logger import Logger, addLog  # Also needed
 
@@ -29,7 +30,7 @@ class ProjectSettings:
             f"Initialized Project Settings object with argument directory={directory}"
         )
 
-    def __setitem__(self, key: str, value: Any) -> Any:
+    def __setitem__(self, key: str, value: Any) -> None:
         self._settings[key] = value
         self.__sync()
 
@@ -61,11 +62,16 @@ class ProjectSettings:
         if not Path(directory).is_dir():
             normalLog(2, f"{directory} is not a directory!")
             return None
-        debugLog(f'Tried to use "createProject" function to check project...')
-        if not createProject(directory, Path(directory).name):
-            debugLog(f"{directory} is not a valid project! Return false instead.")
-            normalLog(2, f"{directory} is not a valid project!")
-            return None
+
+        if not (
+            (Path(directory) / ".si").is_dir()
+            and (Path(directory) / ".si" / "settings.siproj").is_file()
+        ):
+            debugLog(f'Tried to use "createProject" to create a project')
+            if not createProject(directory, Path(directory).name):
+                debugLog(f"{directory} is not a valid project! Return false instead.")
+                normalLog(2, f"{directory} is not a valid project!")
+                return None
         debugLog("Attempting to read settings...")
         gotJson: str = ""
         try:

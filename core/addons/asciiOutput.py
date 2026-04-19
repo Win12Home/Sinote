@@ -1,6 +1,7 @@
 from platform import libc_ver, python_version, system, win32_ver
 
 from rich import print
+
 from utils.argumentParser import colored, debugMode, onlyWarning
 from utils.const import apiVersion, sinoteVersion
 from utils.logger import Logger, normalLogOutput
@@ -11,11 +12,17 @@ def asciiOutput() -> None:
     if onlyWarning:
         return
     Logger.info(f"Import Modules Finish! Used {getTotalSeconds()}secs")
-    Logger.info(r"   _____ _             __          ______    ___ __            ")
-    Logger.info(r"  / ___/(_)___  ____  / /____     / ____/___/ (_) /_____  _____")
+    Logger.info(
+        r"   _____ _             __          ______    ___ __                  PRE-RELEASE"
+    )
+    Logger.info(
+        r"  / ___/(_)___  ____  / /____     / ____/___/ (_) /_____  _____      GITHUB OPEN-SOURCED"
+    )
     Logger.info(r"  \__ \/ / __ \/ __ \/ __/ _ \   / __/ / __  / / __/ __ \/ ___/")
     Logger.info(r" ___/ / / / / / /_/ / /_/  __/  / /___/ /_/ / / /_/ /_/ / /    ")
-    Logger.info(r"/____/_/_/ /_/\____/\__/\___/  /_____/\__,_/_/\__/\____/_/     ")
+    Logger.info(
+        r"/____/_/_/ /_/\____/\__/\___/  /_____/\__,_/_/\__/\____/_/           Win12Home (C) 2025-, MIT."
+    )
     Logger.info(
         f"Sinote Editor {sinoteVersion}, API Version: {".".join([f"{i}" for i in apiVersion])}"
     )

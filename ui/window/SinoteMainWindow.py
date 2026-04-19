@@ -3,18 +3,13 @@ from functools import partial
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
-from core.addons.applyStylesheet import applyStylesheet
-from core.addons.setGlobalUIFont import isRecommendFont
-from core.addons.Shortcut import Shortcut
-from core.AutoLoadPluginThread import autoRun, loadedPlugin
-from core.AutomaticIterDirectoryThread import AutomaticIterDirectoryThread
-from core.i18n import basicInfo, lang, getLangJson
-from core.project import ProjectSettings
-from ui.msgbox.CreateProjectDialog import CreateProjectDialog
 from PySide6.QtCore import QEvent, QObject, Qt, QTimer, Signal
 from PySide6.QtGui import (
     QAction,
+    QBrush,
     QCloseEvent,
+    QColor,
+    QCursor,
     QFont,
     QIcon,
     QKeyEvent,
@@ -24,6 +19,8 @@ from PySide6.QtGui import (
 from PySide6.QtWidgets import (
     QFileDialog,
     QHBoxLayout,
+    QSplitter,
+    QInputDialog,
     QLabel,
     QListWidget,
     QListWidgetItem,
@@ -40,8 +37,17 @@ from PySide6.QtWidgets import (
     QVBoxLayout,
     QWidget,
 )
+
+from core.addons.applyStylesheet import applyStylesheet
+from core.addons.setGlobalUIFont import isRecommendFont
+from core.addons.Shortcut import Shortcut
+from core.AutoLoadPluginThread import autoRun, loadedPlugin
+from core.AutomaticIterDirectoryThread import AutomaticIterDirectoryThread
+from core.i18n import baseInfo, getLangJson
+from core.project import ProjectSettings
 from ui.edit.AutomaticSaveThingsThread import AutomaticSaveThingsThread
 from ui.edit.SinotePlainTextEdit import SinotePlainTextEdit
+from ui.msgbox.CreateProjectDialog import CreateProjectDialog
 from ui.selfLogger import debugLog
 from ui.SettingObject import (
     CheckBoxSettingObject,
@@ -92,10 +98,21 @@ class MainWindow(FramelessWindow):
         proj: str = settingObject.getValue("recently_project_path")
 
         if proj is None:
-            debugLog('"recently_project_path" is null, quitting...')
+            debugLog('"recently_project_path" is null, quitting... 🤔 It\'s have some bugs before.')
             return
 
         self._openProject(proj)
+
+    def _setupOthers(self) -> None:
+        if not isinstance(settingObject.getValue("left_area_pack_width"), int):
+            settingObject.setValue("left_area_pack_width", min(200, self.width()-50))
+
+        self.horizontalSplitter.setSizes([settingObject.getValue("left_area_pack_width"), self.horizontalSplitter.width() - settingObject.getValue("left_area_pack_width")])
+
+        if settingObject.getValue("left_area_visible"):  # Yeah, i don't know it really a bool.
+            self.projectArea.setVisible(True)
+        else:
+            self.projectArea.setVisible(False)
 
     def newProject(self) -> None:
         projectCreator = CreateProjectDialog(self)
@@ -110,7 +127,9 @@ class MainWindow(FramelessWindow):
         if not isinstance(self._projectSettings["recentlyWorks"], dict):
             self._projectSettings["recentlyWorks"] = {}
 
-        if not isinstance(self._projectSettings["nowWorks"], str):  # None -> None, no any issue there
+        if not isinstance(
+            self._projectSettings["nowWorks"], str
+        ):  # None -> None, no any issue there
             self._projectSettings["nowWorks"] = None
 
         if len(self._projectSettings["recentlyWorks"]) > 0:  # NOQA
@@ -130,12 +149,15 @@ class MainWindow(FramelessWindow):
                     else:
                         Logger.error(
                             "Position information has broken! Automatically remove position information.",
-                            "TabSetActivity"
+                            "TabSetActivity",
                         )
                         self.createTab(fileName)
             self._projectSettings["recentlyWorks"] = result
 
         for oneFile in self.tabTextEdits:
+            if oneFile is None:
+                continue
+
             if oneFile.nowFilename == self._projectSettings["nowWorks"]:
                 self.textEditArea.setCurrentWidget(oneFile)
                 break
@@ -144,14 +166,15 @@ class MainWindow(FramelessWindow):
         debugLog(
             "Project Tree Update Signal has received, trying to refresh project tree in UI..."
         )
+        Logger.info("Refreshing Project Tree...", "SinoteUserInterfaceActivity")
         self.folder.clear()
-        self.updateFromFiles(directory)
-        debugLog("Successfully to update project tree!")
+        QTimer.singleShot(10, lambda: self.updateFromFiles(directory))
+        debugLog("Released a QTimer to run it")
 
     def updateFromFiles(
         self, directory: list[Any], from_where: QTreeWidgetItem = None
     ) -> None:
-        debugLog(f"Updating from folder: {directory}")
+        debugLog(f"Updating from folder: {directory}, item count: {len(directory)} 📂")
 
         if from_where is None:
             from_where = self.folder
@@ -161,7 +184,8 @@ class MainWindow(FramelessWindow):
                 item = QTreeWidgetItem(from_where, [oneFile[1]])
                 item.where = oneFile[2]
                 item.setIcon(0, QIcon.fromTheme(oneFile[0]))
-                debugLog("Recursing because of folder type")
+                item.setForeground(0, QBrush(QColor(Qt.GlobalColor.blue)))
+                debugLog("Recursing because of folder type 📂📂📂")
                 self.updateFromFiles(oneFile[3], item)
             else:
                 item = QTreeWidgetItem(from_where, [oneFile[1]])
@@ -173,7 +197,206 @@ class MainWindow(FramelessWindow):
             else:
                 from_where.addChild(item)
 
-            debugLog("Well, successfully to analyze it!")
+            debugLog("Well, successfully to analyze it! 😲")
+
+    def addTreeFile(self, path: Path | str | None) -> None:
+        if path is None:
+            return
+
+        if not isinstance(path, Path):
+            path = Path(path)
+
+        window = QInputDialog(parent=self)
+        window.setInputMode(QInputDialog.InputMode.TextInput)
+        window.setWindowTitle("")
+        window.setWindowIcon(self.windowIcon())
+        window.setLabelText(getLangJson("MessageBox")["msgbox.request.inputFileName"])
+        window.setOkButtonText(getLangJson("MessageBox")["msgbox.button.ok"])
+        window.setCancelButtonText(getLangJson("MessageBox")["msgbox.button.cancel"])
+        if window.exec():
+            try:
+                with open(path / window.textValue(), "w", encoding="utf-8") as f:
+                    f.write("")
+            except Exception as e:
+                msgbox = QMessageBox(
+                    QMessageBox.Icon.Critical,
+                    getLangJson("MessageBox")["msgbox.title.error"],
+                    getLangJson("MessageBox")["msgbox.error.cannotCreate"].format(
+                        str(path / window.textValue()), repr(e)
+                    ),
+                    buttons=QMessageBox.StandardButton.Ok,
+                    parent=self,
+                )
+                msgbox.exec()
+            else:
+                self.dirThread.emitIterDir()
+
+    def addTreeFolder(self, path: Path | str | None) -> None:
+        if path is None:
+            return
+
+        if not isinstance(path, Path):
+            path = Path(path)
+
+        window = QInputDialog(parent=self)
+        window.setInputMode(QInputDialog.InputMode.TextInput)
+        window.setWindowTitle("")
+        window.setWindowIcon(self.windowIcon())
+        window.setLabelText(getLangJson("MessageBox")["msgbox.request.inputFolderName"])
+        window.setOkButtonText(getLangJson("MessageBox")["msgbox.button.ok"])
+        window.setCancelButtonText(getLangJson("MessageBox")["msgbox.button.cancel"])
+        if window.exec():
+            try:
+                (path / window.textValue()).mkdir(exist_ok=True)
+            except Exception as e:
+                msgbox = QMessageBox(
+                    QMessageBox.Icon.Critical,
+                    getLangJson("MessageBox")["msgbox.title.error"],
+                    getLangJson("MessageBox")["msgbox.error.cannotCreateFolder"].format(
+                        str(path / window.textValue()), repr(e)
+                    ),
+                    buttons=QMessageBox.StandardButton.Ok,
+                    parent=self,
+                )
+                msgbox.exec()
+            else:
+                self.dirThread.emitIterDir()
+
+    def removeTreeFile(self) -> None:
+        if not self.folder.currentItem():
+            return
+
+        try:
+            location = self.folder.currentItem().where
+        except AttributeError:
+            return
+
+        try:
+            if Path(location).is_file():
+                for oneTab in self.tabTextEdits:
+                    if oneTab is None:
+                        return
+
+                    if Path(oneTab.nowFilename) == Path(location):
+                        self.tabTextEdits.remove(oneTab)
+                        self.textEditArea.removeTab(self.textEditArea.indexOf(oneTab))
+                        break
+
+                Path(location).unlink()
+            elif Path(location).is_dir():
+                for oneTab in self.tabTextEdits:
+                    if oneTab is None:
+                        return
+
+                    if (
+                        Path(oneTab.nowFilename)
+                        .resolve()
+                        .is_relative_to(Path(location).resolve())
+                    ):
+                        self.tabTextEdits.remove(oneTab)
+                        self.textEditArea.removeTab(self.textEditArea.indexOf(oneTab))
+
+                from shutil import rmtree
+
+                rmtree(location)
+            else:
+                raise IOError(f"{location} is not a file or a directory")
+        except Exception as e:
+            msgbox = QMessageBox(
+                QMessageBox.Icon.Critical,
+                getLangJson("MessageBox")["msgbox.title.error"],
+                getLangJson("MessageBox")["msgbox.error.cannotRemove"].format(repr(e)),
+                buttons=QMessageBox.StandardButton.Ok,
+                parent=self,
+            )
+            msgbox.exec()
+        else:
+            self.dirThread.emitIterDir()
+
+    def renameTreeFile(self) -> None:
+        if not self.folder.currentItem():
+            return
+
+        try:
+            location = self.folder.currentItem().where
+        except AttributeError:
+            return
+
+        window = QInputDialog(parent=self)
+        window.setInputMode(QInputDialog.InputMode.TextInput)
+        window.setWindowTitle("")
+        window.setWindowIcon(self.windowIcon())
+        window.setLabelText(getLangJson("MessageBox")["msgbox.request.inputFileName"])
+        window.setOkButtonText(getLangJson("MessageBox")["msgbox.button.ok"])
+        window.setCancelButtonText(getLangJson("MessageBox")["msgbox.button.cancel"])
+        window.setTextValue(Path(location).name)
+        if window.exec():
+            try:
+                Path(location).rename(Path(location).parent / window.textValue())
+            except Exception as e:
+                msgbox = QMessageBox(
+                    QMessageBox.Icon.Critical,
+                    getLangJson("MessageBox")["msgbox.title.error"],
+                    getLangJson("MessageBox")["msgbox.error.cannotRename"].format(
+                        window.textValue(), repr(e)
+                    ),
+                    buttons=QMessageBox.StandardButton.Ok,
+                    parent=self,
+                )
+                msgbox.exec()
+            else:
+                for oneTab in self.tabTextEdits:
+                    if oneTab is None:
+                        continue
+
+                    if Path(oneTab.nowFilename) == Path(location):
+                        self.tabTextEdits.remove(oneTab)
+                        self.textEditArea.removeTab(self.textEditArea.indexOf(oneTab))
+                        break
+                self.createTab(str(Path(location).parent / window.textValue()))
+                self.dirThread.emitIterDir()
+
+    def analyzeTreeMenu(self) -> None:
+        try:
+            currentPath: Path = Path(self.folder.currentItem().where)
+        except AttributeError:
+            return
+
+        menu = QMenu(self)
+
+        addFile = QAction(
+            getLangJson("EditorUI")["editor.menu.folder.addfile"],
+            icon=QIcon.fromTheme(QIcon.ThemeIcon.DocumentNew),
+        )
+        addFile.triggered.connect(
+            partial(
+                self.addTreeFile,
+                currentPath if currentPath.is_dir() else currentPath.parent,
+            )
+        )
+        addFolder = QAction(
+            getLangJson("EditorUI")["editor.menu.folder.addfolder"],
+            icon=QIcon.fromTheme(QIcon.ThemeIcon.FolderNew),
+        )
+        addFolder.triggered.connect(
+            partial(
+                self.addTreeFolder,
+                currentPath if currentPath.is_dir() else currentPath.parent,
+            )
+        )
+        rename = QAction(
+            getLangJson("EditorUI")["editor.menu.folder.rename"],
+            icon=QIcon.fromTheme(QIcon.ThemeIcon.InsertText),
+        )
+        rename.triggered.connect(self.renameTreeFile)
+        remove = QAction(
+            getLangJson("EditorUI")["editor.menu.folder.remove"],
+            icon=QIcon.fromTheme(QIcon.ThemeIcon.EditDelete),
+        )
+        remove.triggered.connect(self.removeTreeFile)
+
+        menu.addActions([addFile, addFolder, rename, remove])
+        menu.exec(QCursor.pos())
 
     def analyzeOpenItem(self) -> None:
         if not self.folder.currentItem():
@@ -181,16 +404,29 @@ class MainWindow(FramelessWindow):
 
         if not hasattr(self.folder.currentItem(), "where"):
             return
-        
+
         if not Path(self.folder.currentItem().where).is_file():  # NOQA, look down
             return
+
+        for oneTab in self.tabTextEdits:
+            if oneTab is None:
+                continue
+
+            if Path(oneTab.nowFilename) == Path(
+                self.folder.currentItem().where
+            ):  # NOQA
+                self.textEditArea.setCurrentWidget(oneTab)
+                return
 
         self.createTab(self.folder.currentItem().where)  # NOQA, checked attribute
 
     def _setupUI(self) -> None:
         debugLog("Setting up User Interface...")
         debugLog("Setting up Text Edit Area...")
+        self.mainFrame.putLayout = QVBoxLayout()
+
         self.projectArea = QWidget()
+        self.projectArea.setMinimumWidth(20)
         self.projectArea.vLayout = QVBoxLayout()
 
         self.commandBar: QWidget = QWidget()
@@ -199,38 +435,54 @@ class MainWindow(FramelessWindow):
         )
         self.commandBar.hLayout = QHBoxLayout()
         self.commandBar.hLayout.setAlignment(Qt.AlignmentFlag.AlignLeft)
-        self.commandBar.projectName = QLabel(getLangJson("EditorUI")["editor.proj.noproj"])
+        self.commandBar.projectName = QLabel(
+            getLangJson("EditorUI")["editor.proj.noproj"]
+        )
         self.commandBar.addFile = QPushButton("+")
         self.commandBar.addFile.setFlat(True)
         self.commandBar.addFile.setSizePolicy(
             QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed
         )
+        self.commandBar.addFile.clicked.connect(lambda: self.addTreeFile(self._project))
+        self.commandBar.addFolder = QPushButton("+DIR")
+        self.commandBar.addFolder.setFlat(True)
+        self.commandBar.addFolder.setSizePolicy(
+            QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed
+        )
+        self.commandBar.addFolder.clicked.connect(
+            lambda: self.addTreeFolder(self._project)
+        )
         self.commandBar.hLayout.addWidget(self.commandBar.projectName, stretch=0)
         self.commandBar.hLayout.addWidget(self.commandBar.addFile, stretch=0)
+        self.commandBar.hLayout.addWidget(self.commandBar.addFolder, stretch=0)
         self.commandBar.setLayout(self.commandBar.hLayout)
 
         self.folder: QTreeWidget = QTreeWidget()
-        self.folder.itemDoubleClicked.connect(self.analyzeOpenItem)
         self.folder.setHeaderHidden(True)
         self.folder.setRootIsDecorated(False)
+        self.folder.itemDoubleClicked.connect(self.analyzeOpenItem)
+        self.folder.installEventFilter(self)
         self.projectArea.vLayout.addWidget(self.commandBar, stretch=0)
         self.projectArea.vLayout.addWidget(self.folder, stretch=1)
         self.projectArea.setLayout(self.projectArea.vLayout)
 
         self.textEditArea = QTabWidget()
-        self.tabTextEdits: list[SinotePlainTextEdit | None] = []
+        self.tabTextEdits: list[SinotePlainTextEdit | QWidget | None] = []
         self.textEditArea.tabBar().setMaximumHeight(60)
         self.textEditArea.setTabsClosable(True)
         self.textEditArea.setMovable(True)
         self.textEditArea.tabCloseRequested.connect(self._requestClose)
         debugLog("Successfully to set up Text Edit Area!")
         debugLog("Setting up Layout...")
-        self.horizontalLayout = QHBoxLayout()
-        self.horizontalLayout.addWidget(self.projectArea)
-        self.horizontalLayout.addWidget(self.textEditArea)
-        self.horizontalLayout.setStretch(0, 1)
-        self.horizontalLayout.setStretch(1, 3)
-        self.mainFrame.setLayout(self.horizontalLayout)
+        self.horizontalSplitter = QSplitter(Qt.Orientation.Horizontal)
+        self.horizontalSplitter.addWidget(self.projectArea)
+        self.horizontalSplitter.addWidget(self.textEditArea)
+        self.horizontalSplitter.setCollapsible(0, False)
+        self.horizontalSplitter.setCollapsible(1, True)
+
+        self.mainFrame.putLayout.addWidget(self.horizontalSplitter)
+        self.mainFrame.setLayout(self.mainFrame.putLayout)
+
         self.dirThread.iterChanged.connect(self.updateTree)
         debugLog("Successfully to set up Layout!")
         debugLog("Setting up Menu...")
@@ -241,7 +493,7 @@ class MainWindow(FramelessWindow):
         newProject = QAction(
             getLangJson("EditorUI")["editor.menu.files.newproj"],
             self,
-            icon=QIcon.fromTheme(QIcon.ThemeIcon.FolderNew)
+            icon=QIcon.fromTheme(QIcon.ThemeIcon.FolderNew),
         )
         newProject.triggered.connect(self.newProject)
         openProject = QAction(
@@ -330,19 +582,21 @@ class MainWindow(FramelessWindow):
             getLangJson("EditorUI")["editor.desc.setobj.language"],
         )
         self.setArea.appearance.language.comboBox.addItems(
-            [i for _, i in basicInfo["item.dict.language_for"].items()]
+            [i for _, i in baseInfo()["item.dict.language_for"].items()]
         )
         try:
             self.setArea.appearance.language.comboBox.setCurrentIndex(
-                list(basicInfo["item.dict.language_for"].keys()).index(lang)
+                list(baseInfo()["item.dict.language_for"].keys()).index(
+                    settingObject.getValue("language")
+                )
             )
-        except Exception:
+        except IndexError:
             self.setArea.appearance.language.comboBox.setCurrentIndex(0)
         self.setArea.appearance.language.comboBox.currentIndexChanged.connect(
             lambda: {
                 settingObject.setValue(
                     "language",
-                    list(basicInfo["item.dict.language_for"].keys())[
+                    list(baseInfo()["item.dict.language_for"].keys())[
                         self.setArea.appearance.language.comboBox.currentIndex()
                     ],
                 ),
@@ -534,7 +788,8 @@ class MainWindow(FramelessWindow):
         self.setArea.edfont.vLayout.addStretch(1)
         self.setArea.edfont.setLayout(self.setArea.edfont.vLayout)
         self.setArea.addTab(
-            self.setArea.edfont, getLangJson("EditorUI")["editor.tab.settings.editorfont"]
+            self.setArea.edfont,
+            getLangJson("EditorUI")["editor.tab.settings.editorfont"],
         )
         self.setVerticalLayout = QVBoxLayout()
         self.setVerticalLayout.addWidget(self.backToMain)
@@ -569,11 +824,18 @@ class MainWindow(FramelessWindow):
             self.close()
 
     def eventFilter(self, obj: QObject, event: QEvent) -> bool:
+        try:
+            if obj == self.folder and event.type() == QEvent.Type.ContextMenu:
+                if self.folder.currentIndex().isValid():
+                    self.analyzeTreeMenu()
+        except AttributeError:
+            pass
+
         if event.type() == QEvent.Type.KeyPress:
             self.shortcut.keyPressEvent(event)  # NOQA
         elif event.type() == QEvent.Type.KeyRelease:
             self.shortcut.keyReleaseEvent(event)  # NOQA, shut up
-        return False
+        return super().eventFilter(obj, event)
 
     def keyPressEvent(self, event: QKeyEvent) -> None:
         self.shortcut.keyPressEvent(event)
@@ -675,6 +937,7 @@ class MainWindow(FramelessWindow):
     def show(self) -> None:
         debugLog("Showing Application...")
         super().show()
+        self._setupOthers()
         Logger.info(
             f"Used {getTotalSeconds():.2f}s to load!",
             "SinoteUserInterfaceActivity",
@@ -708,15 +971,13 @@ class MainWindow(FramelessWindow):
 
             I never use venv, of course.
             """
-            print(
-                """error: externally-managed-font-src
+            print("""error: externally-managed-font-src
 
 × This font directory is externally managed
 ╰─> To use fixed font every time it's not recommend at that.
 
 If you want to use Fixed Font every time or you doesn't know that problem, remove .1 suffix in DISABLE-FONT-CHECK-WARNING.1!
-                """
-            )
+                """)
             msgbox: QMessageBox = QMessageBox(
                 QMessageBox.Icon.Warning,
                 "Warning",
@@ -736,7 +997,8 @@ If you want to use Fixed Font every time or you doesn't know that problem, remov
                 )
 
         if self._project is None or self._projectSettings is None:
-            self.newProject()
+            self.repaint()
+            QTimer.singleShot(0, self.newProject)
 
     def closeEvent(self, event: QCloseEvent) -> None:
         debugLog("CloseEvent triggered 🤓")
@@ -756,12 +1018,19 @@ If you want to use Fixed Font every time or you doesn't know that problem, remov
         msgbox.setWindowIcon(self.windowIcon())
         debugLog("Executing Message Box and asking user done or cancel...")
         if msgbox.exec() == QMessageBox.StandardButton.Yes:
-
+            leftAreaVisible = self.projectArea.isVisible()
+            self.hide()
             debugLog("Attmepting to save screen size... 😁")
-            settingObject.setValue("screen_size", [self.width(), self.height()])
+            settingObject.setValue(
+                "screen_size",
+                (
+                    [self.width(), self.height()]
+                    if not self.isMaximized()
+                    else "maximized"
+                ),
+            )
             debugLog("Saved screen size! 🐔")
             debugLog("Attempting to close threads 🤓")
-            self.hide()
             self.editorThread.quit()
             self.editorThread.wait()
             self.dirThread.quit()
@@ -795,10 +1064,14 @@ If you want to use Fixed Font every time or you doesn't know that problem, remov
             if self._projectSettings:
                 self._projectSettings["recentlyWorks"] = beforeRead
                 if hasattr(self.textEditArea.currentWidget(), "nowFilename"):
-                    self._projectSettings["nowWorks"] = self.textEditArea.currentWidget().nowFilename
+                    self._projectSettings["nowWorks"] = (
+                        self.textEditArea.currentWidget().nowFilename
+                    )
                 else:
                     self._projectSettings["nowWorks"] = None
             settingObject.setValue("recently_project_path", self._project)
+            settingObject.setValue("left_area_pack_width", self.horizontalSplitter.sizes()[0])
+            settingObject.setValue("left_area_visible", leftAreaVisible)
             debugLog("Saved session!")
             debugLog("Closing window... 🤔")
             self.destroy()
@@ -885,7 +1158,7 @@ If you want to use Fixed Font every time or you doesn't know that problem, remov
 
     def _requestClose(self, index: int):
         if 0 <= index < len(self.tabTextEdits):
-            self.tabTextEdits[index] = None
+            self.tabTextEdits.remove(self.textEditArea.widget(index))
             self.textEditArea.removeTab(index)
 
     def _createRecommendFile(self):
@@ -904,7 +1177,9 @@ If you want to use Fixed Font every time or you doesn't know that problem, remov
             filename = None
         if filename:
             temp.readFile(filename)
-        if position and isinstance(position, int):
+        if position and isinstance(
+            position, int
+        ):  # Restore cursor position from last session
             cursor: QTextCursor = temp.textCursor()
             cursor.setPosition(position)
             temp.setTextCursor(cursor)
@@ -926,14 +1201,17 @@ If you want to use Fixed Font every time or you doesn't know that problem, remov
                 else str(Path(filename).name)
             ),
         )
-        temp.setFilename = lambda index, path: self.textEditArea.tabBar().setTabText(index, Path(path).name)
-        self.textEditArea.setCurrentIndex(len(self.tabTextEdits) - 1)
+        temp.setFilename = lambda index, path: self.textEditArea.tabBar().setTabText(
+            index, Path(path).name
+        )
+        debugLog("Adding path to File Handler... 👍")
         debugLog(
             f"Successfully to create tab! Used: {(datetime.now() - oldDatetime).total_seconds():.2f}s ✅"
         )
         debugLog("Attempting to update setting... 😍")
         self.applySettings()
         debugLog("Successfully to update setting! ✅")
+        self.textEditArea.setCurrentIndex(self.textEditArea.indexOf(temp))
         return temp
 
     def applySettings(self):
@@ -963,7 +1241,22 @@ If you want to use Fixed Font every time or you doesn't know that problem, remov
     def _initBase(self):
         debugLog("Initializing Base Window... 🔎")
         self.setWindowTitle("Sinote")
-        width, height = settingObject.getValue("screen_size")
-        debugLog(f"Saved size: width {width}, height {height}")
-        self.resize(width, height)
+        if settingObject.getValue("screen_size") == "maximized":
+            debugLog(f"Saved size: Maximized Window 😲")
+            self.showMaximized()
+        elif (
+            isinstance(settingObject.getValue("screen_size"), list)
+            and len(settingObject.getValue("screen_size")) == 2
+        ):
+            width, height = settingObject.getValue("screen_size")
+            if not (isinstance(width, int) and isinstance(height, int)):
+                settingObject.setValue("screen_size", [800, 600])
+            debugLog(f"Saved size: width {width}, height {height} 💀")
+            self.resize(width, height)
+        else:
+            Logger.error("Invalid screen_size 🤔", "SinoteUserInterfaceActivity")
         debugLog("Successfully to initialize ✅")
+
+    def resizeEvent(self, event) -> None:
+        self.projectArea.setMaximumWidth(max(20, self.width()-50))
+        super().resizeEvent(event)

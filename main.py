@@ -1,6 +1,6 @@
 """
 Sinote: Code Smartly, User Interface Intuitive
-Sinote Version 0.06.26014
+Sinote Version 0.07.26033
 3rd Party License saved at ./3rd-party-license
 
 Win12Home (C) 2025, 2026. MIT License.
@@ -8,13 +8,15 @@ Win12Home (C) 2025, 2026. MIT License.
 Sorry, my english bad OvO.
 Because I'm a child TAT.
 AI help me to finish 15% of these code, WTF (BABABOY)
+
+Avoid to run Sinote in Python 3.12
 """
 
 # The Sinote Main Script
 
 from core.addons.asciiOutput import asciiOutput
 from core.excepthook import setExceptionHook
-from utils.signal import analyzeAllSignal
+from utils.signalExecute import analyzeAllSignal
 from utils.sinoteScript import appStart
 from utils.verCheck import verCheck
 

@@ -6,6 +6,7 @@ from pathlib import Path
 from typing import Any, List
 
 from PySide6.QtGui import QIcon
+
 from utils.withObjects import RecursionLimitChanger
 
 

@@ -1,6 +1,7 @@
 from pathlib import Path
 
 from PySide6.QtGui import QFontDatabase
+
 from utils.argumentParser import debugMode
 from utils.logger import Logger
 

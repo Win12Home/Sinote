@@ -47,21 +47,15 @@ clean:
 check_py_env:
 	@echo -e "$(YELLOW)Checking Python environment...$(NC)"; \
 	if [ "$(foundPyEnvironment)" = "false" ]; then \
-		if command -v python >/dev/null 2>&1; then \
-			echo -e "$(GREEN)Successfully to find python! (in PATH)$(NC)"; \
-			foundPyEnvironment=true; \
-			pyPath=python; \
-		elif [ -f /bin/python ]; then \
-			echo -e "$(GREEN)Successfully to find python! (in /bin)$(NC)"; \
-			foundPyEnvironment=true; \
-			pyPath=/bin/python; \
-		else \
-			foundPyEnvironment=false; \
+		echo -e "$(YELLOW)Warning: $(NC) PYTHON_PATH hasn't been defined at all. Makefile will use \"python\" for running all the commands"; \
+		if ! $(pyPath) -c "import sys; sys.exit(0)" 2>/dev/null; then \
+		    echo "$(RED)Error: $(NC) \"python\" has not really defined, do you forget to install $(YELLOW)\"python\"$(NC)?"; \
+		    exit 1; \
 		fi; \
 	else \
 		echo -e "$(GREEN)Note: $(NC) PYTHON_PATH has been defined, Makefile will use this value to run python."; \
-	fi
-	@if [ "$$foundPyEnvironment" = "false" ]; then \
+	fi; \
+	if [ "$$foundPyEnvironment" = "false" ]; then \
 		echo -e "$(RED)Failed to find python environment!$(NC)"; \
 		exit 1; \
 	fi; \
@@ -133,7 +127,7 @@ help:
 	echo -e "  $(GREEN)PYTHON_PATH: $(NC)The Python Path that customizable (e.g. /bin/python3.12, /bin/python3.13)"; \
 	echo -e "  $(GREEN)NUITKA_ARGS: $(NC)The Nuitka Compiling Arguments (e.g. --debug)"; \
 	echo -e "  $(GREEN)PYINSTALLER_ARGS: $(NC)The Pyinstaller Making Arguments (e.g. --onefile)"; \
-	echo -e "$(RED)Note: $(NC)These environment variable is not nessasary."
+	echo -e "$(RED)Note: $(NC)These environment variable is not necessary."
 
 sinote_help: help
 
@@ -193,4 +187,21 @@ nuitka_build: nuitka_build_original clean_source
 
 nuitka: clean pip_install_packages nuitka_build_original clean_source
 	@echo -e "$(GREEN)=== Finished all build! ===$(NC)"; \
+	echo -e "Binary file is in $(YELLOW)./make-temporary/$(NC)";
+
+make_with_cli_nuitka: clean pip_install_packages nuitka_build_original clean_source
+	@echo -e "$(GREEN)Starting$(NC) to make CLI..."; \
+	mkdir ./temporary/; \
+	cp ./SinoteCLI.py ./temporary/SinoteCLI.py; \
+	cd ./temporary/; \
+	rm -rf ./dist; \
+	pyinstaller -F -c -i ./../resources/images/plugins.png SinoteCLI.py; \
+	echo -e "$(GREEN)Made$(NC) CLI Successfully!"; \
+	echo -e "$(GREEN)Copying$(NC) dist..."; \
+	cd ..; \
+	cp ./temporary/dist/* ./make-temporary/; \
+	echo -e "$(GREEN)Finished copy$(NC) task!"; \
+	echo -e "$(GREEN)Cleaning$(NC) environment..."; \
+	rm -rf ./temporary; \
+	echo -e "$(GREEN)=== Build completed! ===$(NC)"; \
 	echo -e "Binary file is in $(YELLOW)./make-temporary/$(NC)";

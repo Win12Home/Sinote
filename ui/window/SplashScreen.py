@@ -1,14 +1,17 @@
-from core.i18n import getLangJson
 from PySide6.QtCore import QSize, Qt
 from PySide6.QtGui import QPixmap
-from PySide6.QtWidgets import QDialog, QLabel, QVBoxLayout
+from PySide6.QtWidgets import QApplication, QDialog, QLabel, QVBoxLayout
+
+from core.i18n import getLangJson
 
 
 class SplashScreen(QDialog):
     def __init__(self):
         super().__init__()
         self.setWindowFlags(
-            Qt.WindowType.SplashScreen | Qt.WindowType.FramelessWindowHint | Qt.WindowType.Dialog
+            Qt.WindowType.SplashScreen
+            | Qt.WindowType.FramelessWindowHint
+            | Qt.WindowType.Dialog
         )
         self.setMinimumWidth(500)
         self.setWindowTitle("Sinote")
@@ -38,7 +41,7 @@ class SplashScreen(QDialog):
                 self.nowLoading, "0", total
             )
         )
-        self.repaint()
+        QApplication.instance().processEvents()
 
     def setPluginName(self, name: str):
         self.nowLoading = name
@@ -47,7 +50,7 @@ class SplashScreen(QDialog):
                 self.nowLoading, self.loadedPlugin, self.totals
             )
         )
-        self.repaint()
+        QApplication.instance().processEvents()
 
     def addOne(self):
         self.loadedPlugin += 1
@@ -56,8 +59,8 @@ class SplashScreen(QDialog):
                 self.nowLoading, self.loadedPlugin, self.totals
             )
         )
-        self.repaint()
+        QApplication.instance().processEvents()
 
     def finishedPluginLoad(self):
         self.label.setText(getLangJson("LoadingScreen")["loading.text.loadfont"])
-        self.repaint()
+        QApplication.instance().processEvents()

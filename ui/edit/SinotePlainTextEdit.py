@@ -1,12 +1,13 @@
 from pathlib import Path
 from typing import Any
 
-from core.AutoLoadPluginThread import syntaxHighlighter
-from core.i18n import getLangJson
-from core.plugin import LoadPluginBase
 from PySide6.QtCore import Qt, QThread, Signal
 from PySide6.QtGui import QSyntaxHighlighter
 from PySide6.QtWidgets import QMessageBox, QWidget
+
+from core.AutoLoadPluginThread import syntaxHighlighter
+from core.i18n import getLangJson
+from core.plugin import LoadPluginBase
 from ui.edit.SpacingSupportEdit import SpacingSupportEdit
 from ui.selfLogger import debugLog
 from utils.logger import Logger
@@ -41,7 +42,8 @@ class SinotePlainTextEdit(SpacingSupportEdit):
         self.clear()
         if self.setFilename is not None and hasattr(self.parent(), "indexOf"):
             self.setFilename(
-                self.parent().indexOf(self), getLangJson("EditorUI")["editor.tab.new_file"]
+                self.parent().indexOf(self),
+                getLangJson("EditorUI")["editor.tab.new_file"],
             )
         self.nowFilename = None
 
@@ -57,7 +59,7 @@ class SinotePlainTextEdit(SpacingSupportEdit):
 
         def run(self) -> None:
             debugLog(f"Finding Highlighter (*.{self.appendix})... (THREAD) 🔎")
-            temp: LoadPluginBase.CustomizeSyntaxHighlighter | None = None
+            temp: LoadPluginBase.LazyCustomizeSyntaxHighlighter | None = None
             temp2, temp3 = None, None
             # name: str | None = None
             for k, i in syntaxHighlighter.items():
@@ -89,7 +91,9 @@ class SinotePlainTextEdit(SpacingSupportEdit):
         self.highlighter = (
             highlighter.getObject()
             if highlighter is not None
-            else LoadPluginBase.CustomizeSyntaxHighlighter([[] for _ in range(7)])
+            else LoadPluginBase.CustomizeSyntaxHighlighter(
+                []
+            )  # For disable number highlighting
         )
         self.highlighter.setDocument(self.document())
 

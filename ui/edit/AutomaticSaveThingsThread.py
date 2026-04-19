@@ -2,6 +2,7 @@ import time
 
 from PySide6.QtCore import QThread
 from PySide6.QtWidgets import QWidget
+
 from ui.selfLogger import debugLog
 from utils.config import settingObject
 
@@ -36,7 +37,7 @@ class AutomaticSaveThingsThread(QThread):
     def run(self) -> None:
         while self.running:
             for temp in range(self.saveSecs * 10):
-                time.sleep(0.1)
+                self.msleep(100)
                 if not self.running:
                     self.saveThings()
                     break

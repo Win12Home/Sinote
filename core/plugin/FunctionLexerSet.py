@@ -4,9 +4,11 @@ from pathlib import Path
 from shutil import copy2, rmtree
 from typing import Any, Callable
 
+from PySide6.QtCore import QEventLoop, QTimer
+from PySide6.QtWidgets import QInputDialog, QMessageBox
+
 from core.plugin.LoadPluginBase import LoadPluginBase
 from core.plugin.Variables import Variables
-from PySide6.QtWidgets import QInputDialog, QMessageBox
 from utils.application import BaseApplication
 from utils.argumentParser import debugMode
 from utils.config import settingObject
@@ -55,11 +57,9 @@ class FunctionLexerSet:
             return
         time: datetime = datetime.now()
         FunctionLexerSet.debugLog(f"Sleeping {msecs} msecs...")
-        while (datetime.now() - time).total_seconds() * 1000 < msecs:
-            __import__("time").sleep(0.01)  # Sleep 10ms
-            if BaseApplication.instance().quited:
-                return
-            BaseApplication.instance().processEvents()  # Update
+        eventLoop = QEventLoop()
+        QTimer.singleShot(msecs, eventLoop.quit)
+        eventLoop.exec()
         FunctionLexerSet.debugLog(f"Sleep {msecs} successfully, exited.")
 
     def afile(self, filePath: str, content: str) -> None:

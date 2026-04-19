@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from core.i18n.loadJson import setLang
+from core.i18n.getLangJson import setLang
 from utils.config import settingObject
 
 

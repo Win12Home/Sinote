@@ -3,15 +3,13 @@ from getpass import getuser
 from platform import system
 
 from PySide6.QtWidgets import QApplication, QMessageBox
+
 from utils.err import err
 from utils.logger import Logger, setFunny, setNoColor, setOwLog
 
 debugMode: bool = False
 onlyWarning: bool = False
 colored: bool = True
-
-# basicInfo will be BaseInfo.json
-basicInfo: dict = {}
 
 
 # Look at the system
@@ -80,3 +78,8 @@ if "-ow" in args or "--only-warning" in args:
     Logger.debug("Only Warning Started 🤓", "ArgumentParser")
     onlyWarning = True
     setOwLog()
+
+
+def setDebugMode() -> None:
+    global debugMode
+    debugMode = True

@@ -2,6 +2,7 @@ from datetime import datetime
 
 from PySide6.QtCore import QObject, Qt, Signal
 from PySide6.QtGui import QKeyEvent
+
 from utils.argumentParser import debugMode
 from utils.errors import SinoteErrors
 from utils.logger import Logger
