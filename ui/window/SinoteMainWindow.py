@@ -1205,7 +1205,6 @@ If you want to use Fixed Font every time or you doesn't know that problem, remov
             index, Path(path).name
         )
         debugLog("Adding path to File Handler... 👍")
-        self.fileSystemHandler.addPath(str(Path(filename).absolute()))
         debugLog(
             f"Successfully to create tab! Used: {(datetime.now() - oldDatetime).total_seconds():.2f}s ✅"
         )
