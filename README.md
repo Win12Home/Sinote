@@ -3,7 +3,7 @@
 ***English (United States)*** | [**中文（简体）**](README/README_CN.md)
 
 ## Introduction
-![Python Support](https://img.shields.io/badge/Python%20Support-3.13%20to%203.14-green) ![PySide6 6.10](https://img.shields.io/badge/PySide6-6.10-blue) ![Style Material](https://img.shields.io/badge/Style-Material%20Style-purple) ![Last Release](https://img.shields.io/badge/Last%20Release-0.07.26031-green) ![Develop Status](https://img.shields.io/badge/Develop%20Status-Pre%20Release-blue)
+![Python Support](https://img.shields.io/badge/Python%20Support-3.13%20to%203.14-green) ![PySide6 6.10](https://img.shields.io/badge/PySide6-6.10-blue) ![Style Material](https://img.shields.io/badge/Style-Material%20Style-purple) ![Last Release](https://img.shields.io/badge/Last%20Release-0.08.26033-green) ![Develop Status](https://img.shields.io/badge/Develop%20Status-Pre%20Release-blue)
 
 Sinote [ˈsaɪnoʊt] is an ***Open Source*** Project with **PySide6** and more.<br>
 This project *import* ***Customize Plugin System***! Please skip ``/Documentation/pluginEdit``.<br>

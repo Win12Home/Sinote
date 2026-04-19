@@ -3,11 +3,13 @@
 ## Recently Builds
 ***Now no any build because only Pre-release out!***
 ## Recently Pre-release
-### 0.07.26031
+### 0.08.26033
 1. **Fix issue**: Fixed that Sinote will be pop up error window when starting Create Project.
 2. **Fix issue**: Window will be stuck when first startup or didn't open any projects.
 3. **Fix issue**: Fix issue that Windows, XCB(X11) and other system will not change shape when cursor is at the border of the window.
 4. **Fix issue**: Set ThreadPool max parallel threads to 4.
+5. **Fix issue**: Fix issue that Windows, XCB(X11) and other system will not be release cursor moving event.
+6. **Add feature**: Add splitter that allows user drag to adjust width.
 ### 0.07.26027
 1. **Fix issue**: Fixed that Language Setting Widget it won't follow the setting of setting.json5, and baseInfo always be English.
 2. **Add feature**: Added `Add File, Add Folder, Rename, Remove` to the right-clicking menu of the tree view of the project.

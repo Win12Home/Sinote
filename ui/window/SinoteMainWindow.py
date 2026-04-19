@@ -19,6 +19,7 @@ from PySide6.QtGui import (
 from PySide6.QtWidgets import (
     QFileDialog,
     QHBoxLayout,
+    QSplitter,
     QInputDialog,
     QLabel,
     QListWidget,
@@ -97,10 +98,21 @@ class MainWindow(FramelessWindow):
         proj: str = settingObject.getValue("recently_project_path")
 
         if proj is None:
-            debugLog('"recently_project_path" is null, quitting...')
+            debugLog('"recently_project_path" is null, quitting... 🤔 It\'s have some bugs before.')
             return
 
         self._openProject(proj)
+
+    def _setupOthers(self) -> None:
+        if not isinstance(settingObject.getValue("left_area_pack_width"), int):
+            settingObject.setValue("left_area_pack_width", min(200, self.width()-50))
+
+        self.horizontalSplitter.setSizes([settingObject.getValue("left_area_pack_width"), self.horizontalSplitter.width() - settingObject.getValue("left_area_pack_width")])
+
+        if settingObject.getValue("left_area_visible"):  # Yeah, i don't know it really a bool.
+            self.projectArea.setVisible(True)
+        else:
+            self.projectArea.setVisible(False)
 
     def newProject(self) -> None:
         projectCreator = CreateProjectDialog(self)
@@ -411,7 +423,10 @@ class MainWindow(FramelessWindow):
     def _setupUI(self) -> None:
         debugLog("Setting up User Interface...")
         debugLog("Setting up Text Edit Area...")
+        self.mainFrame.putLayout = QVBoxLayout()
+
         self.projectArea = QWidget()
+        self.projectArea.setMinimumWidth(20)
         self.projectArea.vLayout = QVBoxLayout()
 
         self.commandBar: QWidget = QWidget()
@@ -459,12 +474,15 @@ class MainWindow(FramelessWindow):
         self.textEditArea.tabCloseRequested.connect(self._requestClose)
         debugLog("Successfully to set up Text Edit Area!")
         debugLog("Setting up Layout...")
-        self.horizontalLayout = QHBoxLayout()
-        self.horizontalLayout.addWidget(self.projectArea)
-        self.horizontalLayout.addWidget(self.textEditArea)
-        self.horizontalLayout.setStretch(0, 1)
-        self.horizontalLayout.setStretch(1, 3)
-        self.mainFrame.setLayout(self.horizontalLayout)
+        self.horizontalSplitter = QSplitter(Qt.Orientation.Horizontal)
+        self.horizontalSplitter.addWidget(self.projectArea)
+        self.horizontalSplitter.addWidget(self.textEditArea)
+        self.horizontalSplitter.setCollapsible(0, False)
+        self.horizontalSplitter.setCollapsible(1, True)
+
+        self.mainFrame.putLayout.addWidget(self.horizontalSplitter)
+        self.mainFrame.setLayout(self.mainFrame.putLayout)
+
         self.dirThread.iterChanged.connect(self.updateTree)
         debugLog("Successfully to set up Layout!")
         debugLog("Setting up Menu...")
@@ -919,6 +937,7 @@ class MainWindow(FramelessWindow):
     def show(self) -> None:
         debugLog("Showing Application...")
         super().show()
+        self._setupOthers()
         Logger.info(
             f"Used {getTotalSeconds():.2f}s to load!",
             "SinoteUserInterfaceActivity",
@@ -999,7 +1018,7 @@ If you want to use Fixed Font every time or you doesn't know that problem, remov
         msgbox.setWindowIcon(self.windowIcon())
         debugLog("Executing Message Box and asking user done or cancel...")
         if msgbox.exec() == QMessageBox.StandardButton.Yes:
-
+            leftAreaVisible = self.projectArea.isVisible()
             self.hide()
             debugLog("Attmepting to save screen size... 😁")
             settingObject.setValue(
@@ -1051,6 +1070,8 @@ If you want to use Fixed Font every time or you doesn't know that problem, remov
                 else:
                     self._projectSettings["nowWorks"] = None
             settingObject.setValue("recently_project_path", self._project)
+            settingObject.setValue("left_area_pack_width", self.horizontalSplitter.sizes()[0])
+            settingObject.setValue("left_area_visible", leftAreaVisible)
             debugLog("Saved session!")
             debugLog("Closing window... 🤔")
             self.destroy()
@@ -1183,6 +1204,8 @@ If you want to use Fixed Font every time or you doesn't know that problem, remov
         temp.setFilename = lambda index, path: self.textEditArea.tabBar().setTabText(
             index, Path(path).name
         )
+        debugLog("Adding path to File Handler... 👍")
+        self.fileSystemHandler.addPath(str(Path(filename).absolute()))
         debugLog(
             f"Successfully to create tab! Used: {(datetime.now() - oldDatetime).total_seconds():.2f}s ✅"
         )
@@ -1234,3 +1257,7 @@ If you want to use Fixed Font every time or you doesn't know that problem, remov
         else:
             Logger.error("Invalid screen_size 🤔", "SinoteUserInterfaceActivity")
         debugLog("Successfully to initialize ✅")
+
+    def resizeEvent(self, event) -> None:
+        self.projectArea.setMaximumWidth(max(20, self.width()-50))
+        super().resizeEvent(event)

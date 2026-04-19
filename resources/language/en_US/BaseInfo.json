@@ -7,7 +7,7 @@
     "06",
     "26017"
   ],
-  "item.list.realversion": "0.07.26031-python3.14-pyside6",
+  "item.list.realversion": "0.08.26033-python3.14-pyside6",
   "item.bool.isbetaversion": true,
   "item.list.language_files": [
     "EditorUI",

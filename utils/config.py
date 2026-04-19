@@ -27,6 +27,8 @@ normalSetting: dict = {
     "disableplugin": [],
     "screen_size": [1280, 760],
     "recently_project_path": None,
+    "left_area_pack_width": 200,
+    "left_area_visible": True,
 }
 
 setting: dict = {}
@@ -69,11 +71,13 @@ class Setting:
 
     def setValue(self, key: str, value: Any) -> None:
         global setting
-        if key in normalSetting.keys():
+        if key in normalSetting.keys() and setting.get(key, object()) != value:
             setting[key] = value
             if debugMode:
                 Logger.debug(f"Successfully to change {key} to {value}")
             self.saveToConfig()
+        elif setting.get(key, object()) == value:
+            Logger.debug(f"New value is same as the value of key {key}, no need to change. Value: {value}")
 
     def saveToConfig(self) -> None:
         with open("./setting.json5", "w", encoding="utf-8") as f:

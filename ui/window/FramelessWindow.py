@@ -21,7 +21,7 @@ isWayland: bool = QApplication.platformName().lower() == "wayland"  # Fix issue 
 isX11: bool = QApplication.platformName().lower() in ["x11", "xcb"]
 
 def mapToSelf(self: QWidget, pos: QPoint) -> QPoint:
-    return pos if isWayland else pos - self.pos()  # Wayland is locality position, but others not.
+    return pos if isWayland else self.mapFromGlobal(pos)  # Wayland is locality position, but others not.
 
 class Edge(Enum):
     TopLeft = 0
