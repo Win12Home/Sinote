@@ -3,7 +3,10 @@
 ## Recently Builds
 ***Now no any build because only Pre-release out!***
 ## Recently Pre-release
-### 0.08.26033
+### 0.08.26035
+1. **Remove**: Removed type=0 plugin
+2. **Add feature**: Add type=0 plugin that provides user to run anything with Python.
+### 0.08.26035
 1. **Fix issue**: Fixed that Sinote will be pop up error window when starting Create Project.
 2. **Fix issue**: Window will be stuck when first startup or didn't open any projects.
 3. **Fix issue**: Fix issue that Windows, XCB(X11) and other system will not change shape when cursor is at the border of the window.

@@ -5,7 +5,7 @@ from typing import Any, List
 
 from PySide6.QtCore import Signal, QThread
 
-from core.plugin import LoadPluginBase, LoadPluginInfo
+from core.plugin import LoadPluginBase, LoadWholePlugin
 from ui.selfLogger import debugPluginLog
 from utils.argumentParser import args
 from utils.config import settingObject
@@ -30,7 +30,8 @@ syntaxHighlighter Struct:
 
 class PluginsLoadThread(QThread):
     allLoaded = Signal()
-    def __init__(self, filePaths: list[Path], name: str=None):
+
+    def __init__(self, filePaths: list[Path], name: str = None):
         super().__init__()
         self.filePaths = filePaths
         self.name = name if name else str(__import__("random").randint(10000, 99999))
@@ -50,7 +51,7 @@ class PluginsLoadThread(QThread):
                     f"Automatic skipped {item.name}, Reason: info.json not exists ❌"
                 )
                 return
-            temp = LoadPluginInfo(item.name).getValue()
+            temp = LoadWholePlugin(item.name).getValue()
             debugPluginLog(f"Get value: {temp}")
             if temp == -1:
                 Logger.error(
@@ -62,8 +63,9 @@ class PluginsLoadThread(QThread):
                 return
             loadedPlugin[temp[0]["objectName"]] = temp[0]
             if temp[0]["objectName"] in settingObject.getValue("disableplugin"):
-                debugPluginLog(f"Automatic skip plugin {temp[0]["objectName"]} (DISABLED)")
-                self.loaded.emit()
+                debugPluginLog(
+                    f"Automatic skip plugin {temp[0]["objectName"]} (DISABLED)"
+                )
                 return
             debugPluginLog(
                 f"Successfully loaded {item.name}, objectName: {temp[0]["objectName"]}. Preparing to parse... ✅"
@@ -79,7 +81,7 @@ class PluginsLoadThread(QThread):
                     debugPluginLog("Appending to autoRun... 💥")
                     if isinstance(key[2], list):
                         [
-                            autoRun.append(i) if isinstance(i, partial) else None
+                            autoRun.append(i) if callable(i) else None
                             for i in key[2]
                         ]
                     """
@@ -91,6 +93,7 @@ class PluginsLoadThread(QThread):
                     """
                     debugPluginLog("Successfully to append! ✅")
         debugPluginLog(f"Thread #{self.name} has been finished its work!")
+
 
 class AutoLoadPlugin(QThread):
     loadedOne = Signal()
@@ -139,11 +142,13 @@ class AutoLoadPlugin(QThread):
             copiedList = dirs.copy()
 
             for name, i in enumerate(wannaAllocate):
-                plugins.append(PluginsLoadThread(copiedList[:i], str(name+1)))
+                plugins.append(PluginsLoadThread(copiedList[:i], str(name + 1)))
                 copiedList = copiedList[i:]
 
         else:
-            plugins = [PluginsLoadThread([i], str(name+1)) for name, i in enumerate(dirs)]
+            plugins = [
+                PluginsLoadThread([i], str(name + 1)) for name, i in enumerate(dirs)
+            ]
 
         for item in plugins:
             item.start()

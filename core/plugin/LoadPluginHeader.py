@@ -57,7 +57,7 @@ class LoadPluginHeader:
                 "useSinoteVariableInString": True,
             }
             debugLog(f"Checking header that its path is {self.filename}")
-            if not self.header.get("config", None):
+            if self.header.get("config", None) is None:
                 self.err('Key "config" not found! ❌')
                 return 0
             config = self.config | self.header["config"]
@@ -91,7 +91,7 @@ class LoadPluginHeader:
                     or config["enableCustomizeCommandRun"] == False
                 ):
                     Logger.warning(
-                        f'File "{self.filename}" is a Placeholder File (\'Cause no function and runFunc, or "enableCustomizeCommandRun" not enabled)',
+                        f'File "{self.filename}" is not valid (\'Cause no function and runFunc, or "enableCustomizeCommandRun" not enabled)',
                     )
                     # Interrupt
                     return None
@@ -103,48 +103,20 @@ class LoadPluginHeader:
                             f"Ignored the {funcName} function 'caused not a String function name.",
                         )
                         continue
-                    if not isinstance(funcProg, list):
+
+                    if not isinstance(funcProg, str) and not isinstance(funcProg, list):
                         Logger.warning(
-                            f"Ignored the {funcName} function 'caused not like this {r"\"String\":[]"}",
+                            f"Ignore the {funcName} function 'caused not a Python Function Programme. 🤔 Yep."
                         )
                         continue
-                    # More safe
-                    if isinstance(funcProg, list):
-                        temp: list = []
-                        for line, k in enumerate(funcProg, 1):
-                            debugLog(f"Checking sentence: {line}")
-                            if not isinstance(k, list):
-                                Logger.warning(
-                                    f"Ignored {line}th line in the {funcName} function 'caused isn't a List format.",
-                                )
-                                continue
-                            if len(k) < 2:
-                                Logger.warning(
-                                    f"Ignored {line}th line in the {funcName} function 'caused isn't a List format.",
-                                )
-                                continue
-                            if not isinstance(k[0], str):
-                                Logger.warning(
-                                    f"Ignored {line}th line in the {funcName} function 'caused cannot call the System Function. (Reason: Not String)",
-                                )
-                                continue
-                            if LoadPluginBase.functions.get(k[0].lower(), None) is None:
-                                Logger.warning(
-                                    f"Ignored {line}th line in the {funcName} function 'caused {k[0]} isn't a real function there.",
-                                )
-                                continue
-                            debugLog(
-                                "Valid sentence! Putting it into passed (things) list!"
-                            )
-                            k[0] = k[0].lower()
-                            temp.append(k)
-                        realFuncs[funcName] = temp
+
+                    realFuncs[funcName] = funcProg if isinstance(funcProg, str) else "\n".join(funcProg)
                 # look for runFunc
                 items.append({})
                 for whichFuncToRun, func in realFuncs.items():
                     if whichFuncToRun not in runFunc:
                         Logger.warning(
-                            f'{whichFuncToRun} declared there, but it is not in "runFunc", if you add it to "usefunc", please ignore this.',
+                            f'{whichFuncToRun} declared there, but it is not in "runFunc".',
                         )
                     items[2][whichFuncToRun] = (
                         func,

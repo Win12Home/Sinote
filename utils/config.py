@@ -77,7 +77,9 @@ class Setting:
                 Logger.debug(f"Successfully to change {key} to {value}")
             self.saveToConfig()
         elif setting.get(key, object()) == value:
-            Logger.debug(f"New value is same as the value of key {key}, no need to change. Value: {value}")
+            Logger.debug(
+                f"New value is same as the value of key {key}, no need to change. Value: {value}"
+            )
 
     def saveToConfig(self) -> None:
         with open("./setting.json5", "w", encoding="utf-8") as f:

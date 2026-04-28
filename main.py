@@ -1,13 +1,14 @@
+# *-* coding: utf-8 *-*
+
 """
 Sinote: Code Smartly, User Interface Intuitive
-Sinote Version 0.07.26033
 3rd Party License saved at ./3rd-party-license
 
 Win12Home (C) 2025, 2026. MIT License.
 
 Sorry, my english bad OvO.
 Because I'm a child TAT.
-AI help me to finish 15% of these code, WTF (BABABOY)
+AI help me to finish 10% of these code, yep, only SyntaxHighlighter cuz I didn't learn any Regular Expression.
 
 Avoid to run Sinote in Python 3.12
 """

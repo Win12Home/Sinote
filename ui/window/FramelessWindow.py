@@ -16,12 +16,17 @@ from PySide6.QtWidgets import QMainWindow, QMenuBar, QVBoxLayout, QWidget, QAppl
 from ui.widgets.TitleBar import TitleBar
 from utils.logger import Logger
 
-
-isWayland: bool = QApplication.platformName().lower() == "wayland"  # Fix issue that Windows, XCB(X11) and other system will not change shape when cursor is at the border of the window.
+isWayland: bool = (
+    QApplication.platformName().lower() == "wayland"
+)  # Fix issue that Windows, XCB(X11) and other system will not change shape when cursor is at the border of the window.
 isX11: bool = QApplication.platformName().lower() in ["x11", "xcb"]
 
+
 def mapToSelf(self: QWidget, pos: QPoint) -> QPoint:
-    return pos if isWayland else self.mapFromGlobal(pos)  # Wayland is locality position, but others not.
+    return (
+        pos if isWayland else self.mapFromGlobal(pos)
+    )  # Wayland is locality position, but others not.
+
 
 class Edge(Enum):
     TopLeft = 0
@@ -49,7 +54,9 @@ class BorderCentralWidget(QWidget):
         self.nowCursorPos = None
         self.shapeChecker = QTimer(self)
         self.shapeChecker.timeout.connect(
-            lambda: self.analyzeMouseCursorAndEdge(mapToSelf(self, self.cursor().pos()).toTuple())
+            lambda: self.analyzeMouseCursorAndEdge(
+                mapToSelf(self, self.cursor().pos()).toTuple()
+            )
         )
         self.shapeChecker.start(10)
 
@@ -117,7 +124,9 @@ class BorderCentralWidget(QWidget):
         if event.button() != Qt.MouseButton.LeftButton or self.scalingDisabled:
             return super().mousePressEvent(event)
 
-        shape = self.analyzeMouseCursorAndEdge(mapToSelf(self, self.cursor().pos()).toTuple())
+        shape = self.analyzeMouseCursorAndEdge(
+            mapToSelf(self, self.cursor().pos()).toTuple()
+        )
         self.cursorShapeChangeDisabled = True
 
         self.resizeRequest.emit(shape)
@@ -190,20 +199,30 @@ class FramelessWindow(QMainWindow):
 
     def analyzeWindowMoving(self, moveOffset: QPoint) -> None:
         if not self.isMaximized():
-            if hasattr(self.windowHandle(), "startSystemMove") and system().lower() in [
-                "windows",
-                "linux",
-            ] and not isX11:  # Fix issues that cannot move in Wayland and supported system dragging
+            if (
+                hasattr(self.windowHandle(), "startSystemMove")
+                and system().lower()
+                in [
+                    "windows",
+                    "linux",
+                ]
+                and not isX11
+            ):  # Fix issues that cannot move in Wayland and supported system dragging
                 self.windowHandle().startSystemMove()
             else:
                 self.move(self.pos() + moveOffset)
             self.repaint()
 
     def analyzeWindowResizing(self, resizeEdge: Edge) -> None:
-        if hasattr(self.windowHandle(), "startSystemResize") and system().lower() in [
-            "windows",
-            "linux",
-        ] and not isX11:
+        if (
+            hasattr(self.windowHandle(), "startSystemResize")
+            and system().lower()
+            in [
+                "windows",
+                "linux",
+            ]
+            and not isX11
+        ):
             edgeInQt: Qt.Edge | None = None
             if resizeEdge == Edge.Left:
                 edgeInQt = Qt.Edge.LeftEdge

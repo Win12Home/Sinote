@@ -14,56 +14,6 @@ from utils.logger import Logger
 
 
 class LoadPluginBase:
-    functions: dict = {
-        # Base Functions
-        "print": 0,
-        "msgbox": 1,
-        "log": 2,
-        "var": 3,
-        "vpr": 4,
-        "msgin": 5,
-        "system": 6,
-        "usefunc": 7,
-        "sleep": 8,
-        # Advanced Functions
-        "set": 100,
-        "mkdir": 101,
-        "cfile": 102,
-        "efile": 103,
-        "pfile": 104,
-        "dfile": 105,
-        "afile": 106,
-        "wfile": 107,
-        "rfile": 108,
-        # GUI Functions
-        "errbox": 200,
-    }
-
-    argumentNumber: dict = {
-        # Base Functions
-        0: [1, 1],
-        1: [2, 2],
-        2: [2, 2],
-        3: [1, 2],
-        4: [1, 1],
-        5: [3, 3],
-        6: [1, 2],
-        7: [1, 1],
-        8: [1, 1],
-        # Advanced Functions
-        100: [2, 2],
-        101: [1, 1],
-        102: [1, 1],
-        103: [1, 1],
-        104: [2, 3],
-        105: [1, 1],
-        106: [2, 2],
-        107: [2, 2],
-        108: [2, 2],
-        # GUI Functions
-        200: [1, 1],
-    }
-
     class ConfigKeyNotFoundError(Exception): ...
 
     @staticmethod

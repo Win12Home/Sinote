@@ -98,18 +98,28 @@ class MainWindow(FramelessWindow):
         proj: str = settingObject.getValue("recently_project_path")
 
         if proj is None:
-            debugLog('"recently_project_path" is null, quitting... 🤔 It\'s have some bugs before.')
+            debugLog(
+                '"recently_project_path" is null, quitting... 🤔 It\'s have some bugs before.'
+            )
             return
 
         self._openProject(proj)
 
     def _setupOthers(self) -> None:
         if not isinstance(settingObject.getValue("left_area_pack_width"), int):
-            settingObject.setValue("left_area_pack_width", min(200, self.width()-50))
+            settingObject.setValue("left_area_pack_width", min(200, self.width() - 50))
 
-        self.horizontalSplitter.setSizes([settingObject.getValue("left_area_pack_width"), self.horizontalSplitter.width() - settingObject.getValue("left_area_pack_width")])
+        self.horizontalSplitter.setSizes(
+            [
+                settingObject.getValue("left_area_pack_width"),
+                self.horizontalSplitter.width()
+                - settingObject.getValue("left_area_pack_width"),
+            ]
+        )
 
-        if settingObject.getValue("left_area_visible"):  # Yeah, i don't know it really a bool.
+        if settingObject.getValue(
+            "left_area_visible"
+        ):  # Yeah, i don't know it really a bool.
             self.projectArea.setVisible(True)
         else:
             self.projectArea.setVisible(False)
@@ -946,7 +956,7 @@ class MainWindow(FramelessWindow):
         debugLog("Show Application Successfully!")
         self.applySettings()
         debugLog("Preparing to run AutoRuns...")
-        QTimer.singleShot(100, lambda: [i() for i in autoRun])
+        QTimer.singleShot(100, lambda: [i(self) for i in autoRun])
         debugLog(
             "Running AutoRuns by QTimer 👏"
         )  # If you aren't using QTimer, Window will be stuck.
@@ -1070,7 +1080,9 @@ If you want to use Fixed Font every time or you doesn't know that problem, remov
                 else:
                     self._projectSettings["nowWorks"] = None
             settingObject.setValue("recently_project_path", self._project)
-            settingObject.setValue("left_area_pack_width", self.horizontalSplitter.sizes()[0])
+            settingObject.setValue(
+                "left_area_pack_width", self.horizontalSplitter.sizes()[0]
+            )
             settingObject.setValue("left_area_visible", leftAreaVisible)
             debugLog("Saved session!")
             debugLog("Closing window... 🤔")
@@ -1258,5 +1270,5 @@ If you want to use Fixed Font every time or you doesn't know that problem, remov
         debugLog("Successfully to initialize ✅")
 
     def resizeEvent(self, event) -> None:
-        self.projectArea.setMaximumWidth(max(20, self.width()-50))
+        self.projectArea.setMaximumWidth(max(20, self.width() - 50))
         super().resizeEvent(event)
