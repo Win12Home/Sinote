@@ -137,7 +137,7 @@ jobs:
         EOF
         else
           cat > bin/VERSION.txt << EOF
-        Sinote Editor (Unofficial, PR)
+        Sinote Editor (Unofficial or Merge, PR)
         PR Number: PR # ${{ github.event.number }}
         Build Date: $(date -u +"%Y-%m-%dT%H:%M:%SZ")
         Platform: ${{ runner.os }}
@@ -155,7 +155,7 @@ jobs:
       shell: bash
       run: |
         if [ "${{ github.event_name }}" = "pull_request" ]; then
-          echo "BUILD_SUFFIX=pr-${{ github.event.number }}-unofficial" >> $GITHUB_OUTPUT
+          echo "BUILD_SUFFIX=pr-${{ github.event.number }}" >> $GITHUB_OUTPUT
         else
           echo "BUILD_SUFFIX=${{ github.ref_name }}-${{ github.sha }}-official" >> $GITHUB_OUTPUT
         fi
